@@ -3,6 +3,12 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.9.24"
 }
 
+// 固定签名：CI 注入了密钥库就用它签（这样每次发新版都能直接覆盖安装，
+// 不然 Android 会报「签名不一致」必须先卸载）。别人 fork 自己编译没有密钥库时
+// 退回 debug 签名，构建照样过得了。密钥库本身不进仓库，走 Actions Secret。
+val ksFile = System.getenv("AISTREAM_KEYSTORE").orEmpty()
+val hasKs = ksFile.isNotBlank() && file(ksFile).exists()
+
 android {
     namespace = "io.github.xiaolurenya.aistream.tv"
     compileSdk = 34
@@ -11,13 +17,28 @@ android {
         applicationId = "io.github.xiaolurenya.aistream.tv"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
+    }
+
+    signingConfigs {
+        if (hasKs) {
+            create("aistream") {
+                storeFile = file(ksFile)
+                storePassword = System.getenv("AISTREAM_KS_PW").orEmpty()
+                keyAlias = System.getenv("AISTREAM_KEY_ALIAS").orEmpty()
+                keyPassword = System.getenv("AISTREAM_KEY_PW").orEmpty()
+            }
+        }
     }
 
     buildTypes {
-        release {
+        getByName("debug") {
+            if (hasKs) signingConfig = signingConfigs.getByName("aistream")
+        }
+        getByName("release") {
             isMinifyEnabled = false
+            signingConfig = if (hasKs) signingConfigs.getByName("aistream") else signingConfigs.getByName("debug")
         }
     }
 

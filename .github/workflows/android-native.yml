@@ -29,11 +29,50 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build debug APK
-        run: gradle -p native assembleDebug --no-daemon
+      # 签名密钥库存在 Actions Secret 里，构建时还原成文件再交给 Gradle。
+      # 每次都用同一把钥匙签，用户下次更新才能直接覆盖安装。
+      - name: Restore signing keystore
+        env:
+          KS_B64: ${{ secrets.AISTREAM_KS_BASE64 }}
+          KS_PATH: ${{ github.workspace }}/aistream-sign.jks
+        run: |
+          if [ -n "$KS_B64" ]; then
+            printf '%s' "$KS_B64" | base64 -d > "$KS_PATH"
+            echo "AISTREAM_KEYSTORE=$KS_PATH" >> "$GITHUB_ENV"
+            echo "已还原签名密钥库"
+          else
+            echo "没有配置签名密钥库，本次用 debug 签名（覆盖安装会失败）"
+          fi
 
-      - name: Rename APK
-        run: mv native/build/outputs/apk/debug/*.apk AIStream-Native.apk
+      - name: Build APK
+        env:
+          AISTREAM_KS_PW: ${{ secrets.AISTREAM_KS_PW }}
+          AISTREAM_KEY_ALIAS: ${{ secrets.AISTREAM_KEY_ALIAS }}
+          AISTREAM_KEY_PW: ${{ secrets.AISTREAM_KEY_PW }}
+        run: |
+          if [ -n "$AISTREAM_KEYSTORE" ]; then
+            gradle -p native assembleRelease --no-daemon
+            mv native/build/outputs/apk/release/*.apk AIStream-Native.apk
+          else
+            gradle -p native assembleDebug --no-daemon
+            mv native/build/outputs/apk/debug/*.apk AIStream-Native.apk
+          fi
+
+      # 把签名的指纹打进日志：以后每次发版都能核对是不是同一把钥匙
+      - name: Show signing fingerprint
+        env:
+          AISTREAM_KS_PW: ${{ secrets.AISTREAM_KS_PW }}
+          AISTREAM_KEY_ALIAS: ${{ secrets.AISTREAM_KEY_ALIAS }}
+        run: |
+          if [ -z "$AISTREAM_KEYSTORE" ]; then
+            echo "本次是 debug 签名，跳过指纹校验"; exit 0
+          fi
+          keytool -list -v -keystore "$AISTREAM_KEYSTORE" \
+            -storepass "$AISTREAM_KS_PW" -alias "$AISTREAM_KEY_ALIAS" 2>/dev/null \
+            | grep -iE "SHA1|SHA256|until" || true
+          for A in "$ANDROID_HOME"/build-tools/*/apksigner; do
+            [ -x "$A" ] && "$A" verify --print-certs AIStream-Native.apk && break
+          done || true
 
       - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4

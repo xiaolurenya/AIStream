@@ -84,19 +84,19 @@ class RedeemActivity : AppCompatActivity() {
         override fun getItemCount() = items.size
 
         override fun onBindViewHolder(h: H, i: Int) {
-            val it = items[i]
-            h.t.text = it.title.orEmpty()
-            val kind = if (it.kind == "perm") "权限" else "会员"
-            h.d.text = listOf(
-                it.desc,
-                kind + (if (it.kind == "perm") "" else " Lv" + (it.level ?: "0")),
-                (it.days ?: "0") + " 天"
-            ).filter { it.isNotBlank() }.joinToString(" · ")
-            h.b.text = (it.cost ?: "0") + " 分"
-            h.b.isEnabled = !it.soldOut
-            h.b.alpha = if (it.soldOut) 0.5f else 1f
-            h.b.text = if (it.soldOut) "已兑完" else (it.cost ?: "0") + " 分"
-            h.b.setOnClickListener { if (!it.soldOut) doRedeem(it) }
+            val d = items[i]
+            h.t.text = d.title.orEmpty()
+            val kind = if (d.kind == "perm") "权限" else "会员"
+            h.d.text = listOf<String?>(
+                d.desc,
+                kind + (if (d.kind == "perm") "" else " Lv" + (d.level ?: "0")),
+                (d.days ?: "0") + " 天"
+            ).filter { !it.isNullOrBlank() }.joinToString(" · ")
+            val out = d.soldOut
+            h.b.isEnabled = !out
+            h.b.alpha = if (out) 0.5f else 1f
+            h.b.text = if (out) "已兑完" else (d.cost ?: "0") + " 分"
+            h.b.setOnClickListener { if (!out) doRedeem(d) }
         }
     }
 }
