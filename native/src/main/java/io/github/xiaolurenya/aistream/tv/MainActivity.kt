@@ -33,12 +33,13 @@ class MainActivity : AppCompatActivity() {
         // 只允许底部导航切页：页面里还有横向栏目，左右滑动翻页会和它们抢手势
         pager.isUserInputEnabled = false
         pager.adapter = object : FragmentStateAdapter(this) {
-            override fun getItemCount() = 4
+            override fun getItemCount() = 5
             override fun createFragment(pos: Int) = when (pos) {
                 0 -> HomeFragment()
                 1 -> SearchFragment()
-                2 -> FavFragment()
-                else -> HistoryFragment()
+                2 -> IptvFragment()
+                3 -> FavFragment()
+                else -> MeFragment()
             }
         }
 
@@ -46,8 +47,9 @@ class MainActivity : AppCompatActivity() {
             pager.currentItem = when (it.itemId) {
                 R.id.nav_home -> 0
                 R.id.nav_search -> 1
-                R.id.nav_fav -> 2
-                else -> 3
+                R.id.nav_iptv -> 2
+                R.id.nav_fav -> 3
+                else -> 4
             }
             true
         }

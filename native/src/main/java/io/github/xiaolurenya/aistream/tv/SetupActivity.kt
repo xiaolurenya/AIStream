@@ -49,6 +49,23 @@ class SetupActivity : AppCompatActivity() {
         chipHttp.setOnClickListener { setProto("http") }
         chipHttps.setOnClickListener { setProto("https") }
         btnGo.setOnClickListener { submit() }
+        // 注册要打站点接口，得先有地址才能去（没配过就先让用户连上再注册）
+        findViewById<TextView>(R.id.btnReg).setOnClickListener {
+            if (Prefs.base.isBlank()) {
+                // 注册接口要打站点，先把地址存下来（这一步不要求账号密码）
+                try {
+                    val base = parseTarget()
+                    Prefs.proto = proto
+                    Prefs.port = etPort.text.toString().trim()
+                    Prefs.host = hostOnly()
+                    Prefs.base = base
+                } catch (e: Exception) {
+                    showErr(e.message)
+                    return@setOnClickListener
+                }
+            }
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
         tvClear.setOnClickListener {
             Prefs.clear()
             etPass.setText("")
@@ -101,6 +118,12 @@ class SetupActivity : AppCompatActivity() {
         return "$proto://$h:$p"
     }
 
+    private fun hostOnly(): String {
+        val h = etHost.text.toString().trim()
+            .replace(Regex("(?i)^https?://"), "").trim().trimEnd('/')
+        return Regex("^(.+?):(\\d+)$").find(h)?.groupValues?.get(1) ?: h
+    }
+
     private fun showErr(s: String?) {
         if (s.isNullOrBlank()) {
             tvErr.visibility = View.GONE
@@ -139,11 +162,8 @@ class SetupActivity : AppCompatActivity() {
             }
             busy(false)
             r.onSuccess { resp ->
-                val h = etHost.text.toString().trim()
-                    .replace(Regex("(?i)^https?://"), "").trim().trimEnd('/')
-                val hostOnly = Regex("^(.+?):(\\d+)$").find(h)?.groupValues?.get(1) ?: h
                 Prefs.proto = proto
-                Prefs.host = hostOnly
+                Prefs.host = hostOnly()
                 Prefs.port = etPort.text.toString().trim()
                 Prefs.user = user
                 Prefs.pass = pass

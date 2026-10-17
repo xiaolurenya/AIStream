@@ -56,6 +56,24 @@
             android:resizeableActivity="true"
             android:screenOrientation="fullSensor"
             android:supportsPictureInPicture="true" />
+
+        <activity
+            android:name=".LiveActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:screenOrientation="fullSensor" />
+
+        <activity
+            android:name=".ListActivity"
+            android:screenOrientation="user" />
+
+        <activity
+            android:name=".RedeemActivity"
+            android:screenOrientation="user" />
+
+        <activity
+            android:name=".RegisterActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

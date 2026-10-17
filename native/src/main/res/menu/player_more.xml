@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_scale"
+        android:title="画面比例" />
+    <item
+        android:id="@+id/menu_rotate"
+        android:title="旋转屏幕" />
+    <item
+        android:id="@+id/menu_pip"
+        android:title="画中画" />
+    <item
+        android:id="@+id/menu_stop_cast"
+        android:title="停止投屏" />
+</menu>
