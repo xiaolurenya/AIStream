@@ -29,7 +29,7 @@ import java.net.URL
  *
  * 登录态分两层，缺一不可（站点 v71 起页面门禁认 Cookie、API 门禁认 Bearer）：
  *  - Cookie aistream_sid  → 服务端页面门禁（否则 index.html 被改发 gate.html）
- *  - localStorage['aistream_token'] → 前端 app.js / player.js 自己调 /api/* 时带的 Bearer
+ *  - localStorage['aistream_token'] → 前端 app.js / player.js 自己调 /api 接口时带的 Bearer
  * 用 loadDataWithBaseURL 先在目标 origin 上写入 localStorage，再 location.replace 进站，
  * 保证 app.js 第一次执行时 token 已经就位（不用等页面加载完再补一刀刷新）。
  *
