@@ -6,6 +6,25 @@
 |:---:|:---:|
 | ![首页](docs/shot-home.jpg) | ![播放页](docs/shot-play.jpg) |
 
+### 📱 Android 客户端 —— 免登录直接下载
+
+[**⬇ 下载 AIStream-v0.1.0.apk**](https://github.com/xiaolurenya/AIStream/releases/download/v0.1.0/AIStream-v0.1.0.apk)
+· Android 7.0+ · 5.6MB · [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
+
+APP 里**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
+（不想用 APP 也完全没问题，它就是个壳，功能跟手机浏览器打开你的站点一样。）
+
+### 🐛 欢迎提交 Bug · 欢迎提需求
+
+用着不对劲、有想法、想吐槽，都直接开 Issue：
+
+**👉 [提交一个 Bug](https://github.com/xiaolurenya/AIStream/issues/new?template=bug-report.yml)
+· [提个功能建议](https://github.com/xiaolurenya/AIStream/issues/new?template=feature-request.yml)
+· [看看别人提了什么](https://github.com/xiaolurenya/AIStream/issues)**
+
+站点端和 APP 端都收。提的时候带上**版本 + 复现步骤 + 手机/浏览器环境 + 截图**，我好定位。
+也欢迎直接 PR。聊起来最快的是官方 TG 群：https://t.me/AIStreamTV
+
 > ⚠️ **先读这一节**：本项目免费、仅供技术研究与交流，永久免费。**禁止用于任何商业或盈利行为**。
 > 完整条款见文末 [九、免责声明与使用限制](#九免责声明与使用限制)。
 
@@ -244,9 +263,10 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
   右上角 ⚙ 里还能随时手动切横 / 竖屏。
 - **会话自动续期**：登录态 7 天过期被弹回登录页时，APP 会用保存的账号静默重登一次，无感继续看。
 - **网页视频全屏、返回键网页后退、外链走系统浏览器**；https 站点挂 http 播放源也放行。
-- **不需要自己编译**：仓库配有 GitHub Actions（`.github/workflows/android.yml`），任何对
-  `app/**` 的改动推送后都会自动云构建，到仓库的 **Actions → Android APK → 最新一次运行 →
-  Artifacts → AIStream-APK** 下载即可（需登录 GitHub）。
+- **下载**：正式版直接到 [Releases](https://github.com/xiaolurenya/AIStream/releases/latest) 下，不用登录。
+- **不用自己编译**：仓库配有 GitHub Actions（`.github/workflows/android.yml`）——改到 `app/` 的代码推送后
+  会自动云构建（产物在 Actions 的 Artifacts 里，需登录 GitHub）；**在 GitHub 上发一个 Release 时，
+  它还会把 APK 自动挂到这个 Release 上**。
 - 本地编译也一样简单：装好 Android Studio / JDK17 后在 `app/` 目录 `gradle assembleDebug`。
 
 ---
@@ -338,6 +358,18 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 
 > 注意：机器码里包含容器 hostname，Docker 容器的 hostname 默认是容器 ID，
 > 所以**同一台机器上跑两个实例，它们的机器码是不一样的**，各自要各自的授权码。
+
+**Q：Android APP 连不上我的站点？**
+按顺序排查，前两条能筛掉九成：
+1. 手机浏览器直接打开你的站点地址，能打开吗？**浏览器都打不开就不是 APP 的问题**（内网 IP 要在同一局域网，外网要端口转发/反代）。
+2. 地址只填 IP 或域名，**别带路径**；端口默认 `8890`，改过就填改过的。
+3. 用户名密码就是你在网页登录用的那套（APP 登录走的是同一个 `/api/auth/login`）。
+4. https 站点用了自签证书会先弹一次「证书不受信任」，选继续访问；实在不行就先用 `http://` 内网地址。
+
+**Q：发现 Bug / 想提需求，怎么提？**
+直接开 Issue 就行 → https://github.com/xiaolurenya/AIStream/issues
+里面有 **🐛 提交 Bug** 和 **💡 功能建议** 两个模板，照着填（版本 + 复现步骤 + 环境 + 截图）我就能复现定位。
+**欢迎提交 Bug，也欢迎直接 PR。** 想聊起来的话进 TG 群 https://t.me/AIStreamTV 更快。
 
 ---
 

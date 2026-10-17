@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 官方 TG 群
+    url: https://t.me/AIStreamTV
+    about: 使用问题聊起来最快，要授权码也是进群发机器码
+  - name: 📱 Android APP 下载
+    url: https://github.com/xiaolurenya/AIStream/releases/latest
+    about: 免登录直接下 APK（Android 7.0+）

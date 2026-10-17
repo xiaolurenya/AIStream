@@ -1,0 +1,31 @@
+name: 💡 功能建议
+description: 想要什么新功能、想改进哪里，在这里说
+title: "[建议] "
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: 想要什么
+      description: 说清楚你想达成的效果，别只说「加个 xxx」
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 为什么需要 / 现在怎么凑合
+      placeholder: "现在只能 xxx，每次都要 xxx，挺麻烦"
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: 属于哪块
+      options:
+        - 前台 / 播放
+        - 后台管理
+        - 采集站 / 数据源
+        - Android APP
+        - 授权体系
+        - 其他
+    validations:
+      required: true

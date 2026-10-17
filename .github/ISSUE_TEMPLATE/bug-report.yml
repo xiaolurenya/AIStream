@@ -1,0 +1,71 @@
+name: 🐛 提交 Bug
+description: 站点或 APP 用着不对劲？在这里提，越快越详细越好跟进
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈 **欢迎提交 Bug** —— 站点端、Android APP 端都可以提。
+        提之前麻烦先确认一下：**镜像是最新版**（`xiaoluya/aistream:latest`）、站点已经激活。
+  - type: dropdown
+    id: area
+    attributes:
+      label: 出问题的地方
+      options:
+        - 站点 · 前台（网页）
+        - 站点 · 后台管理
+        - 站点 · 播放 / 换源 / 选集
+        - 站点 · 授权激活
+        - Android APP
+        - 采集站接入
+        - 其他 / 说不清
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 站点看后台页脚或镜像 digest；APP 看「⚙ → 关于」，不知道就填拉取时间
+      placeholder: "例如：镜像 2026-10-17 拉的 / APP v0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 怎么点会出问题，一步一步写
+      placeholder: |
+        1. 打开 xxx
+        2. 点了 xxx
+        3. 就 xxx 了
+    validations:
+      required: true
+  - type: textarea
+    id: expect
+    attributes:
+      label: 期望结果 / 实际结果
+      placeholder: "期望：能正常播放；实际：一直转圈 / 黑屏 / 报错 xxx"
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境信息
+      description: 手机型号 + 安卓版本 / 浏览器；站点是 http 还是 https；NAS 还是 VPS
+      placeholder: "小米14 · Android 14 · Chrome；站点 https；飞牛 NAS 上 Docker 部署"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 截图
+      description: 后台「系统日志」里相关片段、或者截图，直接拖进来
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认一下
+      options:
+        - label: 我已经确认用的是最新版镜像（或最新 APK）
+          required: false

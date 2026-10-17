@@ -6,11 +6,15 @@ on:
     paths:
       - 'app/**'
       - '.github/workflows/android.yml'
+  release:
+    types: [ published ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write      # 发 Release 时要把 APK 挂上去
     steps:
       - uses: actions/checkout@v4
 
@@ -31,8 +35,15 @@ jobs:
       - name: Rename APK
         run: mv app/build/outputs/apk/debug/*.apk AIStream-debug.apk
 
-      - name: Upload APK
+      - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: AIStream-APK
           path: AIStream-debug.apk
+
+      # 只在「发 Release」时执行：把 APK 挂到刚发布的版本上，别人不用登录就能下载
+      - name: Attach APK to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AIStream-debug.apk
