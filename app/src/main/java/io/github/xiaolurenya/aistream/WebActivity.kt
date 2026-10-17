@@ -2,6 +2,8 @@ package io.github.xiaolurenya.aistream
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -21,6 +23,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -39,6 +43,7 @@ class WebActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private lateinit var root: FrameLayout
+    private lateinit var gear: TextView
     private var customView: View? = null
     private var customCb: WebChromeClient.CustomViewCallback? = null
     private lateinit var server: String
@@ -78,14 +83,14 @@ class WebActivity : AppCompatActivity() {
         }
         WebView.setWebContentsDebuggingEnabled(false)
 
-        /* 右上角半透明小按钮：换站点 / 退出重登 */
-        val gear = TextView(this).apply {
+        /* 右上角半透明小按钮：横竖屏切换 / 换站点 / 刷新 */
+        gear = TextView(this).apply {
             text = "⚙"
             textSize = 18f
             setTextColor(Color.WHITE)
             alpha = 0.30f
             gravity = Gravity.CENTER
-            setOnClickListener { startActivity(Intent(this@WebActivity, ServerSetupActivity::class.java)) }
+            setOnClickListener { showMenu() }
         }
         val gp = FrameLayout.LayoutParams(dp(40), dp(40))
         gp.gravity = Gravity.TOP or Gravity.END
@@ -135,12 +140,12 @@ class WebActivity : AppCompatActivity() {
                 root.addView(v, FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
                 customCb = cb
+                /* 全屏看片一律横屏（覆盖手机「自动旋转」关掉的情况）+ 隐藏状态栏/导航栏 */
+                gear.visibility = View.GONE
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                setImmersive(true)
             }
-            override fun onHideCustomView() {
-                customView?.let { root.removeView(it); customView = null }
-                web.visibility = View.VISIBLE
-                customCb?.onCustomViewHidden(); customCb = null
-            }
+            override fun onHideCustomView() { exitFullscreen() }
         }
 
         loadWithSession(sidFromPrefs())
@@ -201,11 +206,60 @@ class WebActivity : AppCompatActivity() {
         }.start()
     }
 
+    /* ---------- 横竖屏 / 菜单 ---------- */
+
+    /** 退出网页全屏：撤掉全屏 view，方向交回用户（跟随系统自动旋转），系统栏放回来 */
+    private fun exitFullscreen() {
+        customView?.let { root.removeView(it) }
+        customView = null
+        web.visibility = View.VISIBLE
+        customCb?.onCustomViewHidden(); customCb = null
+        if (::gear.isInitialized) gear.visibility = View.VISIBLE
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_USER
+        setImmersive(false)
+    }
+
+    /** 手动切换横竖屏：现在是横的就切竖，反之切横（跟随重力的横屏，反向横屏也支持） */
+    private fun toggleOrientation() {
+        val land = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        requestedOrientation = if (land) ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    }
+
+    /** 全屏看片时藏掉状态栏和导航栏，退出全屏再放回来 */
+    private fun setImmersive(on: Boolean) {
+        val c = WindowInsetsControllerCompat(window, window.decorView)
+        if (on) {
+            c.hide(WindowInsetsCompat.Type.systemBars())
+            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            c.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    private fun showMenu() {
+        val land = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val items = arrayOf(
+            if (land) "切回竖屏" else "切到横屏",
+            "重新连接 / 换站点",
+            "刷新页面"
+        )
+        AlertDialog.Builder(this)
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> toggleOrientation()
+                    1 -> startActivity(Intent(this, ServerSetupActivity::class.java))
+                    2 -> loadWithSession(sidFromPrefs())   /* 带 token 重新进站，比 reload 稳 */
+                }
+            }
+            .show()
+    }
+
     /* ---------- 返回键 / 销毁 ---------- */
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (customView != null) { customCb?.onCustomViewHidden(); customView = null; web.visibility = View.VISIBLE; return true }
+            if (customView != null) { exitFullscreen(); return true }
             if (::web.isInitialized && web.canGoBack()) { web.goBack(); return true }
         }
         return super.onKeyDown(keyCode, event)
