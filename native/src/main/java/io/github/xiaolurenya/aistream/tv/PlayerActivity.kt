@@ -29,6 +29,8 @@ import java.net.URLEncoder
 class PlayerActivity : AppCompatActivity() {
 
     private val speeds = floatArrayOf(0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
+    private val RX_M3U8 = Regex("""(https?:)?//[^"'\s<>]+?\.m3u8[^"'\s<>]*""")
+    private val RX_MP4 = Regex("""(https?:)?//[^"'\s<>]+?\.(mp4|flv)(\?[^"'\s<>]*)?""")
     private val scaleNames = arrayOf("适应", "拉伸", "裁剪")
 
     private var lineIdx = 0
@@ -216,31 +218,39 @@ class PlayerActivity : AppCompatActivity() {
         lastReport = 0L
     }
 
-    // 直链直接播；不是直链的先过一遍解析线路，再从解析结果里抠 m3u8
+    // 直链直接播；不是直链的先过一遍解析线路，再从解析结果里抠真实地址
     private fun resolveUrl(raw: String): String {
         if (Api.isM3u8(raw) || Api.isVideoFile(raw)) return raw
         val p = PlayCache.parseList.firstOrNull()?.url
-        if (p.isNullOrBlank()) return raw
-        val full = wrapParse(p, raw)
+        if (!p.isNullOrBlank()) {
+            val full = wrapParse(p, raw)
+            try {
+                val body = Api.fetchText(full)
+                if (body.trimStart().startsWith("#EXTM3U")) return full
+                val hit = extractPlayable(body)
+                if (hit != null) return hit
+            } catch (e: Exception) {
+                // 解析站自己挂了，接着往下碰运气
+            }
+        }
+        // 没配解析线路（或解析没抠出来）时自己再抓一次：
+        // 不少采集站给的是播放页地址，页面里就写着 m3u8，抠出来直接能播
         return try {
-            val body = Api.fetchText(full)
-            val t = body.trimStart()
-            if (t.startsWith("#EXTM3U")) return full
-            val norm = body.replace("\\/", "/").replace("\\u002F", "/")
-            val m = Regex("""(https?:)?//[^"'\s<>]+?\.m3u8[^"'\s<>]*""").find(norm)
-            if (m != null) {
-                var s = m.value.replace("&amp;", "&")
-                if (s.startsWith("//")) s = "https:" + s
-                s
-            } else if (Regex("""(https?:)?//[^"'\s<>]+?\.(mp4|flv)(\?[^"'\s<>]*)?""").containsMatchIn(norm)) {
-                val m2 = Regex("""(https?:)?//[^"'\s<>]+?\.(mp4|flv)(\?[^"'\s<>]*)?""").find(norm)
-                var s2 = m2!!.value.replace("&amp;", "&")
-                if (s2.startsWith("//")) s2 = "https:" + s2
-                s2
-            } else raw
+            val body = Api.fetchText(raw)
+            if (body.trimStart().startsWith("#EXTM3U")) raw
+            else extractPlayable(body) ?: raw
         } catch (e: Exception) {
             raw
         }
+    }
+
+    // 从解析站 / 播放页返回的内容里找能播的地址
+    private fun extractPlayable(body: String): String? {
+        val norm = body.replace("\\/", "/").replace("\\u002F", "/").replace("&amp;", "&")
+        val m = RX_M3U8.find(norm) ?: RX_MP4.find(norm) ?: return null
+        var s = m.value
+        if (s.startsWith("//")) s = "https:" + s
+        return s
     }
 
     private fun wrapParse(purl: String, vurl: String): String {
