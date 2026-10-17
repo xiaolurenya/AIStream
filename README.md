@@ -233,6 +233,20 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 > **一个采集站都没配也能用**：首页会展示内置的热门影视数据（无需任何密钥），
 > 只是没有播放源——播放线路仍需你自己接入采集站。
 
+### 手机 APP（Android，连你自己的站点）
+
+仓库里的 [`app/`](app/) 是一个官方 Android 客户端：**WebView 壳 + 自带登录页**，
+不是连某个固定服务器的那种 APP——它让你填**你自己站点**的地址（IP / 域名 + 端口）和账号密码。
+
+- **连接自己的站点**：首次打开填地址 + 端口 + 用户名 + 密码，验证通过后自动进入站点；
+  账号密码只保存在手机本机。
+- **会话自动续期**：登录态 7 天过期被弹回登录页时，APP 会用保存的账号静默重登一次，无感继续看。
+- **网页视频全屏、返回键网页后退、外链走系统浏览器**；https 站点挂 http 播放源也放行。
+- **不需要自己编译**：仓库配有 GitHub Actions（`.github/workflows/android.yml`），任何对
+  `app/**` 的改动推送后都会自动云构建，到仓库的 **Actions → Android APK → 最新一次运行 →
+  Artifacts → AIStream-APK** 下载即可（需登录 GitHub）。
+- 本地编译也一样简单：装好 Android Studio / JDK17 后在 `app/` 目录 `gradle assembleDebug`。
+
 ---
 
 ## 七、环境变量
@@ -261,6 +275,7 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 │   ├── gate.html/.js      # 登录门禁
 │   ├── style.css / mobile.js
 │   └── vendor/            # artplayer.js + hls.min.js（自托管，页面不连任何 CDN）
+├── app/                   # Android 客户端（WebView 壳，GitHub Actions 自动出 APK）
 ├── Dockerfile
 ├── docker-compose.yml
 └── data/                  # 运行期生成，已在 .gitignore（挂载出来做持久化）

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 外层 ScrollView：小屏 + 弹起输入法时不至于把按钮顶出屏幕 -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:text="AIStream"
+            android:textColor="@color/accent_soft"
+            android:textSize="34sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="24dp"
+            android:text="@string/setup_subtitle"
+            android:textColor="@color/fg_dim"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/etHost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_host"
+            android:inputType="textUri"
+            android:textColor="@color/fg"
+            android:textColorHint="#5a6270"
+            android:backgroundTint="@color/field" />
+
+        <EditText
+            android:id="@+id/etPort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="@string/hint_port"
+            android:inputType="number"
+            android:text="8890"
+            android:textColor="@color/fg"
+            android:textColorHint="#5a6270"
+            android:backgroundTint="@color/field" />
+
+        <EditText
+            android:id="@+id/etUser"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="@string/hint_user"
+            android:inputType="text"
+            android:textColor="@color/fg"
+            android:textColorHint="#5a6270"
+            android:backgroundTint="@color/field" />
+
+        <EditText
+            android:id="@+id/etPass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="@string/hint_pass"
+            android:inputType="textPassword"
+            android:textColor="@color/fg"
+            android:textColorHint="#5a6270"
+            android:backgroundTint="@color/field" />
+
+        <ProgressBar
+            android:id="@+id/pb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnGo"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/accent"
+            android:text="@string/action_connect"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center"
+            android:textColor="@color/danger"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tvClear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="@string/action_clear"
+            android:textColor="#5a6270"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:text="@string/setup_footer"
+            android:textColor="#5a6270"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>
