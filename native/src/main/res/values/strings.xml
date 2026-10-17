@@ -28,6 +28,21 @@
     <string name="no_source">没有可用的播放线路</string>
     <string name="detail_plot">简介</string>
     <string name="label_line">线路</string>
+    <string name="label_parser">解析器</string>
+    <string name="tab_iptv">直播</string>
+    <string name="tab_me">我的</string>
+    <string name="iptv_empty">没有可用频道：后台没开 IPTV，或没对你的账号开放</string>
+    <string name="points_sign">签到</string>
+    <string name="points_signed">已签到</string>
+    <string name="points_invite">我的邀请码</string>
+    <string name="points_redeem">积分兑换</string>
+    <string name="act_change_pw">修改密码</string>
+    <string name="act_logout">退出登录</string>
+    <string name="me_history">观看历史</string>
+    <string name="me_fav">我的收藏</string>
+    <string name="cast_title">投屏到</string>
+    <string name="cast_scanning">正在扫描局域网设备…</string>
+    <string name="cast_none">没扫到投屏设备。确认手机和电视在同一个局域网、电视开了 DLNA / 投屏</string>
     <string name="label_episodes">选集</string>
 
     <string name="menu_speed">倍速</string>

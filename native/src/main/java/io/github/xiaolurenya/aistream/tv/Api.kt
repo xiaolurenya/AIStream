@@ -264,4 +264,151 @@ object Api {
     fun isVideoFile(u: String): Boolean =
         Regex("\\.(mp4|m4v|mkv|webm|ts|flv|mov|avi|m3u8)(\\?|#|$)", RegexOption.IGNORE_CASE)
             .containsMatchIn(u.trim())
+
+    // ---------- 站点配置：功能开关 + 当前账号的可视权限 ----------
+    data class IptvCfg(val enabled: Boolean = false, val allowed: Boolean = false)
+
+    data class CfgResp(
+        val siteName: String? = null,
+        val hasParse: Boolean = false,
+        val views: Map<String, Boolean>? = null,
+        val iptv: IptvCfg? = null
+    )
+
+    fun config(): CfgResp? = get("/api/config")
+
+    // ---------- IPTV 直播 ----------
+    data class IptvCh(
+        val cid: String? = null,
+        val name: String? = null,
+        val group: String? = null,
+        val tid: String? = null,
+        val src: String? = null,
+        val direct: Boolean = false,
+        val logo: String? = null
+    )
+
+    data class IptvResp(
+        val enabled: Boolean = false,
+        val denied: Boolean = false,
+        val count: Int = 0,
+        val total: Int = 0,
+        val error: String? = null,
+        val channels: List<IptvCh>? = null,
+        val groupOrder: List<String>? = null
+    )
+
+    fun iptv(): IptvResp? = get("/api/iptv")
+
+    // 频道真实地址不在列表接口里（服务端防窥只给不透明 cid），播放走这个
+    fun iptvStream(cid: String): String = Prefs.base + "/api/iptv/stream?ch=" + enc(cid)
+
+    // ---------- 会员 / 积分 / 邀请 ----------
+    data class VipInfo(
+        val level: String? = null,
+        val name: String? = null,
+        val noAds: Boolean = false,
+        val pointMul: String? = null,
+        val expire: String? = null,
+        val days: String? = null
+    )
+
+    data class CheckinInfo(val today: Boolean = false, val streak: String? = null, val last: String? = null)
+    data class InviteInfo(val code: String? = null, val invited: String? = null, val perInvite: String? = null)
+    data class DailyInfo(val watchMin: String? = null, val date: String? = null)
+
+    data class PointsResp(
+        val points: String? = null,
+        val vip: VipInfo? = null,
+        val checkin: CheckinInfo? = null,
+        val invite: InviteInfo? = null,
+        val daily: DailyInfo? = null
+    )
+
+    fun pointsMe(): PointsResp? = get("/api/points/me")
+    fun invite(): InviteInfo? = get("/api/invite")
+
+    data class CheckinResp(
+        val ok: Boolean = false,
+        val gained: String? = null,
+        val streak: String? = null,
+        val points: String? = null,
+        val msg: String? = null,
+        val error: String? = null
+    )
+
+    fun checkin(): CheckinResp? =
+        try { gson.fromJson(postRaw("/api/checkin", "{}"), CheckinResp::class.java) } catch (e: Exception) { null }
+
+    data class RedeemItem(
+        val id: String? = null,
+        val title: String? = null,
+        val desc: String? = null,
+        val kind: String? = null,
+        val level: String? = null,
+        val permKey: String? = null,
+        val days: String? = null,
+        val cost: String? = null,
+        val stock: String? = null,
+        val soldOut: Boolean = false
+    )
+
+    data class RedeemMe(val points: String? = null, val vip: VipInfo? = null)
+    data class RedeemResp(val enabled: Boolean = false, val items: List<RedeemItem>? = null, val me: RedeemMe? = null)
+
+    fun redeem(): RedeemResp? = get("/api/redeem")
+    fun redeemPost(id: String): OkResp? =
+        try { gson.fromJson(postRaw("/api/redeem", gsonText(mapOf("id" to id))), OkResp::class.java) }
+        catch (e: Exception) { null }
+
+    // ---------- 账号 ----------
+    fun changePassword(oldPw: String, newPw: String) {
+        postRaw("/api/auth/change-password", gsonText(mapOf("oldPassword" to oldPw, "newPassword" to newPw)))
+    }
+
+    fun logout() {
+        try { postRaw("/api/auth/logout", "{}") } catch (e: Exception) {}
+    }
+
+    fun register(user: String, pass: String, invite: String): LoginResp {
+        val body = gsonText(mapOf("username" to user, "password" to pass, "invite" to invite))
+        val req = Request.Builder()
+            .url(abs(Prefs.base, "/api/auth/register"))
+            .header("Content-Type", "application/json")
+            .post(body.toRequestBody("application/json".toMediaType()))
+            .build()
+        http.newCall(req).execute().use { r ->
+            val s = r.body?.string().orEmpty()
+            val o = try { gson.fromJson(s, LoginResp::class.java) } catch (e: Exception) { null }
+            if (r.code !in 200..299) throw Err(o?.error ?: "注册失败（HTTP ${r.code}）")
+            if (o == null || o.token.isNullOrBlank()) throw Err("注册返回异常")
+            return o
+        }
+    }
+
+    // ---------- 投屏 ----------
+    // 服务端 v36 已经把 SSDP 发现和 SOAP 控制都做了，手机端只负责列设备、发指令
+    data class DlnaDev(
+        val name: String? = null,
+        val controlUrl: String? = null,
+        val location: String? = null,
+        val type: String? = null
+    )
+
+    data class DlnaList(val list: List<DlnaDev>? = null, val error: String? = null)
+
+    fun dlnaScan(): DlnaList? = get("/api/dlna/scan")
+
+    fun dlnaCast(controlUrl: String, url: String, title: String): OkResp? =
+        try {
+            gson.fromJson(
+                postRaw("/api/dlna/cast", gsonText(mapOf("controlUrl" to controlUrl, "url" to url, "title" to title))),
+                OkResp::class.java
+            )
+        } catch (e: Exception) { null }
+
+    fun dlnaStop(controlUrl: String): OkResp? =
+        try {
+            gson.fromJson(postRaw("/api/dlna/stop", gsonText(mapOf("controlUrl" to controlUrl))), OkResp::class.java)
+        } catch (e: Exception) { null }
 }

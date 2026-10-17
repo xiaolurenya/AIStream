@@ -59,26 +59,26 @@
             android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/btnScale"
+            android:id="@+id/btnCast"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="4dp"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
-            android:text="适应"
+            android:text="投屏"
             android:textColor="@android:color/white"
             android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/btnRotate"
+            android:id="@+id/btnMore"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:paddingStart="10dp"
+            android:paddingStart="8dp"
             android:paddingEnd="10dp"
-            android:text="旋转"
+            android:text="⋯"
             android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textSize="20sp" />
 
     </LinearLayout>
 

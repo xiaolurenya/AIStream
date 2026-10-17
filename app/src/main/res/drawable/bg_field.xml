@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 圆角输入框：深底 + 细描边，聚焦态靠 Android 默认（光标变色） -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#0d1320" />
-    <corners android:radius="12dp" />
-    <stroke android:width="1dp" android:color="#2a3242" />
-</shape>

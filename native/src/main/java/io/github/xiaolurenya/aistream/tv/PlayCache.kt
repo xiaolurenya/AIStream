@@ -11,9 +11,26 @@ object PlayCache {
         val eps: List<Api.Episode>
     )
 
+    // 官方 / 专享这类线路排前面（跟网页端一个口径）
+    private val OFFICIAL = Regex("官方|专享|腾讯|爱奇艺|优酷|芒果|咪咕|闪电|极速|vip", RegexOption.IGNORE_CASE)
+
+    fun isOfficial(l: Line): Boolean = OFFICIAL.containsMatchIn(l.station) || OFFICIAL.containsMatchIn(l.from)
+
+    // 稳定排序：官方在前，其余保持后台配置顺序
+    fun sorted(list: List<Line>): List<Line> = list.sortedBy { if (isOfficial(it)) 0 else 1 }
+
     var lines: List<Line> = emptyList()
     var parseList: List<Api.Parse> = emptyList()
     var hasParse: Boolean = false
+
+    // 当前选中的解析器下标（后台可以配多条解析线路，用户可挑一条）
+    var parseIndex: Int = 0
+
+    // IPTV 频道列表与当前台号：直播播放页要能上下换台
+    var iptv: List<Api.IptvCh> = emptyList()
+    var iptvIndex: Int = 0
+
+    fun parseUrl(): String = parseList.getOrNull(parseIndex)?.url.orEmpty()
 
     var title: String = ""
     var year: String = ""

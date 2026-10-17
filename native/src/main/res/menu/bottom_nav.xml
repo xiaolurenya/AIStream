@@ -9,11 +9,15 @@
         android:icon="@drawable/ic_search"
         android:title="@string/tab_search" />
     <item
+        android:id="@+id/nav_iptv"
+        android:icon="@drawable/ic_live"
+        android:title="@string/tab_iptv" />
+    <item
         android:id="@+id/nav_fav"
         android:icon="@drawable/ic_fav"
         android:title="@string/tab_fav" />
     <item
-        android:id="@+id/nav_history"
-        android:icon="@drawable/ic_history"
-        android:title="@string/tab_history" />
+        android:id="@+id/nav_me"
+        android:icon="@drawable/ic_me"
+        android:title="@string/tab_me" />
 </menu>
