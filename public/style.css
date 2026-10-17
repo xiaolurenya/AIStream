@@ -1060,3 +1060,22 @@ html.is-mobile .cast-btn{display:inline-flex;align-items:center}
 .cm-dev .cm-u{font-size:11px;color:var(--muted)}
 .cm-foot{display:flex;gap:10px;margin-top:12px}
 .cm-foot .btn{flex:1}
+
+/* ---------- v74：手机横屏「影院模式」（大哥反馈：横屏播放顶栏+防上当条把画面挡掉大半） ----------
+   命中条件三重保险：横屏 + 触屏设备 + 视口矮于 520px —— 手机横屏才会命中，桌面窄窗口不受影响。
+   播放页变成一屏影院：顶栏/防上当条/海报卡/搜索框/选集侧栏全部收起，播放器铺满整屏。
+   想切集/返回就转回竖屏，或用 APP 右上角 ⚙ 菜单。 */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 520px){
+  body.pbody{overflow:hidden}
+  .ptop,.antiscam,.p-media,.side-poster,.side-card,.side-rec,.big-search,
+  .p-side,.p-eps,.p-info{display:none}
+  .p-wrap{grid-template-columns:1fr;gap:0;margin:0;padding:0;max-width:none}
+  .p-main{grid-template-columns:1fr;gap:0}
+  .p-stagecol{margin:0;min-width:0}
+  .stage-frame{padding:0;border-radius:0;background:none;box-shadow:none;animation:none}
+  .stage-inner{aspect-ratio:auto;height:100dvh;border-radius:0}
+  /* 倍速条（含跳过片头胶囊）固定成画面底部一条半透明横栏，切线/倍速/跳片头都还够得着 */
+  #speedbar{position:fixed;left:0;right:0;bottom:0;z-index:80;margin:0;padding:5px 10px;
+    flex-wrap:nowrap;overflow-x:auto;
+    background:linear-gradient(180deg,transparent,rgba(5,7,16,.92) 38%)}
+}

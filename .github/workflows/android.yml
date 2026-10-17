@@ -33,17 +33,18 @@ jobs:
         run: gradle -p app assembleDebug --no-daemon
 
       - name: Rename APK
-        run: mv app/build/outputs/apk/debug/*.apk AIStream-debug.apk
+        run: mv app/build/outputs/apk/debug/*.apk AIStream-Android.apk
 
       - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: AIStream-APK
-          path: AIStream-debug.apk
+          path: AIStream-Android.apk
 
       # 只在「发 Release」时执行：把 APK 挂到刚发布的版本上，别人不用登录就能下载
+      # 资产名固定为 AIStream-Android.apk → README 里 releases/latest/download 直链永远有效
       - name: Attach APK to Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: AIStream-debug.apk
+          files: AIStream-Android.apk
