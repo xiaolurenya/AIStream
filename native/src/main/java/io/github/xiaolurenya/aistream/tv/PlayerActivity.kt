@@ -404,7 +404,7 @@ class PlayerActivity : AppCompatActivity() {
 
                 if (canIntro && !introDone && !resuming && t >= SKIP_INTRO_AT && t < SKIP_INTRO_TO - 5) {
                     introDone = true
-                    runCatching { player.seekTo(SKIP_INTRO_TO * 1000) }
+                    runCatching { player.seekTo((SKIP_INTRO_TO * 1000).toLong()) }
                     toast("已跳过片头")
                 }
 

@@ -6,17 +6,16 @@
 |:---:|:---:|
 | ![首页](docs/shot-home.jpg) | ![播放页](docs/shot-play.jpg) |
 
-### 📱 Android 客户端 —— 免登录直接下载
+### 📱 Android 原生客户端 —— 免登录直接下载
 
 | 版本 | 下载 | 一句话 |
 |---|---|---|
-| **原生客户端（推荐）** | [**⬇ AIStream-Native.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Native.apk) | Kotlin + ExoPlayer 全原生，界面原生绘制、视频原生硬解 |
-| 网页兼容版 | [⬇ AIStream-Android.apk](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Android.apk) | WebView 壳，等于用手机浏览器打开你的站点 |
+| **原生客户端** | [**⬇ AIStream-Native.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Native.apk) | Kotlin + ExoPlayer 全原生，界面原生绘制、视频原生硬解 |
 
-两个都是 **Android 7.0+**、都**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
+**Android 7.0+**、**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
 · [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
 
-> 两个 APP 可以同时装（包名不同），试完留一个就行。
+> 所有版本都用同一把签名密钥签发，**新版本直接覆盖安装即可，不用先卸载**。
 
 ### 🐛 欢迎提交 Bug · 欢迎提需求
 
@@ -258,43 +257,47 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 
 ### 手机 APP（Android，连你自己的站点）
 
-仓库里有两个客户端，都**不是连某个固定服务器的那种 APP**——填**你自己站点**的地址
-（IP / 域名 + 端口）和账号密码，凭证只存在手机本机。
+[`native/`](native/) 是 **Kotlin + ExoPlayer + OkHttp + Coil 全原生**的客户端，**不是网页套壳**：
+界面原生绘制、视频原生硬解，直接调站点的 `/api` 接口。它**不是连某个固定服务器的那种 APP**——填
+**你自己站点**的地址（IP / 域名 + 端口）和账号密码，凭证只存在手机本机。
 
-#### 原生客户端 [`native/`](native/)（推荐）
-
-Kotlin + ExoPlayer + OkHttp + Coil 全原生实现，**不再是网页套壳**：界面原生绘制、视频原生硬解，
-直接调站点的 `/api` 接口，和网页端完全解耦。
+底部五个页签：**首页 · 搜索 · 直播 · 收藏 · 我的**。
 
 - **连接自己的站点**：http / https 协议切换、地址 + 端口 + 账号密码；粘一整条网址会自动识别协议和端口；
-  之前存过凭证且还有效时静默进入，不用反复登录。
+  之前存过凭证且还有效时静默进入，不用反复登录。站点开了自助注册的话，登录页可直接**填邀请码注册**。
 - **首页 / 搜索 / 收藏 / 历史**：栏目横滑海报墙（空栏目自动不占位）、下拉刷新；搜索走 TMDB + 采集站聚合；
   收藏和历史长按可删。
-- **详情页换源**：把「采集站 × 播放线路」摊平成一条列表，点哪条播哪条，下面直接选集。
-- **播放器**：ExoPlayer 原生硬解，m3u8 / mp4 直连；不是直链的会先过一遍解析线路，
-  **从解析结果里把真实 m3u8 抠出来再播**（不用再开网页 iframe 去解析）。
-- **续播**：进度存手机本机，起播自动定位；同时定期回传站点，网页端「播放历史」里同样看得到。
+- **详情页换源**：同时按「站点 id + 站内 id」精确取**和**按片名聚合取，结果合并去重后摊平成一条线路列表，
+  **官方 / 专享线路排最前面并打 ★**，点哪条播哪条，下面直接选集。
+  后台配了多条解析线路时，会列成一行让你自己挑解析器。
+- **播放器**：ExoPlayer 原生硬解，m3u8 / mp4 直连；不是直链的先过解析线路，
+  **从解析结果里把真实 m3u8 抠出来再播**；解析线路为空时再兜底抓一次播放页自己抠地址。
+- **自动跳过片头 / 片尾**：跟网页端同一套判定（20 秒后跳到 100 秒、片尾按片长比例）。
+  **能不能跳由后台给这个账号开的 `skipIntro` / `skipOutro` 权限决定**，权限没开就不会擅自跳转；
+  手动拖进度条会被识别出来，不会误判成「播到片尾」而连环跳集。
 - **播放控制**：倍速 0.75 ~ 2.0、画面比例（适应 / 拉伸 / 裁剪）、一键旋转、失败一键换线路 / 重试、
-  自动连播下一集、横屏沉浸、画中画。
+  自动连播下一集、横屏沉浸、**画中画（Android 8.0+）**。
+- **直播（IPTV）**：按后台分组展示频道网格 + 台标，ExoPlayer 直连服务端 `/api/iptv/stream`。
+  能不能看由后台 IPTV 开关和账号权限决定，服务端已经过滤过了。
+- **投屏（DLNA）**：扫描局域网设备列表 → 选一个 → 把当前播放地址推上去；还能随时停止投屏。
+  SSDP 发现和 SOAP 控制都做在服务端，手机只负责列设备和发指令。
+- **个人中心**：账号、会员等级、**积分**、今日观看分钟；**每日签到**、点击查看历史、
+  **积分兑换**（会员时长 / 临时权限）、**修改密码**、退出登录。
+- **邀请注册**：个人中心里显示自己的邀请码，一键复制分享给别人。
+- **续播**：进度存手机本机，起播自动定位；同时定期回传站点，网页端「播放历史」里同样看得到。
 - **海报走站点图片代理**：统一过 `/api/dimg`，绕开图床防盗链和跨域。
-- **下载 / 编译**：Release 页直接下 `AIStream-Native.apk`，不用登录；云构建配置在
-  `.github/workflows/android-native.yml`，本地则在 `native/` 目录 `gradle assembleDebug`。
 
-#### 网页兼容版 [`app/`](app/)（老版本）
+#### 下载 / 编译
 
-WebView 壳 + 自带登录页，功能跟手机浏览器打开你的站点一样：
-
-- **连接自己的站点**：首次打开填地址 + 端口 + 用户名 + 密码，验证通过后自动进入站点；
-  账号密码只保存在手机本机。
-- **横屏**：普通页面跟随重力四向旋转；**播放进全屏自动转横屏并隐藏状态栏**；右上角 ⚙ 悬浮球可拖到任意位置（不挡内容，位置自动记住），菜单里也能手动切横 / 竖屏；横屏播放页自动变「影院模式」（顶栏收起、播放器铺满整屏）。
-- **登录页可选 http / https 协议**，地址里粘完整网址会自动识别。
-- **会话自动续期**：登录态 7 天过期被弹回登录页时，APP 会用保存的账号静默重登一次，无感继续看。
-- **网页视频全屏、返回键网页后退、外链走系统浏览器**；https 站点挂 http 播放源也放行。
-- **下载**：正式版 `AIStream-Android.apk` 直接到 [Releases](https://github.com/xiaolurenya/AIStream/releases/latest) 下，不用登录。
-- **不用自己编译**：仓库配有 GitHub Actions（`.github/workflows/android.yml`）——改到 `app/` 的代码推送后
-  会自动云构建（产物在 Actions 的 Artifacts 里，需登录 GitHub）；**在 GitHub 上发一个 Release 时，
+- **下载**：Release 页直接下 `AIStream-Native.apk`，不用登录。
+- **不用自己编译**：仓库配了 GitHub Actions（`.github/workflows/android-native.yml`）——改到 `native/` 的代码
+  推送后自动云构建（产物在 Actions 的 Artifacts 里，需登录 GitHub）；**在 GitHub 上发一个 Release 时，
   它还会把 APK 自动挂到这个 Release 上**。
-- 本地编译也一样简单：装好 Android Studio / JDK17 后在 `app/` 目录 `gradle assembleDebug`。
+- **签名固定**：所有版本用同一把签名密钥签发，**新版本可以直接覆盖安装**。
+  密钥库走 Actions Secret（`AISTREAM_KS_BASE64` / `AISTREAM_KS_PW` / `AISTREAM_KEY_ALIAS` / `AISTREAM_KEY_PW`），
+  **不进仓库**。你自己 fork 编译时没配这几个 Secret，会自动退回 debug 签名（那样每次覆盖安装都得先卸载）。
+- **本地编译**：装好 Android Studio / JDK17 后在 `native/` 目录 `gradle assembleDebug`；
+  想出正式签名的包就配上上面四个环境变量再 `gradle assembleRelease`。
 
 ---
 
@@ -325,7 +328,6 @@ WebView 壳 + 自带登录页，功能跟手机浏览器打开你的站点一样
 │   ├── style.css / mobile.js
 │   └── vendor/            # artplayer.js + hls.min.js（自托管，页面不连任何 CDN）
 ├── native/                # Android 原生客户端（Kotlin + ExoPlayer，Actions 出 AIStream-Native.apk）
-├── app/                   # Android 网页兼容版客户端（WebView 壳，Actions 出 AIStream-Android.apk）
 ├── Dockerfile
 ├── docker-compose.yml
 └── data/                  # 运行期生成，已在 .gitignore（挂载出来做持久化）
@@ -393,6 +395,17 @@ WebView 壳 + 自带登录页，功能跟手机浏览器打开你的站点一样
 2. 地址只填 IP 或域名，**别带路径**；端口默认 `8890`，改过就填改过的。
 3. 用户名密码就是你在网页登录用的那套（APP 登录走的是同一个 `/api/auth/login`）。
 4. https 站点用了自签证书会先弹一次「证书不受信任」，选继续访问；实在不行就先用 `http://` 内网地址。
+
+**Q：更新 APP 提示「签名不一致 / 安装失败」，怎么办？**
+官方 Release 里的 `AIStream-Native.apk` 全部用同一把密钥签名，**直接覆盖安装就行，不用先卸载**。
+如果出现这个提示，说明你手机上装的不是官方版（自己用 debug 签名编译的、或被别人重新打包过）——
+先卸载旧的，再装官方 Release 的；之后跟着官方 Release 更新就不会再出现。
+
+**Q：为什么我的 APP 没有直播 / 积分 / 签到 / 投屏？**
+这些功能**跟着站点走**：后台没开 IPTV、没开积分体系，APP 里对应的入口就是空的（不是 APP 坏了）。
+- 直播：后台 IPTV 页配置频道源，并给当前账号开 IPTV 权限。
+- 积分 / 签到 / 兑换 / 邀请码：后台「积分中心」相关开关。
+- 投屏：手机和投屏设备要在**同一个局域网**，且设备支持 DLNA / UPnP。
 
 **Q：原生客户端能进首页，但点进去播不出来？**
 先用手机浏览器打开同一部片子试试：浏览器也播不了，就是片源本身的问题，跟 APP 无关。浏览器能播而 APP 不行，
