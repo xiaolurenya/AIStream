@@ -21,6 +21,11 @@ android {
         }
     }
 
+    // AGP 8 起默认不再生成 BuildConfig（设置页要显示版本号）
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
