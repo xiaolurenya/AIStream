@@ -215,7 +215,7 @@ class WebActivity : AppCompatActivity() {
         web.visibility = View.VISIBLE
         customCb?.onCustomViewHidden(); customCb = null
         if (::gear.isInitialized) gear.visibility = View.VISIBLE
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_USER
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
         setImmersive(false)
     }
 

@@ -28,12 +28,12 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- sensorUser：跟随手机「自动旋转」开关，用户开了就能横屏看；
-             播放全屏时代码再强制切横屏（覆盖系统锁定），右上角 ⚙ 里也能手动切 -->
+        <!-- fullSensor：四个方向都跟随重力，不受手机「自动旋转」开关限制（sensorUser 是代码常量，
+             manifest 枚举里没有它）；播放全屏时再强制切横屏，右上角 ⚙ 里也能手动切 -->
         <activity
             android:name=".WebActivity"
             android:exported="false"
-            android:screenOrientation="sensorUser"
+            android:screenOrientation="fullSensor"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:windowSoftInputMode="adjustResize" />
     </application>
