@@ -1,0 +1,7 @@
+.git
+.github
+data
+node_modules
+_sanitize*.py
+*.log
+.DS_Store

@@ -1,0 +1,3 @@
+# 统一用 LF 换行：Windows 上 clone 下来不会全变 CRLF，
+# 避免别人改一行却整文件 diff 全红、也避免 shell 脚本在 Linux 上因 CR 报 bad interpreter
+* text=auto eol=lf

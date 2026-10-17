@@ -1,0 +1,25 @@
+services:
+  aistream:
+    # 现成镜像，粘贴即用，无需本地构建
+    image: xiaoluya/aistream:latest
+    container_name: aistream
+    # 保持 root 用户运行，确保挂载出来的数据目录有读写权限
+    user: "0:0"
+    restart: always
+    ports:
+      # 左边是宿主机端口（想换端口就改左边），右边 8890 是容器内端口，别动
+      - "8890:8890"
+    environment:
+      - TZ=Asia/Shanghai
+      - PORT=8890
+      - DATA_DIR=/data
+      # 可选：想用 TMDB 榜单类首页栏目才需要，留空不影响采集站功能
+      # - TMDB_TOKEN=你的 TMDB Read Access Token
+      # 可选：出网代理（本机直连 TMDB 不通时才需要，格式 host:port）
+      # - OUT_PROXY=127.0.0.1:7890
+    volumes:
+      # 左边改成你自己的路径（飞牛示例：/vol1/1000/aistream/data）
+      - /vol1/1000/aistream/data:/data
+
+# 用的是默认 bridge 网络 + 端口映射，不抢占宿主机网络栈，多个实例可以并存。
+# 代价：DLNA/SSDP 投屏靠广播包发现设备，bridge 下跨不过去 → 需要投屏就改回 network_mode: host。
