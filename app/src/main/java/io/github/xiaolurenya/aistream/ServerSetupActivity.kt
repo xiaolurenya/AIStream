@@ -2,9 +2,10 @@ package io.github.xiaolurenya.aistream
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -15,10 +16,12 @@ import java.net.URL
 import javax.net.ssl.SSLException
 
 /**
- * 添加服务器：地址(IP/域名) + 端口 + 用户名 + 密码。
+ * 添加服务器：协议(http/https) + 地址(IP/域名) + 端口 + 用户名 + 密码。
  * 流程：探测站点(GET /api/license/status) → 登录(POST /api/auth/login，服务端 readBody 只认 JSON)
  *      → 拿到 token / 会话 Cookie(aistream_sid) → 保存配置 → 进 WebView。
  * 配置保存在本机 SharedPreferences，不上传任何地方。
+ *
+ * 协议标识：卡片顶部 http:// / https:// 二选一；地址里直接粘了带协议的完整网址会自动识别并选中。
  */
 class ServerSetupActivity : AppCompatActivity() {
 
@@ -26,10 +29,13 @@ class ServerSetupActivity : AppCompatActivity() {
     private lateinit var etPort: EditText
     private lateinit var etUser: EditText
     private lateinit var etPass: EditText
-    private lateinit var btnGo: Button
+    private lateinit var chipHttp: TextView
+    private lateinit var chipHttps: TextView
+    private lateinit var btnGo: TextView
     private lateinit var tvStatus: TextView
     private lateinit var tvClear: TextView
     private lateinit var pb: ProgressBar
+    private var proto = "http"           /* 当前选中的协议 */
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +46,8 @@ class ServerSetupActivity : AppCompatActivity() {
         etPort = findViewById(R.id.etPort)
         etUser = findViewById(R.id.etUser)
         etPass = findViewById(R.id.etPass)
+        chipHttp = findViewById(R.id.chipHttp)
+        chipHttps = findViewById(R.id.chipHttps)
         btnGo = findViewById(R.id.btnGo)
         tvStatus = findViewById(R.id.tvStatus)
         tvClear = findViewById(R.id.tvClear)
@@ -50,9 +58,9 @@ class ServerSetupActivity : AppCompatActivity() {
         etHost.setText(sp.getString("host", ""))
         etPort.setText(sp.getInt("port", 8890).toString())
         etUser.setText(sp.getString("user", ""))
-
-        /* 已配置过才显示「清除」入口（换站点用） */
+        /* 上次用的协议回显（server 存的是完整 base） */
         if (saved != null) {
+            setProto(if (saved.startsWith("https")) "https" else "http")
             tvClear.visibility = View.VISIBLE
             tvClear.setOnClickListener {
                 androidx.appcompat.app.AlertDialog.Builder(this)
@@ -66,14 +74,42 @@ class ServerSetupActivity : AppCompatActivity() {
                     .setNegativeButton("取消", null)
                     .show()
             }
+        } else {
+            setProto("http")
+        }
+
+        chipHttp.setOnClickListener { setProto("http") }
+        chipHttps.setOnClickListener { setProto("https") }
+        /* 地址栏粘贴了完整网址 → 自动识别协议（前缀留在框里，connect 时统一解析） */
+        etHost.setOnFocusChangeListener { _, has ->
+            if (!has) detectProtoFromHost()
         }
 
         btnGo.setOnClickListener { connect() }
     }
 
+    /** http/https 两个胶囊的选中态 */
+    private fun setProto(p: String) {
+        proto = p
+        val on = p == "http"
+        chipHttp.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
+        chipHttp.setTextColor(Color.parseColor(if (on) "#7ecbff" else "#9aa3b2"))
+        chipHttps.setBackgroundResource(if (on) R.drawable.bg_chip else R.drawable.bg_chip_on)
+        chipHttps.setTextColor(Color.parseColor(if (on) "#9aa3b2" else "#7ecbff"))
+    }
+
+    /** 地址框里带了完整协议前缀就跟着切 */
+    private fun detectProtoFromHost() {
+        val raw = etHost.text.toString().trim().lowercase()
+        if (raw.startsWith("https://")) setProto("https")
+        else if (raw.startsWith("http://")) setProto("http")
+    }
+
     private fun connect() {
+        detectProtoFromHost()
         val raw = etHost.text.toString().trim()
-        val host = raw.removePrefix("http://").removePrefix("https://").trimEnd('/')
+        /* 去掉协议前缀和尾部斜杠，得到纯 host（域名/IP）——(?i) 兼容用户粘的大写 HTTP:// */
+        val host = raw.replace(Regex("(?i)^https?://"), "").trimEnd('/')
         val portStr = etPort.text.toString().trim()
         val user = etUser.text.toString().trim()
         val pass = etPass.text.toString()
@@ -81,12 +117,12 @@ class ServerSetupActivity : AppCompatActivity() {
         if (host.isEmpty()) { tvStatus.text = "请填写服务器地址（IP 或域名）"; return }
         if (user.isEmpty() || pass.isEmpty()) { tvStatus.text = "请填写用户名和密码"; return }
         val port = portStr.toIntOrNull() ?: 8890
-        /* 支持直接填完整地址（带 https:// 的域名），填了就以填的为准 */
-        val base = if (raw.startsWith("http")) raw.trimEnd('/') else "http://$host:$port"
+        val base = "$proto://$host:$port"
 
         btnGo.isEnabled = false
+        btnGo.alpha = 0.6f
         pb.visibility = View.VISIBLE
-        tvStatus.text = "连接中…"
+        tvStatus.text = "连接中… $base"
 
         Thread {
             var err: String? = null
@@ -97,13 +133,14 @@ class ServerSetupActivity : AppCompatActivity() {
                 if (sid == null) err = "用户名或密码错误"
             } catch (e: Exception) {
                 err = when (e) {
-                    is SSLException -> "HTTPS 证书无效（自签名证书）。请先在浏览器确认证书，或改用 http:// 地址"
+                    is SSLException -> "$proto 证书无效（自签名）。换 http:// 试试，或在浏览器确认证书后重试"
                     else -> e.message ?: "连接失败"
                 }
             }
 
             runOnUiThread {
                 btnGo.isEnabled = true
+                btnGo.alpha = 1f
                 pb.visibility = View.GONE
                 if (sid == null) {
                     tvStatus.text = "✗ ${err ?: "连接失败"}"

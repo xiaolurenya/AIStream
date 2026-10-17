@@ -5,12 +5,14 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.net.http.SslError
 import android.webkit.CookieManager
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
@@ -19,6 +21,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -38,12 +41,16 @@ import java.net.URL
  * 保证 app.js 第一次执行时 token 已经就位（不用等页面加载完再补一刀刷新）。
  *
  * 会话 7 天过期被弹回 /gate.html 时，自动用保存的账号静默重登一次。
+ *
+ * 悬浮球（⚙）可以拖到屏幕任意位置，位置记在本机，别挡网页内容；点一下出菜单。
+ * 横屏自动进入沉浸（藏状态栏/导航栏），配合站点 v74 的横屏影院模式看片。
  */
 class WebActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private lateinit var root: FrameLayout
     private lateinit var gear: TextView
+    private lateinit var progress: ProgressBar
     private var customView: View? = null
     private var customCb: WebChromeClient.CustomViewCallback? = null
     private lateinit var server: String
@@ -52,7 +59,7 @@ class WebActivity : AppCompatActivity() {
     private var reloginBusy = false
     private val trustedHosts = HashSet<String>()   /* 本次会话内用户点过「继续」的自签证书主机 */
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         root = FrameLayout(this)
@@ -80,22 +87,40 @@ class WebActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             /* 去掉 UA 里的 "; wv" 标记，部分播放源/图床对 WebView UA 下发的内容不同 */
             userAgentString = userAgentString.replace("; wv", "")
+            /* ---------- 加载速度 / 流畅度 ---------- */
+            cacheMode = WebSettings.LOAD_DEFAULT                  /* 图片等静态资源吃磁盘缓存 */
+            if (Build.VERSION.SDK_INT >= 23) offscreenPreRaster = true   /* 离屏预渲染，切入前台少白屏 */
+            if (Build.VERSION.SDK_INT >= 26) safeBrowsingEnabled = false /* 省一次 SafeBrowsing 联网检查，内网站也少误报 */
+            if (Build.VERSION.SDK_INT >= 26) {
+                /* 渲染进程别省电：看片时被系统降级会卡成幻灯片 */
+                web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true)
+            }
         }
         WebView.setWebContentsDebuggingEnabled(false)
 
-        /* 右上角半透明小按钮：横竖屏切换 / 换站点 / 刷新 */
+        /* 顶部加载进度条：细一条，满格自动消失 */
+        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progressTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#00e5ff"))
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#1a2233"))
+        }
+        root.addView(progress, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(3)))
+
+        /* 悬浮球 ⚙：可拖动，位置记忆在本机；点一下出菜单 */
         gear = TextView(this).apply {
             text = "⚙"
-            textSize = 18f
+            textSize = 15f
             setTextColor(Color.WHITE)
-            alpha = 0.30f
             gravity = Gravity.CENTER
-            setOnClickListener { showMenu() }
+            alpha = 0.38f
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(0x59060b18)
+                setStroke(dp(1), 0x33667a99)
+            }
         }
-        val gp = FrameLayout.LayoutParams(dp(40), dp(40))
-        gp.gravity = Gravity.TOP or Gravity.END
-        gp.topMargin = dp(10); gp.rightMargin = dp(10)
-        root.addView(gear, gp)
+        root.addView(gear, gearParams(sp))
+        gear.setOnTouchListener { _, ev -> dragGear(ev, sp) }
 
         injectSession(sidFromPrefs())
 
@@ -112,7 +137,7 @@ class WebActivity : AppCompatActivity() {
                 return true   /* 其他 scheme（magnet 等）不处理 */
             }
 
-            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
+            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
                 /* 家庭 NAS 常见自签证书：问一次，本次会话内记住 */
                 val host = try { URL(server).host } catch (_: Exception) { "" }
                 if (host.isNotEmpty() && trustedHosts.contains(host)) { handler.proceed(); return }
@@ -133,15 +158,22 @@ class WebActivity : AppCompatActivity() {
             }
         }
         web.webChromeClient = object : WebChromeClient() {
+            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                if (customView != null) return          /* 全屏看片时不显示进度条 */
+                progress.progress = newProgress
+                progress.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
+            }
+
             override fun onShowCustomView(v: View, cb: CustomViewCallback) {   /* 网页视频全屏 */
                 if (customView != null) { cb.onCustomViewHidden(); return }
                 customView = v
                 web.visibility = View.GONE
+                progress.visibility = View.GONE
+                gear.visibility = View.GONE
                 root.addView(v, FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
                 customCb = cb
                 /* 全屏看片一律横屏（覆盖手机「自动旋转」关掉的情况）+ 隐藏状态栏/导航栏 */
-                gear.visibility = View.GONE
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                 hideSystemBars(true)
             }
@@ -149,6 +181,56 @@ class WebActivity : AppCompatActivity() {
         }
 
         loadWithSession(sidFromPrefs())
+    }
+
+    /* ---------- 悬浮球：拖动 + 记忆位置 ---------- */
+
+    private fun gearParams(sp: android.content.SharedPreferences): FrameLayout.LayoutParams {
+        val lp = FrameLayout.LayoutParams(dp(34), dp(34))
+        lp.gravity = Gravity.TOP or Gravity.START
+        val dm = resources.displayMetrics
+        val savedX = sp.getInt("gear_x", Int.MIN_VALUE)
+        val savedY = sp.getInt("gear_y", Int.MIN_VALUE)
+        /* 没存过：右上角但往下让开网页顶部导航（大哥反馈 ⚙ 挡住了「动漫」标签） */
+        lp.leftMargin = if (savedX != Int.MIN_VALUE) savedX else dm.widthPixels - dp(42)
+        lp.topMargin = if (savedY != Int.MIN_VALUE) savedY else dp(92)
+        /* 屏幕旋转/换机后可能出界，收回来 */
+        lp.leftMargin = lp.leftMargin.coerceIn(0, maxOf(0, dm.widthPixels - dp(40)))
+        lp.topMargin = lp.topMargin.coerceIn(0, maxOf(0, dm.heightPixels - dp(60)))
+        return lp
+    }
+
+    private var dragFromX = 0f; private var dragFromY = 0f
+    private var gearFromX = 0; private var gearFromY = 0
+    private var dragged = false
+
+    private fun dragGear(ev: MotionEvent, sp: android.content.SharedPreferences): Boolean {
+        val lp = gear.layoutParams as FrameLayout.LayoutParams
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                dragFromX = ev.rawX; dragFromY = ev.rawY
+                gearFromX = lp.leftMargin; gearFromY = lp.topMargin
+                dragged = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dx = (ev.rawX - dragFromX).toInt(); val dy = (ev.rawY - dragFromY).toInt()
+                if (dragged || dx * dx + dy * dy > 100) {       /* 10px 内算点按，不抖 */
+                    dragged = true
+                    val dm = resources.displayMetrics
+                    lp.leftMargin = (gearFromX + dx).coerceIn(0, dm.widthPixels - gear.width)
+                    lp.topMargin = (gearFromY + dy).coerceIn(0, dm.heightPixels - gear.height)
+                    gear.layoutParams = lp
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                if (dragged) {                                   /* 拖完记位置，下次还在这 */
+                    sp.edit().putInt("gear_x", lp.leftMargin).putInt("gear_y", lp.topMargin).apply()
+                    return true
+                }
+                showMenu()                                       /* 没拖 = 点按 */
+            }
+        }
+        return dragged
     }
 
     /* ---------- 登录态 ---------- */
@@ -206,9 +288,17 @@ class WebActivity : AppCompatActivity() {
         }.start()
     }
 
-    /* ---------- 横竖屏 / 菜单 ---------- */
+    /* ---------- 横竖屏 / 沉浸 / 菜单 ---------- */
 
-    /** 退出网页全屏：撤掉全屏 view，方向交回用户（跟随系统自动旋转），系统栏放回来 */
+    /* 手动切横竖屏、网页全屏进出都会走到这：横屏自动藏系统栏，竖屏放回来。
+       横屏的「影院模式」由站点 v74 的 CSS 负责（顶栏/防上当条收起、播放器铺满整屏）。 */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (customView != null) return               /* 全屏看片中，方向由全屏逻辑管 */
+        hideSystemBars(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)
+    }
+
+    /** 退出网页全屏：撤掉全屏 view，方向交回重力（四个方向都允许），系统栏放回来 */
     private fun exitFullscreen() {
         customView?.let { root.removeView(it) }
         customView = null
@@ -226,7 +316,7 @@ class WebActivity : AppCompatActivity() {
         else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
     }
 
-    /** 全屏看片时藏掉状态栏和导航栏，退出全屏再放回来 */
+    /** 全屏看片 / 横屏时藏掉状态栏和导航栏，退出再放回来 */
     private fun hideSystemBars(on: Boolean) {
         val c = WindowInsetsControllerCompat(window, window.decorView)
         if (on) {

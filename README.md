@@ -8,8 +8,8 @@
 
 ### 📱 Android 客户端 —— 免登录直接下载
 
-[**⬇ 下载 AIStream-v0.1.0.apk**](https://github.com/xiaolurenya/AIStream/releases/download/v0.1.0/AIStream-v0.1.0.apk)
-· Android 7.0+ · 5.6MB · [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
+[**⬇ 下载最新版 APK**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Android.apk)
+· Android 7.0+ · 当前 v0.2.0 · [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
 
 APP 里**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
 （不想用 APP 也完全没问题，它就是个壳，功能跟手机浏览器打开你的站点一样。）
@@ -259,8 +259,8 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 
 - **连接自己的站点**：首次打开填地址 + 端口 + 用户名 + 密码，验证通过后自动进入站点；
   账号密码只保存在手机本机。
-- **横屏**：普通页面跟随手机「自动旋转」开关；**播放进全屏时自动转横屏并隐藏状态栏**（不受系统锁竖屏影响）；
-  右上角 ⚙ 里还能随时手动切横 / 竖屏。
+- **横屏**：普通页面跟随重力四向旋转；**播放进全屏自动转横屏并隐藏状态栏**；右上角 ⚙ 悬浮球可拖到任意位置（不挡内容，位置自动记住），菜单里也能手动切横 / 竖屏；横屏播放页自动变「影院模式」（顶栏收起、播放器铺满整屏）。
+- **登录页可选 http / https 协议**，地址里粘完整网址会自动识别。
 - **会话自动续期**：登录态 7 天过期被弹回登录页时，APP 会用保存的账号静默重登一次，无感继续看。
 - **网页视频全屏、返回键网页后退、外链走系统浏览器**；https 站点挂 http 播放源也放行。
 - **下载**：正式版直接到 [Releases](https://github.com/xiaolurenya/AIStream/releases/latest) 下，不用登录。

@@ -10,93 +10,166 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:gravity="center_vertical">
+        android:padding="22dp"
+        android:gravity="center_horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="30dp"
             android:text="AIStream"
             android:textColor="@color/accent_soft"
-            android:textSize="34sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginTop="4dp"
             android:text="@string/setup_subtitle"
             android:textColor="@color/fg_dim"
-            android:textSize="14sp" />
+            android:textSize="13sp"
+            android:gravity="center" />
 
-        <EditText
-            android:id="@+id/etHost"
+        <!-- 连接卡片 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_host"
-            android:inputType="textUri"
-            android:textColor="@color/fg"
-            android:textColorHint="#5a6270"
-            android:backgroundTint="@color/field" />
+            android:layout_marginTop="22dp"
+            android:orientation="vertical"
+            android:padding="18dp"
+            android:background="@drawable/bg_card">
 
-        <EditText
-            android:id="@+id/etPort"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="@string/hint_port"
-            android:inputType="number"
-            android:text="8890"
-            android:textColor="@color/fg"
-            android:textColorHint="#5a6270"
-            android:backgroundTint="@color/field" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="站点协议"
+                android:textColor="@color/accent_soft"
+                android:textSize="12sp"
+                android:letterSpacing="0.1" />
 
-        <EditText
-            android:id="@+id/etUser"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="@string/hint_user"
-            android:inputType="text"
-            android:textColor="@color/fg"
-            android:textColorHint="#5a6270"
-            android:backgroundTint="@color/field" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/etPass"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="@string/hint_pass"
-            android:inputType="textPassword"
-            android:textColor="@color/fg"
-            android:textColorHint="#5a6270"
-            android:backgroundTint="@color/field" />
+                <TextView
+                    android:id="@+id/chipHttp"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="http://"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_chip_on"
+                    android:textColor="#7ecbff" />
+
+                <TextView
+                    android:id="@+id/chipHttps"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:gravity="center"
+                    android:text="https://"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_chip"
+                    android:textColor="#9aa3b2" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="内网一般选 http；https 证书无效（自签名）时 APP 会弹一次确认。填完整网址（带 http:// 或 https://）会自动识别。"
+                android:textColor="#5a6270"
+                android:textSize="11sp" />
+
+            <EditText
+                android:id="@+id/etHost"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:hint="站点地址（192.168.2.225 或 nas.example.com）"
+                android:inputType="textUri"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:textColor="@color/fg"
+                android:textColorHint="#5a6270"
+                android:textSize="14sp"
+                android:background="@drawable/bg_field" />
+
+            <EditText
+                android:id="@+id/etPort"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:hint="端口（默认 8890）"
+                android:inputType="number"
+                android:text="8890"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:textColor="@color/fg"
+                android:textColorHint="#5a6270"
+                android:textSize="14sp"
+                android:background="@drawable/bg_field" />
+
+            <EditText
+                android:id="@+id/etUser"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:hint="用户名"
+                android:inputType="text"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:textColor="@color/fg"
+                android:textColorHint="#5a6270"
+                android:textSize="14sp"
+                android:background="@drawable/bg_field" />
+
+            <EditText
+                android:id="@+id/etPass"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:hint="密码"
+                android:inputType="textPassword"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:textColor="@color/fg"
+                android:textColorHint="#5a6270"
+                android:textSize="14sp"
+                android:background="@drawable/bg_field" />
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/pb"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
             android:visibility="gone" />
 
-        <Button
+        <TextView
             android:id="@+id/btnGo"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:layout_marginTop="20dp"
-            android:backgroundTint="@color/accent"
+            android:layout_marginTop="18dp"
+            android:gravity="center"
             android:text="@string/action_connect"
-            android:textColor="#ffffff" />
+            android:textColor="#ffffff"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_btn" />
 
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
             android:textColor="@color/danger"
             android:textSize="13sp" />
@@ -105,7 +178,7 @@
             android:id="@+id/tvClear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
             android:padding="8dp"
             android:text="@string/action_clear"
@@ -116,8 +189,8 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="26dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginBottom="14dp"
             android:gravity="center"
             android:text="@string/setup_footer"
             android:textColor="#5a6270"
