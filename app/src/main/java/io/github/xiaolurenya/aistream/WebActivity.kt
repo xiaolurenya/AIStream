@@ -143,7 +143,7 @@ class WebActivity : AppCompatActivity() {
                 /* 全屏看片一律横屏（覆盖手机「自动旋转」关掉的情况）+ 隐藏状态栏/导航栏 */
                 gear.visibility = View.GONE
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                setImmersive(true)
+                hideSystemBars(true)
             }
             override fun onHideCustomView() { exitFullscreen() }
         }
@@ -216,7 +216,7 @@ class WebActivity : AppCompatActivity() {
         customCb?.onCustomViewHidden(); customCb = null
         if (::gear.isInitialized) gear.visibility = View.VISIBLE
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
-        setImmersive(false)
+        hideSystemBars(false)
     }
 
     /** 手动切换横竖屏：现在是横的就切竖，反之切横（跟随重力的横屏，反向横屏也支持） */
@@ -227,7 +227,7 @@ class WebActivity : AppCompatActivity() {
     }
 
     /** 全屏看片时藏掉状态栏和导航栏，退出全屏再放回来 */
-    private fun setImmersive(on: Boolean) {
+    private fun hideSystemBars(on: Boolean) {
         val c = WindowInsetsControllerCompat(window, window.decorView)
         if (on) {
             c.hide(WindowInsetsCompat.Type.systemBars())
