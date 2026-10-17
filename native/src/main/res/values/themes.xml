@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.AIStream" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorSecondary">@color/accent_soft</item>
+        <item name="colorOnPrimary">@color/fg</item>
+        <item name="android:textColorPrimary">@color/fg</item>
+        <item name="android:textColorSecondary">@color/fg_dim</item>
+    </style>
+
+    <style name="AIStream.TextTitle" parent="android:Widget.TextView">
+        <item name="android:textColor">@color/fg</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="AIStream.TextSub" parent="android:Widget.TextView">
+        <item name="android:textColor">@color/fg_dim</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+</resources>
