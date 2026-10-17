@@ -15,7 +15,9 @@ object Api {
 
     class Err(msg: String, val code: Int = 0) : Exception(msg)
 
-    private val gson = GsonBuilder()
+    // public inline 函数里要用，不能是 private
+    @PublishedApi
+    internal val gson = GsonBuilder()
         .registerTypeAdapter(String::class.java, JsonDeserializer<String> { j, _, _ ->
             if (j == null || j.isJsonNull) "" else try { j.asString } catch (e: Exception) { "" }
         })

@@ -8,11 +8,15 @@
 
 ### 📱 Android 客户端 —— 免登录直接下载
 
-[**⬇ 下载最新版 APK**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Android.apk)
-· Android 7.0+ · 当前 v0.2.0 · [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
+| 版本 | 下载 | 一句话 |
+|---|---|---|
+| **原生客户端（推荐）** | [**⬇ AIStream-Native.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Native.apk) | Kotlin + ExoPlayer 全原生，界面原生绘制、视频原生硬解 |
+| 网页兼容版 | [⬇ AIStream-Android.apk](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Android.apk) | WebView 壳，等于用手机浏览器打开你的站点 |
 
-APP 里**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
-（不想用 APP 也完全没问题，它就是个壳，功能跟手机浏览器打开你的站点一样。）
+两个都是 **Android 7.0+**、都**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
+· [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
+
+> 两个 APP 可以同时装（包名不同），试完留一个就行。
 
 ### 🐛 欢迎提交 Bug · 欢迎提需求
 
@@ -254,8 +258,31 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 
 ### 手机 APP（Android，连你自己的站点）
 
-仓库里的 [`app/`](app/) 是一个官方 Android 客户端：**WebView 壳 + 自带登录页**，
-不是连某个固定服务器的那种 APP——它让你填**你自己站点**的地址（IP / 域名 + 端口）和账号密码。
+仓库里有两个客户端，都**不是连某个固定服务器的那种 APP**——填**你自己站点**的地址
+（IP / 域名 + 端口）和账号密码，凭证只存在手机本机。
+
+#### 原生客户端 [`native/`](native/)（推荐）
+
+Kotlin + ExoPlayer + OkHttp + Coil 全原生实现，**不再是网页套壳**：界面原生绘制、视频原生硬解，
+直接调站点的 `/api` 接口，和网页端完全解耦。
+
+- **连接自己的站点**：http / https 协议切换、地址 + 端口 + 账号密码；粘一整条网址会自动识别协议和端口；
+  之前存过凭证且还有效时静默进入，不用反复登录。
+- **首页 / 搜索 / 收藏 / 历史**：栏目横滑海报墙（空栏目自动不占位）、下拉刷新；搜索走 TMDB + 采集站聚合；
+  收藏和历史长按可删。
+- **详情页换源**：把「采集站 × 播放线路」摊平成一条列表，点哪条播哪条，下面直接选集。
+- **播放器**：ExoPlayer 原生硬解，m3u8 / mp4 直连；不是直链的会先过一遍解析线路，
+  **从解析结果里把真实 m3u8 抠出来再播**（不用再开网页 iframe 去解析）。
+- **续播**：进度存手机本机，起播自动定位；同时定期回传站点，网页端「播放历史」里同样看得到。
+- **播放控制**：倍速 0.75 ~ 2.0、画面比例（适应 / 拉伸 / 裁剪）、一键旋转、失败一键换线路 / 重试、
+  自动连播下一集、横屏沉浸、画中画。
+- **海报走站点图片代理**：统一过 `/api/dimg`，绕开图床防盗链和跨域。
+- **下载 / 编译**：Release 页直接下 `AIStream-Native.apk`，不用登录；云构建配置在
+  `.github/workflows/android-native.yml`，本地则在 `native/` 目录 `gradle assembleDebug`。
+
+#### 网页兼容版 [`app/`](app/)（老版本）
+
+WebView 壳 + 自带登录页，功能跟手机浏览器打开你的站点一样：
 
 - **连接自己的站点**：首次打开填地址 + 端口 + 用户名 + 密码，验证通过后自动进入站点；
   账号密码只保存在手机本机。
@@ -263,7 +290,7 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 - **登录页可选 http / https 协议**，地址里粘完整网址会自动识别。
 - **会话自动续期**：登录态 7 天过期被弹回登录页时，APP 会用保存的账号静默重登一次，无感继续看。
 - **网页视频全屏、返回键网页后退、外链走系统浏览器**；https 站点挂 http 播放源也放行。
-- **下载**：正式版直接到 [Releases](https://github.com/xiaolurenya/AIStream/releases/latest) 下，不用登录。
+- **下载**：正式版 `AIStream-Android.apk` 直接到 [Releases](https://github.com/xiaolurenya/AIStream/releases/latest) 下，不用登录。
 - **不用自己编译**：仓库配有 GitHub Actions（`.github/workflows/android.yml`）——改到 `app/` 的代码推送后
   会自动云构建（产物在 Actions 的 Artifacts 里，需登录 GitHub）；**在 GitHub 上发一个 Release 时，
   它还会把 APK 自动挂到这个 Release 上**。
@@ -297,7 +324,8 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 │   ├── gate.html/.js      # 登录门禁
 │   ├── style.css / mobile.js
 │   └── vendor/            # artplayer.js + hls.min.js（自托管，页面不连任何 CDN）
-├── app/                   # Android 客户端（WebView 壳，GitHub Actions 自动出 APK）
+├── native/                # Android 原生客户端（Kotlin + ExoPlayer，Actions 出 AIStream-Native.apk）
+├── app/                   # Android 网页兼容版客户端（WebView 壳，Actions 出 AIStream-Android.apk）
 ├── Dockerfile
 ├── docker-compose.yml
 └── data/                  # 运行期生成，已在 .gitignore（挂载出来做持久化）
@@ -365,6 +393,14 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 2. 地址只填 IP 或域名，**别带路径**；端口默认 `8890`，改过就填改过的。
 3. 用户名密码就是你在网页登录用的那套（APP 登录走的是同一个 `/api/auth/login`）。
 4. https 站点用了自签证书会先弹一次「证书不受信任」，选继续访问；实在不行就先用 `http://` 内网地址。
+
+**Q：原生客户端能进首页，但点进去播不出来？**
+先用手机浏览器打开同一部片子试试：浏览器也播不了，就是片源本身的问题，跟 APP 无关。浏览器能播而 APP 不行，
+通常是这两种：
+1. 这条线路给的是**网页地址**而不是视频直链 —— APP 会自动过一遍后台配置的解析线路把真实地址抠出来，
+   **后台「解析线路」是空的就抠不出来**，去后台配一条解析再试。
+2. 直链被站方做了防盗链 —— APP 已经按播放域名带了 Referer、并按普通浏览器 UA 请求，
+   还是不行就点播放器中间面板的「换线路」，换条源。
 
 **Q：发现 Bug / 想提需求，怎么提？**
 直接开 Issue 就行 → https://github.com/xiaolurenya/AIStream/issues

@@ -32,6 +32,8 @@ class PosterAdapter(
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(h: H, i: Int) {
         val it = items[i]
+        // 点击回调要拿到的是这一项的数据，不是被点的 View
+        val card = it
         h.title.text = it.title.orEmpty()
         val y = it.year.orEmpty()
         val sc = it.score.orEmpty().toDoubleOrNull()
@@ -46,9 +48,9 @@ class PosterAdapter(
             h.img.setBackgroundColor(0x00000000)
             h.img.load(u)
         }
-        h.itemView.setOnClickListener { onClick(it) }
+        h.itemView.setOnClickListener { onClick(card) }
         if (onLongClick != null) {
-            h.itemView.setOnLongClickListener { onLongClick.invoke(it); true }
+            h.itemView.setOnLongClickListener { onLongClick.invoke(card); true }
         }
     }
 
