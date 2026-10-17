@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{SITE_NAME}} · 后台管理</title>
+<!-- 国内访问 fonts.googleapis.com 会长时间阻塞加载，已移除改用系统字体 -->
+<link rel="stylesheet" href="/style.css">
+<style>
+.admin{max-width:1080px;margin:0 auto;padding:24px 20px 60px}
+.tabs{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0;align-items:flex-start}
+.tab-group{display:flex;flex-direction:column;gap:6px}
+.tg-cap{font-size:10px;letter-spacing:2px;color:var(--muted);opacity:.75;padding-left:7px;white-space:nowrap}
+.tg-chips{display:flex;gap:8px;flex-wrap:wrap}
+.tabs .chip{cursor:pointer;user-select:none;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(24,26,52,.45);color:var(--muted);font-size:13px;transition:.15s}
+.tabs .chip:hover{color:var(--txt);border-color:rgba(0,229,255,.5);box-shadow:0 0 10px rgba(0,229,255,.25)}
+.tabs .chip.active{background:linear-gradient(90deg,rgba(0,229,255,.25),rgba(177,107,255,.25));border-color:var(--cyan);color:#fff}
+/* 上游解析线路 / 上游采集线路：多列紧凑卡片（原全宽竖排太长） */
+#upLines,#upCollectLines{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:10px}
+#upLines .u,#upCollectLines .u{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0;padding:8px 10px;border-radius:10px;background:rgba(24,26,52,.45);border:1px solid var(--line);font-size:12px}
+#upLines .u .lab,#upCollectLines .u .lab{flex:0 0 auto;max-width:100%;font-weight:600;color:var(--cyan)}
+#upLines .u .typ,#upCollectLines .u .typ{flex:0 0 auto;font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid rgba(0,229,255,.5);color:var(--cyan)}
+#upLines .u .typ.cj,#upCollectLines .u .typ.cj{border-color:rgba(177,107,255,.5);color:var(--purple)}
+/* 地址独占第二行，完整可读可复制，不再被按钮挤压成一条竖线 */
+#upLines .u .uurl,#upCollectLines .u .uurl{flex:1 1 100%;order:99;color:var(--muted);font-size:11px;word-break:break-all;white-space:normal}
+#upLines .u .mini,#upCollectLines .u .mini{flex:0 0 auto;cursor:pointer;user-select:none;padding:3px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(255,77,216,.12);color:#ffd9f3;font-size:11px}
+#upLines .u .mini:first-of-type,#upCollectLines .u .mini:first-of-type{margin-left:auto}
+#upLines .u.blocked,#upCollectLines .u.blocked{opacity:.6;border-color:rgba(255,77,216,.45);background:rgba(255,77,216,.06)}
+#upLines .u.blocked .lab,#upCollectLines .u.blocked .lab{color:#ff6b8a;text-decoration:line-through}
+/* 折叠：超出 N 条先隐藏，点「显示更多」展开 */
+#upLines .u.hid,#upCollectLines .u.hid{display:none}
+.up-more{margin-top:10px}
+.up-more .btn{padding:7px 16px}
+/* 删除按钮用警示红，与粉色的「拉黑」区分开 */
+#upCollectLines .u .mini[data-act="del"]{border-color:rgba(255,107,138,.55);background:rgba(255,107,138,.12);color:#ff6b8a}
+#upCollectLines .u .mini[data-act="del"]:hover{background:rgba(255,107,138,.22)}
+.panel{display:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:14px}
+.panel.active{display:block}
+.field{margin-bottom:16px}
+/* v63b：「其他设置」的文案输入框也走暗色（它们不在 .field 容器里，上面那条选择器罩不到） */
+#miscBox input{width:100%;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);
+  padding:9px 12px;border-radius:10px;outline:none;font-family:inherit;font-size:13px}
+#miscBox input:focus{border-color:var(--cyan);box-shadow:var(--glow)}
+#miscBox input::placeholder{color:rgba(150,168,196,.55)}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit}
+.field textarea{min-height:90px;resize:vertical}
+.row2{display:flex;gap:12px}.row2>*{flex:1}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--cyan)}
+.stat{display:flex;gap:16px;flex-wrap:wrap}
+.stat .b{flex:1;min-width:160px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.stat .b .n{font-size:26px;font-weight:800;color:var(--cyan)}
+.stat .b .l{color:var(--muted);font-size:12px;margin-top:4px}
+.switch{position:relative;width:46px;height:24px;display:inline-block}
+.switch input{display:none}
+.slider{position:absolute;inset:0;background:#233; border-radius:20px;transition:.2s;cursor:pointer}
+.slider::before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#9ab;border-radius:50%;transition:.2s}
+.switch input:checked+.slider{background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.switch input:checked+.slider::before{transform:translateX(22px);background:#04121a}
+/* 改密弹窗 */
+#pwModal{position:fixed;inset:0;z-index:200;display:none;place-items:center;background:rgba(3,4,8,.82);backdrop-filter:blur(6px)}
+#pwModal .box{width:360px;max-width:90vw;padding:24px;border-radius:16px;background:var(--panel);border:1px solid var(--cyan);box-shadow:var(--glow)}
+#pwModal h3{color:var(--cyan);margin-bottom:14px;font-size:17px}
+#pwModal .row2{margin-top:12px}
+#permModal{position:fixed;inset:0;z-index:200;display:none;place-items:center;background:rgba(3,4,8,.82);backdrop-filter:blur(6px)}
+#permModal .box{width:430px;max-width:90vw;padding:24px;border-radius:16px;background:var(--panel);border:1px solid var(--cyan);box-shadow:var(--glow)}
+#permModal h3{color:var(--cyan);margin-bottom:14px;font-size:17px}
+#permModal label.pv{display:inline-flex;align-items:center;gap:6px;font-size:13px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+#permModal label.pv input{accent-color:var(--cyan)}
+#regPermBoxes label.pv{display:inline-flex;align-items:center;gap:6px;font-size:13px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+#regPermBoxes label.pv input{accent-color:var(--cyan)}
+#vipPermBoxes label.pv{display:inline-flex;align-items:center;gap:6px;font-size:13px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+#vipPermBoxes label.pv input{accent-color:var(--cyan)}
+/* IPTV 源表格行内输入框：跟主题同色（原来白底刺眼），加高好点 */
+#iSrcTable input[data-f]{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:9px;
+  padding:0 12px;font-size:13px;height:40px;width:100%;box-sizing:border-box;transition:.15s}
+#iSrcTable input[data-f]:focus{border-color:var(--cyan);box-shadow:var(--glow);outline:none}
+#iSrcTable input[data-f="name"]{max-width:170px}
+#iSrcTable input[type="checkbox"]{width:auto;accent-color:var(--cyan);cursor:pointer}
+#iSrcTable td:last-child{white-space:nowrap}
+#iPermTable input[type="checkbox"]{width:auto;accent-color:var(--cyan);cursor:pointer}
+#iPermTable td{text-align:center}
+#iPermTable td:first-child,#iPermTable th:first-child{text-align:left}
+#permModal .row2{margin-top:16px}
+#vipModal,#ptsModal{position:fixed;inset:0;z-index:200;display:none;place-items:center;background:rgba(3,4,8,.82);backdrop-filter:blur(6px)}
+#vipModal .box,#ptsModal .box{padding:24px;border-radius:16px;background:var(--panel);border:1px solid var(--cyan);box-shadow:var(--glow)}
+#vipModal h3,#ptsModal h3{color:var(--cyan);margin-bottom:14px;font-size:17px}
+#vipModal .row2,#ptsModal .row2{margin-top:16px}
+#vipModal select,#ptsModal input{width:100%;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);padding:10px 12px;border-radius:10px;outline:none;font-family:inherit}
+.up-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.up-list .u{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 12px;background:rgba(5,6,10,.5);border:1px solid var(--line);border-radius:10px;font-size:13px}
+.up-list .u .lab{color:var(--txt)}
+.up-list .u .uurl{color:var(--muted);font-size:11px;flex:1;min-width:0;margin:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div class="logo">{{SITE_NAME}}<small>ADMIN</small></div>
+    <div class="user"><span id="uName" style="font-size:13px"></span>
+      <button class="btn" onclick="location.href='/index.html'">前台</button>
+      <button class="btn" id="logout">退出</button></div>
+  </div>
+</header>
+
+<div class="admin">
+  <div id="gateAdmin" style="text-align:center;padding:60px">
+    <div class="logo" style="font-size:24px;margin-bottom:10px">管理员登录</div>
+    <div style="max-width:300px;margin:0 auto">
+      <input id="aUser" placeholder="用户名" style="width:100%;margin-bottom:10px;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:12px;border-radius:10px">
+      <input id="aPass" type="password" placeholder="密码" style="width:100%;margin-bottom:10px;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:12px;border-radius:10px">
+      <button class="btn primary" id="aLogin" style="width:100%">登录后台</button>
+      <div class="err" id="aErr" style="color:#ff6b8a;font-size:12px;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div id="adminMain" class="hidden">
+    <div class="tabs">
+      <div class="tab-group">
+        <span class="tg-cap">总览</span>
+        <div class="tg-chips">
+          <div class="chip active" data-t="overview">概览</div>
+          <div class="chip" data-t="logs">系统日志</div>
+        </div>
+      </div>
+      <div class="tab-group">
+        <span class="tg-cap">站点与内容</span>
+        <div class="tg-chips">
+          <div class="chip" data-t="home">首页配置</div>
+          <div class="chip" data-t="parse">解析地址</div>
+          <div class="chip" data-t="upstream">上游接入</div>
+          <div class="chip" data-t="collect">采集站</div>
+          <div class="chip" data-t="iptv">IPTV 直播</div>
+          <div class="chip" data-t="misc">其他设置</div>
+        </div>
+      </div>
+      <div class="tab-group">
+        <span class="tg-cap">广告与播放</span>
+        <div class="tg-chips">
+          <div class="chip" data-t="adfilter">广告过滤</div>
+          <div class="chip" data-t="ads">广告联盟</div>
+        </div>
+      </div>
+      <div class="tab-group">
+        <span class="tg-cap">用户与运营</span>
+        <div class="tg-chips">
+          <div class="chip" data-t="users">用户管理</div>
+          <div class="chip" data-t="points">积分会员</div>
+        </div>
+      </div>
+      <div class="tab-group">
+        <span class="tg-cap">消息通知</span>
+        <div class="tg-chips">
+          <div class="chip" data-t="broadcast">广播推送</div>
+          <div class="chip" data-t="announce">公告弹窗</div>
+        </div>
+      </div>
+      <div class="tab-group">
+        <span class="tg-cap">账号</span>
+        <div class="tg-chips">
+          <div class="chip" data-t="pwd">修改密码</div>
+          <div class="chip" data-t="license">授权管理</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel active" id="p-overview">
+      <div class="stat" id="stats"></div>
+      <p style="color:var(--muted);font-size:13px;margin-top:14px">提示：默认管理员 admin / admin123，请尽快在「修改密码」中修改，并在「用户管理」中按需新增管理员。</p>
+    </div>
+
+    <div class="panel" id="p-broadcast">
+      <div class="field"><label>启用广播推送（独立开关）</label>
+        <label class="switch"><input type="checkbox" id="bEn"><span class="slider"></span></label></div>
+      <div class="field"><label>标题</label><input id="bTitle" placeholder="例如：系统维护通知"></div>
+      <div class="field"><label>内容</label><textarea id="bContent" placeholder="推送内容，在线用户即时收到，并按下方设置连续推送"></textarea></div>
+      <div class="field row2">
+        <div style="flex:1"><label>连续推送次数（1-50）</label><input id="bCount" type="number" min="1" max="50" value="1"></div>
+        <div style="flex:1"><label>推送间隔</label><div style="display:flex;gap:8px;align-items:center">
+          <input id="bInterval" type="number" min="1" max="1440" value="1" style="flex:1 1 0;min-width:0;width:auto">
+          <select id="bUnit" style="flex:0 0 92px;width:92px"><option value="s">秒</option><option value="m">分</option><option value="h" selected>时</option></select>
+        </div></div>
+      </div>
+      <p style="color:var(--muted);font-size:12px;line-height:1.6">按上方「启用广播推送」开关保存生效：开启后服务端按「次数 × 间隔」周期性推送，即便用户刷新也会持续弹出，达到连续提醒；关闭开关并保存、或点「停止推送」即停。推送样式为醒目横幅（右下方大卡片，可在播放页也显示）。</p>
+      <button class="btn primary" id="bSave">保存广播设置</button>
+      <button class="btn" id="bStop" style="margin-left:10px">停止推送</button>
+    </div>
+
+    <div class="panel" id="p-announce">
+      <div class="field"><label>启用公告弹窗</label>
+        <label class="switch"><input type="checkbox" id="aEn"><span class="slider"></span></label></div>
+      <div class="field"><label>类型</label>
+        <select id="aMode">
+          <option value="normal">普通公告（可关闭）</option>
+          <option value="maintenance">维护公告（强制 · 前台无法关闭 · 刷新也弹）</option>
+        </select></div>
+      <div class="field"><label>标题</label><input id="aTitle" placeholder="公告标题"></div>
+      <div class="field"><label>内容</label><textarea id="aContent" placeholder="弹窗正文"></textarea></div>
+      <button class="btn primary" id="aSave">保存公告</button>
+      <button class="btn" id="aPush" style="margin-left:10px">保存并立即弹窗</button>
+    </div>
+
+    <div class="panel" id="p-home">
+      <div class="field"><label>站点名称（同时改浏览器标题与登录页）</label><input id="hName"></div>
+      <div class="field row2">
+        <div style="flex:1"><label>浏览器标签页标题（留空默认「站名 · AI」）</label><input id="hPageTitle"></div>
+        <div style="flex:1"><label>登录页副标语（留空默认）</label><input id="hGateSub" placeholder="AI 智能影视聚合 · 请登录后观看"></div>
+      </div>
+      <div class="field"><label>首页大标题（独立文字，留空则显示站名）</label><input id="hHeroTitle" placeholder="例如：海量好剧 · 随点随看"></div>
+      <div class="field"><label>首页副标题（留空保持默认）</label><input id="hHeroSub" placeholder="海量资源 · 一键即播 · 全站免费"></div>
+      <div class="field"><label>内容地区（首页推荐 / 本周追剧 / 热门 的 TMDB 拉取地区，默认 CN 国内）</label>
+        <select id="hRegion">
+          <option value="CN">中国大陆 CN（国内热门）</option>
+          <option value="TW">台湾 TW</option>
+          <option value="HK">香港 HK</option>
+          <option value="US">美国 US</option>
+          <option value="">全球（不分地区）</option>
+        </select></div>
+      <div class="field row2">
+        <div style="width:140px"><label>大标题字号(px，留空默认)</label><input id="hHeroTSize" type="number" min="20" max="120" step="1"></div>
+        <div style="width:160px"><label>大标题颜色(留空默认)</label><input id="hHeroTColor" placeholder="#7ee7ff"></div>
+        <div style="width:140px"><label>副标题字号(px，留空默认)</label><input id="hHeroSSize" type="number" min="10" max="40" step="1"></div>
+        <div style="width:160px"><label>副标题颜色(留空默认)</label><input id="hHeroSColor" placeholder="#9fb3c8"></div>
+      </div>
+      <div class="field"><label>首页提示文字</label><textarea id="hTip"></textarea></div>
+      <div class="field"><label>自动跳过片头片尾（开启=播放时自动跳过；关闭=手动点胶囊跳过；两种模式都会弹窗提示）<span style="color:var(--muted)"> · 受下方「跳过片头/片尾」权限控制，无权限的普通用户胶囊显示为金色「会员专享」引导</span></label>
+        <label class="switch"><input type="checkbox" id="tAutoSkip"><span class="slider"></span></label></div>
+      <div class="field"><label>防上当友情提示（播放页）</label>
+        <label class="switch"><input type="checkbox" id="tScam"><span class="slider"></span></label></div>
+      <div class="field"><label>防上当提示文字</label><textarea id="tScamText"></textarea></div>
+      <div class="field"><div style="display:flex;gap:12px">
+        <div style="flex:1"><label>滚动速度（秒/圈，越小越快）</label><input id="tScamSpeed" type="number" min="5" max="180" step="1" value="15"></div>
+        <div style="width:110px"><label>文字大小(px)</label><input id="tScamSize" type="number" min="10" max="40" step="1" value="13"></div>
+        <div style="width:150px"><label>文字颜色</label><input id="tScamColor" type="color" style="width:100%;height:42px;padding:4px;cursor:pointer" value="#ffd9f3"></div>
+      </div></div>
+      <div class="field"><div style="display:flex;gap:12px">
+        <div style="flex:1"><label>出现位置（%，100=从右侧进入，0=左边缘出现）</label><input id="tScamFrom" type="number" min="-200" max="200" step="5" value="100"></div>
+        <div style="flex:1"><label>消失位置（%，-100=完全滚出左侧，0=停在左边缘）</label><input id="tScamTo" type="number" min="-200" max="200" step="5" value="-100"></div>
+      </div></div>
+
+      <div class="field">
+        <label>首页栏目管理（可自由增删 / 排序，TMDB 榜单与采集站混排）</label>
+        <div id="colList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="row2" style="margin-top:10px;align-items:flex-end">
+          <div><label style="margin-bottom:6px">类型</label>
+            <select id="colType"><option value="tmdb">TMDB 榜单</option><option value="collect">采集站最新</option></select></div>
+          <div><label style="margin-bottom:6px">来源</label><select id="colKey"></select></div>
+        </div>
+        <input id="colLabel" placeholder="栏目显示名（留空则自动命名）" style="margin-top:10px">
+        <button class="btn primary" id="colAdd" style="margin-top:10px">＋ 添加栏目</button>
+      </div>
+      <button class="btn" id="hSave" style="margin-top:6px">保存首页配置</button>
+    </div>
+
+    <div class="panel" id="p-parse">
+      <div class="field row2">
+        <div><label>名称</label><input id="pName" placeholder="例如：解析线路1"></div>
+        <div><label>解析地址(支持 {url} 占位或自动追加)</label><input id="pUrl" placeholder="https://jx.example.com/?url="></div>
+      </div>
+      <button class="btn primary" id="pAdd">添加解析地址</button>
+      <table id="pTable"><thead><tr><th>名称</th><th>地址</th><th>操作</th></tr></thead><tbody></tbody></table>
+
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:18px;margin-top:22px">
+        <label>上游解析地址线路（自动获取，已并入上方解析列表并应用于播放）</label>
+        <div id="upLines" class="up-list"><div class="muted" style="font-size:13px">—</div></div>
+        <button class="btn" id="upSync" style="margin-top:12px">重新获取并添加</button>
+        <span id="upSyncR" style="font-size:13px;color:var(--muted);margin-left:10px"></span>
+        <!-- v34：自动同步（ticket 被上游轮换时服务端定时重新拉取并保存） -->
+        <div style="border-top:1px dashed var(--line);margin-top:16px;padding-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);cursor:pointer;margin:0">
+            <input type="checkbox" id="upAutoEn" style="width:auto">自动同步（ticket 被上游轮换时自动更新并保存）
+          </label>
+          <select id="upAutoIv" style="width:auto;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);padding:7px 10px;border-radius:9px;outline:none;font-family:inherit">
+            <option value="30">每 30 分钟</option>
+            <option value="60">每 1 小时</option>
+            <option value="180">每 3 小时</option>
+            <option value="360">每 6 小时</option>
+            <option value="720">每 12 小时</option>
+          </select>
+          <button class="btn" id="upAutoSave" style="padding:7px 16px">保存并立即检测</button>
+          <span id="upAutoR" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-upstream">
+      <h3 style="margin-bottom:6px;font-size:17px">上游接入</h3>
+      <div style="color:var(--muted);font-size:12px;line-height:1.7;margin-bottom:16px">
+        站点的影片数据、播放线路、解析地址全部来自上游接口。上游地址 / 密钥 / Cookie 失效后，在这里直接换成自己申请的新值即可，保存后立即生效，无需改代码、无需重启。
+      </div>
+      <div class="field">
+        <label>上游 API 地址（主地址，结尾不要带 /）</label>
+        <input id="upApiBase" placeholder="https://your-upstream.example.com">
+      </div>
+      <div class="field row2">
+        <div><label>上游 API 密钥（HMAC Key）</label><input id="upApiKey" placeholder="上游发放的密钥，留空表示上游不校验"></div>
+        <div><label>上游 Cookie（可选，上游要求登录时粘贴）</label><input id="upApiCookie" placeholder="a=1; b=2"></div>
+      </div>
+      <div class="field">
+        <label>备用镜像地址（多行，主地址不通时按顺序自动重试）</label>
+        <textarea id="upApiMirrors" placeholder="https://mirror1.example.com&#10;https://mirror2.example.com"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary" id="upApiSave">保存上游接入</button>
+        <button class="btn" id="upApiTest">测试连通性</button>
+        <span id="upApiR" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:16px;margin-top:20px">
+        <label>换上游的正确顺序</label>
+        <div style="color:var(--muted);font-size:12px;line-height:1.8">
+          ① 向上游申请 → 拿到 <b>API 地址 + 密钥</b>（有的还要 Cookie）→ ② 填进上面并保存 → ③ 点「测试连通性」看到「连通」→
+          ④ 回到「解析地址」页点「重新获取并添加」刷新解析线路 → ⑤ 到「采集站」页点「自动获取上游采集地址」→ 完成。<br>
+          仅供自用：这里的值只存在你自己的 <b>config.json</b> 里，不会上传到任何地方。
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-collect">
+      <div class="field row2">
+        <div><label>名称</label><input id="cName" placeholder="例如：资源站A"></div>
+        <div><label>API 地址(苹果CMS根域名)</label><input id="cApi" placeholder="https://api.example.com"></div>
+      </div>
+      <button class="btn primary" id="cAdd">添加采集站</button>
+      <button class="btn" id="cTest" style="margin-left:10px">测试连通性</button>
+      <span id="cTestR" style="font-size:13px;color:var(--muted)"></span>
+      <table id="cTable"><thead><tr><th>名称</th><th>API</th><th>操作</th></tr></thead><tbody></tbody></table>
+
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:18px;margin-top:22px">
+        <label>上游普通线路 · 采集资源档（上游同步得到，删掉的下次同步不会再回来）</label>
+        <div id="upCollectLines" class="up-list"><div class="muted" style="font-size:13px">—</div></div>
+        <div id="upCollectDeleted" style="margin-top:10px;font-size:12px;color:var(--muted);display:none"></div>
+      </div>
+
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:18px;margin-top:22px">
+        <label>自动获取上游采集地址</label>
+        <div style="color:var(--muted);font-size:12px;line-height:1.7;margin-bottom:10px">
+          点下面按钮，服务端用当前「上游接入」的配置去上游拉一次资源站清单，逐条真实连通测试，通过的自动保存进上面的采集站列表（不通过的丢弃并列出原因）。
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="cAutoUp">自动获取上游采集地址并保存</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);cursor:pointer;margin:0">
+            <input type="checkbox" id="cAutoOn" style="width:auto">每天自动获取一次
+          </label>
+          <button class="btn" id="cAutoSave" style="padding:7px 16px">保存</button>
+          <span id="cAutoR" style="font-size:13px;color:var(--muted)"></span>
+        </div>
+      </div>
+
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:18px;margin-top:22px">
+        <label>批量导入采集地址（每行一条：名称|API地址，无竖线则整行当地址、名称自动取域名）</label>
+        <textarea id="cImport" placeholder="资源站A|https://api.a.com&#10;https://api.b.com"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
+          <button class="btn" id="cImportGo">导入</button>
+          <span id="cImportR" style="font-size:13px;color:var(--muted)"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-users">
+      <div class="field row2">
+        <div><label>用户名</label><input id="uNew" placeholder="新用户名"></div>
+        <div><label>密码</label><input id="uPw" placeholder="密码"></div>
+      </div>
+      <div class="field row2" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)">
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin-bottom:6px">① 添加用户 <span style="color:var(--muted)">— 「角色」只决定新添加账号的身份，与下面的权限模板无关</span></div>
+        <div><label>角色</label><select id="uRole"><option value="user">普通用户</option><option value="admin">管理员</option></select></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn primary" id="uAdd">添加用户</button></div>
+      </div>
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:14px;margin-top:6px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="margin:0">开放前台注册</label>
+          <label class="switch" style="transform:scale(.9)"><input type="checkbox" id="regEn" checked><span class="slider"></span></label>
+          <span style="color:var(--muted);font-size:12px">关闭后登录页隐藏注册入口、接口直接拒绝</span>
+        </div>
+        <label style="margin-top:16px">② 新用户默认访问权限 <span style="color:var(--muted);font-size:12px;font-weight:400">— 全站只有这一份模板，注册用户和后台添加的普通用户都套用它；管理员账号不受任何权限限制（永远全开），不需要单独设置</span></label>
+        <div id="regPermBoxes" style="display:flex;flex-wrap:wrap;gap:10px 14px"></div>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap">
+          <button class="btn primary" id="regSave">保存注册设置</button>
+        <button class="btn" id="regApply" style="margin-left:10px">应用到现有普通用户</button>
+        <div id="regStat" style="margin-top:10px;font-size:13px"></div>
+        <span style="color:var(--muted);font-size:12px">已有用户不随模板变动；点「应用」才会把当前模板覆盖到全部普通用户</span>
+          <span style="color:var(--muted);font-size:12px">建议：IPTV 默认关闭，避免普通用户权限过高</span>
+        </div>
+      </div>
+      <table id="uTable"><thead><tr><th>用户名</th><th>角色</th><th>会员</th><th>积分</th><th>签到/邀请</th><th>栏目权限</th><th>创建时间</th><th>操作</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="panel" id="p-pwd">
+      <h3 style="margin-bottom:16px;font-size:17px">修改我的密码</h3>
+      <div class="field"><label>当前密码</label><input id="myOld" type="password"></div>
+      <div class="field row2">
+        <div><label>新密码（至少 6 位）</label><input id="myNew" type="password"></div>
+        <div><label>确认新密码</label><input id="myNew2" type="password"></div>
+      </div>
+      <button class="btn primary" id="myPwSave">保存修改</button>
+    </div>
+
+    <div class="panel" id="p-misc">
+      <h3 style="margin-bottom:6px;font-size:17px">其他设置</h3>
+      <p style="color:var(--muted);font-size:12.5px;margin-bottom:16px">播放器加载等待框（转圈那张卡）里的全部文字都能改；留空即恢复默认文案。</p>
+      <div class="field row2">
+        <div><label>「继续发现」轮播间隔（秒）</label><input id="miscRotMs" type="number" min="3" max="120" step="1" placeholder="10"></div>
+        <div><label>说明</label><div style="color:var(--muted);font-size:12px;line-height:1.7">播放页右侧「简介」与「继续发现」每隔这么多秒自动切换一次；鼠标悬停暂停、移开继续（手机端本来就不轮播）。</div></div>
+      </div>
+      <div id="miscBox"></div>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:16px;flex-wrap:wrap">
+        <button class="btn primary" id="miscSave">保存</button>
+        <button class="btn" id="miscReset">恢复默认文案</button>
+        <span id="miscStat" style="font-size:13px"></span>
+      </div>
+    </div>
+
+    <div class="panel" id="p-license">
+      <h3 style="margin-bottom:14px;font-size:17px">授权管理</h3>
+      <div id="licState" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13px"></div>
+      <div class="field">
+        <label>本机机器码 <span style="color:var(--muted);font-weight:400">— 发给站长换授权码，一机一码</span></label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <code id="licMid" style="flex:1;padding:9px 12px;border-radius:9px;background:rgba(120,180,255,.07);border:1px solid var(--line);color:var(--cyan);font-size:14px;letter-spacing:1px;word-break:break-all">读取中…</code>
+          <button class="btn" id="licCopy">复制</button>
+        </div>
+      </div>
+      <div class="field" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)">
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin-bottom:8px">① 激活本站</div>
+        <label>授权码</label>
+        <textarea id="licCode" rows="2" placeholder="粘贴 AIST-… 开头的授权码" style="width:100%;margin-bottom:10px;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="licActivate">激活</button>
+          <button class="btn" id="licClear">解除激活</button>
+          <span id="licStat" style="font-size:13px"></span>
+        </div>
+      </div>
+      <div id="licIssuedBox" class="field" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)">
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin-bottom:8px">② 授权码台账 <span style="color:var(--muted);font-weight:400">— 签出去的每一个码：状态 / 停用 / 改时长 / 删除</span></div>
+        <div style="width:100%;font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+          停用只拦「还没激活」的码；对方已经激活的实例是离线校验，无法远程关停，只能让对方自行解除。<br>
+          「改时长」= 给同一台机器重签一个新码（签名里写死了到期时间，改不了旧码），旧码自动标记已换发。
+        </div>
+        <table id="licTable"><thead><tr>
+          <th>机器码</th><th>有效期</th><th>状态</th><th>签发时间</th><th>激活时间</th><th>备注</th><th>操作</th>
+        </tr></thead><tbody></tbody></table>
+        <div class="up-more" id="licMore" style="text-align:left"></div>
+        <div id="licNewOut" class="hidden" style="margin-top:10px">
+          <div style="font-size:12px;color:#7ee0a8;margin-bottom:6px" id="licNewTip"></div>
+          <textarea id="licNewCode" rows="3" readonly style="width:100%;background:rgba(5,6,10,.5);border:1px solid var(--line);color:#7ee0a8;border-radius:10px;padding:10px 12px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none"></textarea>
+          <button class="btn" id="licNewCopy" style="margin-top:8px">复制新授权码</button>
+        </div>
+      </div>
+
+      <div id="licGenBox" class="field" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)">
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin-bottom:8px">③ 给别人签发授权码 <span style="color:var(--muted);font-weight:400">— 需要签发私钥，公开仓库版本没有私钥，签不了码</span></div>
+        <div class="field row2">
+          <div><label>对方机器码</label><input id="licGenMid" placeholder="16 位机器码"></div>
+          <!-- v73d：授权一律永久，不再提供期限档位 -->
+          <div><label>有效期</label><select id="licGenDays" disabled title="授权一律永久">
+            <option value="0">永久（无期限）</option>
+          </select></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="licGen">生成授权码</button>
+          <span id="licGenStat" style="font-size:13px"></span>
+        </div>
+        <div id="licGenOut" class="hidden" style="margin-top:10px">
+          <textarea id="licGenCode" rows="3" readonly style="width:100%;background:rgba(5,6,10,.5);border:1px solid var(--line);color:#7ee0a8;border-radius:10px;padding:10px 12px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none"></textarea>
+          <button class="btn" id="licGenCopy" style="margin-top:8px">复制授权码</button>
+        </div>
+      </div>
+      <div id="licKeyBox" class="field" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)">
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin-bottom:8px">④ 签发私钥 <span style="color:var(--muted);font-weight:400">— 只有站长这台机器需要配；丢了就再也签不出新码，请自行备份</span></div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px" id="licKeyTip"></div>
+        <textarea id="licKey" rows="4" placeholder="-----BEGIN PRIVATE KEY----- …" style="width:100%;margin-bottom:8px;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none"></textarea>
+        <button class="btn" id="licKeySave">保存私钥</button>
+      </div>
+
+      <div id="licContactBox" class="field" style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.02)">
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin-bottom:8px">⑤ 前台「怎么拿到授权码」 <span style="color:var(--muted);font-weight:400">— 留空则用代码里内置的默认文案（server.js 的 LIC_CONTACT）</span></div>
+        <textarea id="licContact" rows="3" placeholder="例：微信 your_wechat&#10;QQ 123456&#10;邮箱 you@example.com&#10;说明：把机器码发我，我给你签一个永久码" style="width:100%;margin-bottom:8px;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:12px;resize:vertical;outline:none"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="licContactSave">保存联系方式</button>
+          <span id="licContactStat" style="font-size:13px"></span>
+        </div>
+        <div style="width:100%;color:var(--cyan);font-size:13px;margin:12px 0 8px">⑥ 站点地址（激活回执） <span style="color:var(--muted);font-weight:400">— 填你自己的访问地址，会嵌进签出的授权码：对方激活成功的瞬间自动向你上报「已激活+对方机器码」，台账里激活时间/状态才会实时更新。留空则不上报。</span></div>
+        <input id="licSiteUrl" placeholder="例：http://your-domain.com:8890（外网能访问到的地址，别人激活时要连得上它）" style="width:100%;margin-bottom:8px;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:12px;outline:none" />
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="licSiteUrlSave">保存站点地址</button>
+          <span id="licSiteUrlStat" style="font-size:13px"></span>
+        </div>
+        <div style="width:100%;color:var(--muted);font-size:12px;margin-top:8px;line-height:1.7">⚠️ 联系方式与站点地址都是「签码那一刻」嵌进码里的 —— 改了之后，<b>新签 / 换发</b>的码带新值；已经签出去的旧码用「换发」刷新（换发同样免费、永久）。</div>
+      </div>
+
+      <div id="licNoSignTip" class="field hidden" style="border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--muted);line-height:1.8">
+        本实例没有签发私钥，不是签发方 —— 上面的「授权码台账 / 签发授权码 / 签发私钥 / 前台联系方式」已隐藏。<br>
+        这些功能只有持有私钥的签发方（站长自己那台）才有，别人拿到源码也签不出授权码。
+      </div>
+    </div>
+
+    <div class="panel" id="p-logs">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+        <select id="logLevel" style="background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:9px">
+          <option value="all">全部级别</option>
+          <option value="info">INFO</option>
+          <option value="warn">WARN</option>
+          <option value="error">ERROR</option>
+        </select>
+        <input id="logQ" placeholder="搜索关键字（路径/内容/标签）" style="flex:1;min-width:180px;background:rgba(5,6,10,.5);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:9px;outline:none">
+        <button class="btn" id="logRefresh">刷新</button>
+        <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px"><input type="checkbox" id="logAuto"> 自动刷新</label>
+        <button class="btn danger" id="logClear">清空日志</button>
+      </div>
+      <div id="logTotal" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+      <div id="logBox" style="max-height:62vh;overflow:auto;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.7;background:rgba(5,6,10,.6);border:1px solid var(--line);border-radius:12px;padding:12px"></div>
+    </div>
+
+    <div class="panel" id="p-adfilter">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:18px">m3u8 广告过滤：服务端改写播放清单、删除插播广告切片，切片仍由浏览器直连源站（不占用家庭上行）。命中后播放页会提示「已拦截 N 个插播广告」。</p>
+      <div class="field">
+        <label>启用广告过滤（关闭则清单原样返回，不做任何处理）</label>
+        <label class="switch"><input type="checkbox" id="adEn"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <label>切片代理回退（⚠️ 开启后会占用你的家庭上行带宽，仅当采集站 ts 直连全部失败时应急，默认关闭）</label>
+        <label class="switch"><input type="checkbox" id="adTs"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <label>域名黑名单（每行一个，命中即把该域名所在整组判定为广告；支持子域名，例如 <code>ads.example.com</code> 或 <code>example.com</code>）</label>
+        <textarea id="adBl" placeholder="ads.example.com&#10;ad.example.vip&#10;vod.example.xyz"></textarea>
+      </div>
+      <button class="btn primary" id="adSave">保存广告过滤设置</button>
+      <span id="adSaveR" style="font-size:13px;color:var(--muted);margin-left:10px"></span>
+      <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
+        <h3 style="font-size:15px;color:var(--cyan);margin-bottom:10px">实时预览（断点插播检测）</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:12px">粘贴一条 m3u8 播放地址（或带 <code>resolve://</code> 的线路凭证），点「分析」即可看到该线路的插播广告检测结果，含断点位置与预计拦截段数。规则与线上过滤完全一致（含本页设置的黑名单）。</p>
+        <div class="field">
+          <label>播放地址 / 线路凭证</label>
+          <input id="adPrevUrl" placeholder="https://.../index.m3u8  或  resolve://...">
+        </div>
+        <button class="btn" id="adPrevBtn">分析</button>
+        <span id="adPrevR" style="font-size:13px;color:var(--muted);margin-left:10px"></span>
+        <div id="adPrevBox" style="display:none;margin-top:14px;font-family:Consolas,'Courier New',monospace;font-size:12px;line-height:1.7;background:rgba(5,6,10,.6);border:1px solid var(--line);border-radius:12px;padding:12px;white-space:pre-wrap"></div>
+      </div>
+    </div>
+    <div class="panel" id="p-ads">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.7">广告联盟两种对接方式：<b>① 自定义广告</b>——后台配图片 + 跳转链接（最常用，立即生效）；<b>② 联盟代码</b>——直接粘贴广告联盟（百度联盟 / Google AdSense / 各类 CPA、CPS）提供的 <code>&lt;script&gt;</code> 或 <code>&lt;iframe&gt;</code> 片段，前台用沙箱 iframe 原样加载。各位置可单独开关；「会员去广告」在「积分会员」页按等级配置。</p>
+      <div class="field row2">
+        <div><label>启用广告联盟（总开关）</label><label class="switch"><input type="checkbox" id="adEn2"><span class="slider"></span></label></div>
+        <div><label>对接方式</label><select id="adNetwork"><option value="custom">自定义广告（图片+链接）</option><option value="code">联盟代码（粘贴 script/iframe）</option></select></div>
+      </div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:20px 0 12px">① 播放器暂停广告 <span style="color:var(--muted);font-size:12px;font-weight:400">— 用户点「暂停」时展示，继续播放即消失</span></h3>
+      <div class="field row2">
+        <div><label>启用暂停广告</label><label class="switch"><input type="checkbox" id="adPauseEn"><span class="slider"></span></label></div>
+        <div><label>弹出延迟(ms，0=立即)</label><input id="adPauseDelay" type="number" min="0" max="10000" step="100"></div>
+        <div><label>自动关闭(秒，0=不自动关)</label><input id="adPauseAuto" type="number" min="0" max="600"></div>
+      </div>
+      <div class="field"><label>允许用户手动关闭</label><label class="switch"><input type="checkbox" id="adPauseClose"><span class="slider"></span></label></div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:20px 0 12px">② 播放页左侧广告位 <span style="color:var(--muted);font-size:12px;font-weight:400">— 关闭时该区域显示原有参数（信息卡），与现在完全一致</span></h3>
+      <div class="field row2">
+        <div><label>启用左侧广告位</label><label class="switch"><input type="checkbox" id="adSideEn"><span class="slider"></span></label></div>
+        <div><label>显示位置</label><select id="adSidePos"><option value="belowDetail">详情信息卡下方</option><option value="belowPoster">海报下方</option><option value="aboveHistory">播放历史上方</option><option value="topOfSide">左栏最顶部</option></select></div>
+        <div><label>宽度(px 或 %)</label><input id="adSideW" placeholder="100%"></div>
+        <div><label>高度(px 或 auto)</label><input id="adSideH" placeholder="auto"></div>
+        <div><label>最多展示条数</label><input id="adSideMax" type="number" min="1" max="6"></div>
+      </div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:20px 0 12px">③ 自定义广告条目</h3>
+      <table id="adItemsTable"><thead><tr><th>标题</th><th>图片</th><th>跳转链接</th><th>投放位置</th><th>权重</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table>
+      <div class="field row2" style="margin-top:12px;align-items:flex-end">
+        <div><label>标题</label><input id="adItemTitle" placeholder="广告标题"></div>
+        <div><label>图片地址(https)</label><input id="adItemImg" placeholder="https://…/banner.jpg"></div>
+        <div><label>跳转链接</label><input id="adItemLink" placeholder="https://…"></div>
+      </div>
+      <div class="field row2" style="align-items:flex-end">
+        <div><label>投放位置</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-right:14px"><input type="checkbox" id="adItemSlotSide" style="width:auto"> 播放页左侧</label>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="adItemSlotPause" style="width:auto"> 暂停广告</label>
+        </div>
+        <div style="max-width:140px"><label>权重(越大越易被选中)</label><input id="adItemWeight" type="number" min="1" max="99" value="1"></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn primary" id="adItemAdd">＋ 添加广告</button></div>
+      </div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:22px 0 12px">④ 联盟代码 <span style="color:var(--muted);font-size:12px;font-weight:400">— 仅「对接方式=联盟代码」时使用；原样注入沙箱 iframe</span></h3>
+      <div class="field"><label>播放页左侧广告位代码</label><textarea id="adCodeSide" placeholder='<script src="…"></script>&#10;<iframe src="…"></iframe>' style="font-family:Consolas,monospace;font-size:12px;min-height:110px"></textarea></div>
+      <div class="field"><label>暂停广告代码</label><textarea id="adCodePause" placeholder='<script src="…"></script>' style="font-family:Consolas,monospace;font-size:12px;min-height:110px"></textarea></div>
+      <button class="btn primary" id="adSaveBtn">保存广告联盟配置</button>
+      <span id="adSaveR" style="font-size:13px;color:var(--muted);margin-left:10px"></span>
+    </div>
+
+    <div class="panel" id="p-points">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:18px;line-height:1.7">积分体系：用户通过<b>每日签到</b>、<b>邀请注册</b>、<b>观看影视</b>获得积分；各渠道的<b>积分数量与每日次数/上限</b>均可在下方控制。会员等级决定<b>积分倍率</b>与<b>去广告特权</b>，在「用户管理」里给用户设置等级与到期时间。</p>
+      <div class="field"><label>启用积分系统（关闭后签到/邀请/观看均不再发放）</label><label class="switch"><input type="checkbox" id="ptEn"><span class="slider"></span></label></div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:18px 0 12px">① 每日签到</h3>
+      <div class="field row2">
+        <div><label>基础积分/次</label><input id="ptCkBase" type="number" min="0"></div>
+        <div><label>连签每日加成</label><input id="ptCkBonus" type="number" min="0"></div>
+        <div><label>连签加成上限(天)</label><input id="ptCkMax" type="number" min="0" max="365"></div>
+      </div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:18px 0 12px">② 邀请注册</h3>
+      <div class="field row2">
+        <div><label>每邀请 1 人奖励积分</label><input id="ptIvPer" type="number" min="0"></div>
+        <div><label>每日邀请奖励上限(分)</label><input id="ptIvCap" type="number" min="0"></div>
+        <div style="display:flex;align-items:flex-end"><label style="margin:0"><input type="checkbox" id="ptIvReq" style="width:auto;margin-right:6px">必须邀请码才能注册</label></div>
+      </div>
+      <p style="color:var(--muted);font-size:12px;margin:-6px 0 14px">每位用户的邀请码在播放页「邀请好友」卡片里可复制；关闭注册开关时邀请奖励同样不生效。</p>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:18px 0 12px">③ 观看影视</h3>
+      <div class="field row2">
+        <div><label>每观看满 1 分钟得积分</label><input id="ptWPer" type="number" min="0"></div>
+        <div><label>每日最多计多少分钟</label><input id="ptWCap" type="number" min="0" max="1440"></div>
+      </div>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:18px 0 12px">④ 会员等级（积分倍率 / 去广告 / 跳过片头片尾）</h3>
+      <table id="vipTable"><thead><tr><th>等级</th><th>名称</th><th>去广告</th><th>IPTV</th><th>访问权限</th><th>积分倍率</th><th>积分门槛</th><th>操作</th></tr></thead><tbody></tbody></table>
+      <div class="field row2" style="margin-top:12px;align-items:flex-end">
+        <div style="max-width:100px"><label>等级(0-9)</label><input id="vipLv" type="number" min="0" max="9"></div>
+        <div><label>名称</label><input id="vipName" placeholder="例如：黄金会员"></div>
+        <div style="max-width:120px"><label>积分倍率</label><input id="vipMul" type="number" min="0" max="100" step="0.1" value="1"></div>
+        <div style="max-width:130px"><label>积分门槛(成长值)</label><input id="vipPoints" type="number" min="0" placeholder="0=不设"></div>
+        <div style="display:flex;align-items:flex-end;gap:10px">
+          <label style="margin:0;white-space:nowrap"><input type="checkbox" id="vipNoAds" style="width:auto;margin-right:6px">去广告</label>
+          <label style="margin:0;white-space:nowrap"><input type="checkbox" id="vipIptv" style="width:auto;margin-right:6px">IPTV</label>
+          <button class="btn primary" id="vipAdd">＋ 添加/更新等级</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:6px">
+        <label>该等级额外解锁的权限（勾选 = 该等级用户直接放行，无视用户单独设置；不勾 = 仍按用户单独设置。普通用户等级建议全不勾）<span style="color:var(--muted)"> · 「跳过片头/片尾」勾选后会员才能自动/手动跳过，未勾选的普通用户只显示金色引导胶囊</span></label>
+        <div id="vipPermBoxes" style="display:flex;flex-wrap:wrap;gap:10px 14px"></div>
+      </div>
+      <p style="color:var(--muted);font-size:12px;margin:-4px 0 14px">「积分门槛」用于首页左下用户卡的成长进度条：用户积分达到门槛即显示可升级，配合下方「积分兑换」把积分换成会员。</p>
+
+      <h3 style="font-size:15px;color:var(--cyan);margin:20px 0 12px">⑤ 积分兑换项 <span style="color:var(--muted);font-size:12px;font-weight:400">— 用户用积分兑换会员时长或限时权限，实时到账</span></h3>
+      <div class="field"><label>启用积分兑换</label><label class="switch"><input type="checkbox" id="rdEn"><span class="slider"></span></label></div>
+      <table id="rdTable"><thead><tr><th>标题</th><th>类型</th><th>内容</th><th>时长</th><th>消耗积分</th><th>库存</th><th>状态</th><th>操作</th></tr></thead><tbody></tbody></table>
+      <div class="field row2" style="margin-top:12px;align-items:flex-end">
+        <div><label>标题</label><input id="rdTitle" placeholder="例如：SVIP会员 30 天"></div>
+        <div><label>说明（选填）</label><input id="rdDesc" placeholder="兑换后立即生效，时长可叠加"></div>
+        <div><label>类型</label><select id="rdKind"><option value="vip">会员时长</option><option value="perm">限时权限</option></select></div>
+      </div>
+      <div class="field row2" style="align-items:flex-end">
+        <div id="rdVipWrap"><label>会员等级</label><select id="rdLevel"></select></div>
+        <div id="rdPermWrap" style="display:none"><label>权限项</label><select id="rdPermKey"></select></div>
+        <div style="max-width:150px"><label>时长（天，0=永久）</label><input id="rdDays" type="number" min="0" value="30"></div>
+        <div style="max-width:130px"><label>消耗积分</label><input id="rdCost" type="number" min="0" value="500"></div>
+        <div style="max-width:130px"><label>库存（-1=无限）</label><input id="rdStock" type="number" min="-1" value="-1"></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn primary" id="rdAdd">＋ 添加兑换项</button></div>
+      </div>
+      <div class="field" style="margin-top:16px"><label>启用会员系统</label><label class="switch"><input type="checkbox" id="vipEn"><span class="slider"></span></label></div>
+      <button class="btn primary" id="ptSaveBtn">保存积分与会员配置</button>
+      <button class="btn" id="rdSaveBtn" style="margin-left:10px">保存兑换设置</button>
+      <span id="ptSaveR" style="font-size:13px;color:var(--muted);margin-left:10px"></span>
+    </div>
+
+    <div class="panel" id="p-iptv">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:18px">IPTV 直播：开启后侧边栏出现「📡 IPTV」入口（用户能否访问在「用户管理 → 栏目权限」里控制）。频道走服务端代理播放；节目单（EPG）用于频道下方显示「正在播/接下来」，前台不额外显示设置。</p>
+      <h3 style="font-size:15px;color:var(--cyan);margin-bottom:12px">① 直播源（可添加多个，频道自动合并、分组自动汇总）</h3>
+      <div class="field">
+        <label>启用 IPTV（关闭则前台侧边栏隐藏入口）</label>
+        <label class="switch"><input type="checkbox" id="iEn"><span class="slider"></span></label>
+      </div>
+      <table id="iSrcTable"><thead><tr><th style="width:150px">名称</th><th>地址（M3U 播放清单）</th><th style="width:150px">分组（手动）</th><th style="width:70px">启用</th><th style="width:150px">操作</th></tr></thead><tbody></tbody></table>
+      <datalist id="iSrcGroupList"></datalist>
+      <div class="field row2" style="margin-top:12px;align-items:flex-end">
+        <div style="max-width:150px"><label>源名称</label><input id="iSrcName" placeholder="例如：央视源"></div>
+        <div><label>M3U 地址</label><input id="iSrcUrl" placeholder="http://…/m3u"></div>
+        <div style="max-width:160px"><label>分组（可选，留空=用清单自带分组）</label><input id="iSrcGroup" list="iSrcGroupList" placeholder="例如：黄果短剧"></div>
+        <div style="display:flex;gap:8px"><button class="btn primary" id="iSrcAdd">＋ 添加直播源</button></div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">手动分组：填了之后，这个源的全部频道都会归到这个分组名下面（覆盖清单里自带的分组），前台分组页签和下面的「分组权限」都按它算。同一个分组名可以填给多个源，会自动合在一起。</div>
+      <div class="field" style="margin-top:14px">
+        <label>频道分组（自动获取全部已添加直播源的分组，单独列出）<span style="color:var(--muted);font-size:12px"> — 保存后前台「IPTV」页的分组页签同步更新</span></label>
+        <div style="display:flex;gap:10px;align-items:center;margin:6px 0">
+          <button class="btn" id="iGroups">⟳ 获取/刷新分组</button>
+          <span id="iGroupStat" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <div id="iGroupPrev" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <table id="iGroupTable"><thead><tr><th>分组</th><th style="width:120px">频道数</th></tr></thead><tbody></tbody></table>
+        <div style="margin-top:12px">
+          <label>分组排序（前台「IPTV」页的分组页签按此顺序显示；没排的分组按名称排后面）<span style="color:var(--muted);font-size:12px"> — 点「保存 IPTV 设置」生效</span></label>
+          <div id="iOrderBox" style="margin:8px 0"></div>
+          <button class="btn" id="iOrderReset" type="button">恢复默认排序（按名称）</button>
+        </div>
+      </div>
+      <div class="field" style="border-top:1px dashed var(--line);padding-top:14px;margin-top:8px">
+        <label>分组权限（勾 = 可看该分组，不勾 = 隐藏该分组全部频道）<span style="color:var(--muted);font-size:12px"> — 等级行：未设置 = 默认允许；用户行：未设置 = <b>继承所属会员等级</b>（勾选框显示的就是实际生效值）。以后新增的分组默认可看（需要时再回来关）。用户仍需有 IPTV 栏目入口权限才能看到直播</span></label>
+        <table id="iPermTable"><thead><tr id="iPermHead"></tr></thead><tbody id="iPermBody"></tbody></table>
+      </div>
+      <h3 style="font-size:15px;color:var(--cyan);margin:20px 0 12px">② 节目单（EPG）设置 <span style="color:var(--muted);font-size:12px;font-weight:400">— 需配合上方 IPTV 开启才生效</span></h3>
+      <div class="field">
+        <label>启用节目单匹配（频道下方显示正在播/接下来）</label>
+        <label class="switch"><input type="checkbox" id="iEpgEn"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <label>节目单地址（xmltv 格式；⚠️ 若地址返回的是 M3U 清单则匹配不到节目）</label>
+        <input id="iEpg" placeholder="http://…/playback.xml">
+      </div>
+      <button class="btn primary" id="iSave">保存 IPTV 设置</button>
+      <button class="btn" id="iTest">测试清单拉取</button>
+      <button class="btn" id="iEpgTest">测试节目单</button>
+      <div id="iTestR" style="font-size:13px;color:var(--muted);margin-top:10px;min-height:18px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 栏目权限 弹窗 -->
+<div id="permModal">
+  <div class="box" style="width:430px">
+    <h3>栏目权限 · <span id="permUser"></span></h3>
+    <p style="color:var(--muted);font-size:12px;margin:0 0 12px">未勾选 = 禁止访问；管理员不受限。保存后用户刷新页面生效。</p>
+    <div id="permBoxes" style="display:flex;flex-wrap:wrap;gap:10px 14px"></div>
+    <div class="row2" style="margin-top:16px">
+      <button class="btn" id="permAll">全部勾选</button>
+      <button class="btn primary" id="permSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 管理员代改用户密码 弹窗 -->
+<div id="pwModal">
+  <div class="box">
+    <h3>修改 <span id="pwUser"></span> 的密码</h3>
+    <div class="field" style="margin-bottom:0"><label>新密码（至少 6 位）</label><input id="pwNew" type="password" placeholder="输入新密码"></div>
+    <div class="row2">
+      <button class="btn primary" id="pwSave">保存</button>
+      <button class="btn" id="pwCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 设置会员 弹窗 -->
+<div id="vipModal">
+  <div class="box" style="width:400px">
+    <h3>设置会员 · <span id="vipMUser"></span></h3>
+    <p style="color:var(--muted);font-size:12px;margin:0 0 12px">等级决定积分倍率与去广告特权（在「积分会员」页配置）。天数在<b>现有到期时间之上叠加</b>；填 0 = 永久；等级选「普通用户」= 取消会员。</p>
+    <div id="vipMCur" style="font-size:12px;padding:8px 12px;border-radius:10px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.3);margin-bottom:12px;color:var(--txt)"></div>
+    <div class="field"><label>会员等级</label><select id="vipMLv"></select></div>
+    <div class="field"><label>时长（天，0=永久）</label><input id="vipMDays" type="number" min="0" max="3650" placeholder="例如 30"></div>
+    <div class="row2">
+      <button class="btn primary" id="vipMSave">保存</button>
+      <button class="btn" id="vipMCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 调整积分 弹窗 -->
+<div id="ptsModal">
+  <div class="box" style="width:360px">
+    <h3>调整积分 · <span id="ptsMUser"></span></h3>
+    <p style="color:var(--muted);font-size:12px;margin:0 0 12px">后台手动调整为<b>精确到分</b>（不乘会员倍率）。正数增加、负数扣减，积分不会低于 0。</p>
+    <div class="field"><label>增减分数</label><input id="ptsMDelta" type="number" placeholder="例如 100 或 -50"></div>
+    <div class="row2">
+      <button class="btn primary" id="ptsMSave">保存</button>
+      <button class="btn" id="ptsMCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/admin.js"></script>
+</body>
+</html>

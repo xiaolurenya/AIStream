@@ -1,0 +1,14 @@
+# 运行期数据（配置/用户/收藏/历史/日志/图片缓存）——永远不要提交
+data/
+*.log
+logs.json
+users.json
+history.json
+fav.json
+config.json
+
+node_modules/
+.DS_Store
+Thumbs.db
+_sanitize*.py
+.env

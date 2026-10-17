@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>播放 · AIStream</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+<script src="/mobile.js"></script>
+</head>
+<body class="pbody">
+<!-- 顶栏：返回 + LED滚动条（后台可设文字/字号/速度/颜色） + 收藏 + AI PLAY -->
+<header class="ptop">
+  <div class="back" onclick="goHome()">← 返回首页</div>
+  <div class="ptitle" id="pTopTitle"></div>
+  <div class="led-bar hidden" id="ledBar"></div>
+  <button class="p-fav" id="pFav" onclick="toggleFav()">☆ 收藏</button>
+  <!-- v36：投屏（手机端自动显示，PC 端隐藏，不影响电脑端布局） -->
+  <button class="p-fav cast-btn" id="pCast">投屏</button>
+  <div class="p-live"><i></i>AI PLAY</div>
+</header>
+
+<div class="p-wrap">
+  <!-- 左：竖版信息条（海报+详情纵排） + 播放器 -->
+  <main class="p-main">
+    <div class="p-media">
+      <div class="side-poster" id="sidePoster"></div>
+      <div class="side-card" id="sideDetail"></div>
+
+      <div class="side-rec">
+        <h3>播放历史<a class="clr-link" id="pHistClr" style="float:none;display:inline-block">清空</a><a class="more" id="pHistMore" style="cursor:pointer">查看更多</a></h3>
+        <div id="pHist" class="hf-list"><div class="empty" style="padding:10px 0">加载中…</div></div>
+      </div>
+
+      <div class="side-rec">
+        <h3>我的收藏<a class="more" id="pFavMore" style="cursor:pointer">查看更多</a></h3>
+        <div id="pFavList" class="hf-list"><div class="empty" style="padding:10px 0">加载中…</div></div>
+      </div>
+    </div>
+
+    <div class="p-stagecol">
+      <div class="stage-frame">
+        <div class="stage-inner"><div id="stage"><div class="loader" style="height:100%"><div class="spin"></div></div></div></div>
+      </div>
+
+      <!-- 大搜索框：原防上当提示位置 -->
+      <div class="big-search">
+        <input id="bigQ" placeholder="搜索 电影 / 剧集 / 动漫，回车直达…">
+        <button class="btn primary" id="bigQBtn">搜 索</button>
+      </div>
+
+      <div class="speedbar hidden" id="speedbar"></div>
+
+      <div class="side-rec" style="margin-top:18px">
+        <h3>猜你喜欢</h3>
+        <div class="rec-grid" id="rec"><div class="empty" style="padding:16px 0">加载中…</div></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 右：选集（顶部） + 标题/简介/主演 -->
+  <aside class="p-side">
+    <div class="p-eps">
+      <div class="ep-rmk hidden" id="epRmk"></div>
+      <div class="eps-head"><h3>选集</h3><div class="seasons" id="seasons"></div></div>
+      <div class="eps-bar" id="epsBar"></div>
+      <div class="eps-grid" id="eps"><div class="empty" style="padding:30px 0">加载中…</div></div>
+    </div>
+
+    <div class="p-info">
+      <h1 id="ptitle">加载中…</h1>
+      <!-- v61：简介块 与 继续发现 同一位置轮播（10s/次，悬停暂停；手机端只显示简介不轮播） -->
+      <div class="p-rot" id="pRot">
+        <div class="p-rot-slide" id="pSlideInfo">
+          <div class="pmeta" id="pmeta"></div>
+          <div class="p-desc" id="pDesc"></div>
+          <div class="p-people" id="pActors"></div>
+        </div>
+        <div class="p-rot-slide p-rot-slide-b hidden" id="pSlideDiscover">
+          <div class="disc-head">
+            <span class="disc-ico">✦</span>
+            <div class="disc-tt"><b>继续发现</b><i>按这部演员、导演和类型，继续找能看的</i></div>
+          </div>
+          <div class="disc-chips" id="discChips"></div>
+        </div>
+        <div class="p-rot-dots" id="pRotDots"><i class="on"></i><i></i></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- v36：投屏设备选择 -->
+<div id="castModal" class="cast-modal hidden">
+  <div class="cm-box">
+    <div class="cm-head"><h3>📺 投屏到设备</h3><button class="cm-x" id="castClose">✕</button></div>
+    <div class="cm-tip" id="castTip">正在局域网内查找可投屏设备…</div>
+    <div class="cm-body" id="castList"><div class="empty" style="padding:18px 0">扫描中…</div></div>
+    <div class="cm-foot">
+      <button class="btn" id="castRescan">重新扫描</button>
+      <button class="btn" id="castManual">手动添加</button>
+      <button class="btn" id="castStop">停止投屏</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="/vendor/hls.min.js"></script>
+<script src="/vendor/artplayer.js"></script>
+<script src="/player.js"></script>
+</body>
+</html>

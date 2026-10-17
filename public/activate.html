@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>站点激活 · {{SITE_NAME}}</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%94%91%3C/text%3E%3C/svg%3E">
+<style>
+  /* v63d：激活页独立排版（不加载 app.js / player.js，只依赖这一页） */
+  html,body{height:100%}
+  body{margin:0;background:
+      radial-gradient(1100px 520px at 12% -8%,rgba(102,209,255,.16),transparent 60%),
+      radial-gradient(900px 500px at 92% 6%,rgba(198,155,255,.15),transparent 62%),
+      radial-gradient(800px 620px at 60% 108%,rgba(255,158,210,.12),transparent 60%),
+      #05070e;color:var(--txt);font-family:inherit;display:flex;align-items:center;justify-content:center;padding:26px 16px}
+  .act-wrap{width:100%;max-width:560px}
+  .act-card{position:relative;border:1px solid rgba(120,180,255,.18);border-radius:20px;padding:34px 32px 26px;
+    background:linear-gradient(180deg,rgba(16,20,38,.92),rgba(8,10,20,.94));
+    box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.03) inset}
+  .act-card::before{content:'';position:absolute;inset:0 0 auto;height:3px;border-radius:20px 20px 0 0;
+    background:linear-gradient(90deg,#66d1ff,#8ab4ff,#c69bff,#ff9ed2)}
+  .act-brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .act-logo{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:22px;
+    background:linear-gradient(135deg,rgba(102,209,255,.22),rgba(198,155,255,.22));border:1px solid rgba(120,180,255,.28)}
+  .act-name{font-size:19px;font-weight:800;letter-spacing:.3px;
+    background:linear-gradient(96deg,#fff,#9fe9ff 40%,#c69bff 72%,#ff9ed2);-webkit-background-clip:text;background-clip:text;
+    color:transparent;-webkit-text-fill-color:transparent}
+  .act-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .act-h{font-size:22px;font-weight:800;letter-spacing:.4px;margin:0 0 6px}
+  .act-desc{font-size:13px;color:var(--muted);line-height:1.75;margin:0 0 22px}
+  .act-sec{margin-bottom:16px}
+  .act-lab{font-size:12px;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .act-lab b{color:var(--cyan);font-weight:600}
+  .act-midbox{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:13px;
+    background:rgba(120,180,255,.07);border:1px solid rgba(120,180,255,.22)}
+  .act-mid{flex:1;font-size:17px;font-weight:700;letter-spacing:1.5px;color:#9fe9ff;
+    font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;user-select:all}
+  .act-copy{flex:0 0 auto;padding:7px 14px;border-radius:9px;border:1px solid rgba(120,180,255,.35);
+    background:rgba(102,209,255,.1);color:#9fe9ff;font-size:12px;cursor:pointer;transition:.15s}
+  .act-copy:hover{background:rgba(102,209,255,.22)}
+  .act-copy.done{color:#7ee0a8;border-color:rgba(126,224,168,.45);background:rgba(126,224,168,.12)}
+  textarea#actCode{width:100%;min-height:96px;box-sizing:border-box;resize:vertical;padding:12px 14px;border-radius:13px;
+    background:rgba(5,6,10,.6);border:1px solid rgba(120,180,255,.22);color:var(--txt);font-size:12.5px;line-height:1.7;
+    font-family:ui-monospace,Menlo,Consolas,monospace;outline:none;transition:.15s}
+  textarea#actCode:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(102,209,255,.14)}
+  textarea#actCode::placeholder{color:rgba(150,168,196,.5)}
+  .act-btn{width:100%;margin-top:4px;padding:13px;border:0;border-radius:13px;cursor:pointer;
+    font-size:15px;font-weight:700;letter-spacing:2px;color:#041018;
+    background:linear-gradient(90deg,#66d1ff,#8ab4ff 45%,#c69bff);transition:.18s}
+  .act-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .act-btn:disabled{opacity:.6;cursor:default;transform:none}
+  .act-msg{margin-top:12px;min-height:20px;font-size:13px;text-align:center}
+  .act-msg.err{color:#ff6b8a}
+  .act-msg.ok{color:#7ee0a8}
+  .act-contact{margin-top:18px;padding:14px 16px;border-radius:13px;white-space:pre-wrap;font-size:13px;line-height:1.85;
+    background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.26);color:#ffe6b0}
+  .act-contact .ct{display:flex;align-items:center;gap:7px;font-weight:700;margin-bottom:6px;color:#ffd166;font-size:12.5px}
+  .act-foot{margin-top:20px;padding-top:14px;border-top:1px dashed rgba(120,180,255,.16);
+    font-size:11.5px;color:var(--muted);text-align:center;line-height:1.8}
+  .act-foot a{color:var(--cyan);cursor:pointer}
+  .act-ok{margin-top:6px;text-align:center;padding:16px 10px}
+  .act-ok .ic{font-size:34px;line-height:1}
+  .act-ok .t1{font-size:17px;font-weight:800;margin-top:8px;color:#7ee0a8}
+  .act-ok .t2{font-size:12.5px;color:var(--muted);margin-top:6px}
+  @media (max-width:520px){
+    .act-card{padding:26px 20px 20px}
+    .act-h{font-size:19px}
+    .act-mid{font-size:15px;letter-spacing:1px}
+  }
+</style>
+</head>
+<body>
+<div class="act-wrap">
+  <div class="act-card" id="actCard">
+    <div class="act-brand">
+      <div class="act-logo">🔑</div>
+      <div>
+        <div class="act-name" id="actLogo">{{SITE_NAME}}</div>
+        <div class="act-sub">AI 智能影视聚合 · 站点授权</div>
+      </div>
+    </div>
+
+    <h1 class="act-h">本站点尚未激活</h1>
+    <p class="act-desc">填入授权码即可正常使用，<b style="color:var(--cyan)">不需要登录任何账号</b>。授权码与本机机器码绑定，一机一码。</p>
+
+    <div class="act-sec">
+      <div class="act-lab">① 复制下面的<b>本机机器码</b>，发给站长换取授权码</div>
+      <div class="act-midbox">
+        <code class="act-mid" id="actMid">读取中…</code>
+        <button class="act-copy" id="actCopy">复制</button>
+      </div>
+    </div>
+
+    <div class="act-sec" id="actContactSec" style="display:none">
+      <div class="act-lab">② 获取授权码</div>
+      <div class="act-contact" id="actContact"></div>
+    </div>
+
+    <div class="act-sec">
+      <div class="act-lab">③ 粘贴授权码后点激活</div>
+      <textarea id="actCode" placeholder="AIST-…" spellcheck="false"></textarea>
+      <button class="act-btn" id="actGo">激 活</button>
+      <div class="act-msg" id="actMsg"></div>
+    </div>
+
+    <div class="act-foot">
+      激活成功后会自动进入站点 · 若长时间无反应请<a id="actRefresh">刷新本页</a><br>
+      本站资源均来自第三方公开采集，仅供学习交流
+    </div>
+  </div>
+</div>
+<script src="/activate.js"></script>
+</body>
+</html>

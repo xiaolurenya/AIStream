@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{PAGE_TITLE}}</title>
+<!-- 国内访问 fonts.googleapis.com 会长时间阻塞加载，已移除改用系统字体 -->
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+<script src="/mobile.js"></script>
+</head>
+<body>
+<!-- 登录门禁：未登录时本页源码只有登录框，全部功能结构由 app.js 登录后动态注入 -->
+<!-- {{SITE_NAME}} / {{GATE_SUB}} 由服务端按后台配置输出 -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="logo" id="gateLogo">{{SITE_NAME}}</div>
+    <p>{{GATE_SUB}}</p>
+    <div class="err" id="gateErr"></div>
+    <input id="gUser" placeholder="用户名" autocomplete="username">
+    <input id="gPass" type="password" placeholder="密码" autocomplete="current-password">
+    <button class="btn primary" id="gLogin">登 录</button>
+    <div class="gate-foot" id="gateFoot">
+      <span>还没有账号？</span><a id="gRegLink">注册新账号</a>
+    </div>
+    <div id="gReg" class="hidden">
+      <input id="gRegUser" placeholder="用户名（2-20 位，中文/字母/数字）">
+      <input id="gRegPass" type="password" placeholder="密码（至少 6 位）" autocomplete="new-password">
+      <input id="gRegPass2" type="password" placeholder="确认密码" autocomplete="new-password">
+      <input id="gRegInvite" placeholder="邀请码（选填，填了对双方都得积分）" autocomplete="off">
+      <button class="btn primary" id="gRegBtn">注 册</button>
+      <div class="gate-foot"><span>已有账号？</span><a id="gBackLogin">返回登录</a></div>
+    </div>
+  </div>
+</div>
+<div id="root"></div>
+<div id="toast"></div>
+<script>/* 保险：本地无 token 直接跳极简登录页，避免拿到完整 app 壳却没登录（服务端已按会话 cookie 门禁，这里是双保险） */
+if(!localStorage.getItem('aistream_token'))location.replace('/gate.html');</script>
+<script src="/app.js"></script>
+</body>
+</html>
