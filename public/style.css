@@ -1067,9 +1067,15 @@ html.is-mobile .cast-btn{display:inline-flex;align-items:center}
    想切集/返回就转回竖屏，或用 APP 右上角 ⚙ 菜单。 */
 @media (orientation: landscape) and (pointer: coarse) and (max-height: 520px){
   body.pbody{overflow:hidden}
+  /* 光给 body 设 overflow 锁不住：滚动条在 html 上（实测还能滚 59px）——
+     :has 支持的浏览器直接锁死；不支持的旧 WebView 会忽略这条，退化为按 body 裁剪，不影响看片 */
+  html:has(body.pbody){overflow:hidden}
   .ptop,.antiscam,.p-media,.side-poster,.side-card,.side-rec,.big-search,
   .p-side,.p-eps,.p-info{display:none}
   .p-wrap{grid-template-columns:1fr;gap:0;margin:0;padding:0;max-width:none}
+  /* style.css 里 html.is-mobile .p-wrap 给手机留了 12px 外边距/内边距，特异性比 .p-wrap 高，
+     影院模式要一起清掉，否则画面左右各留 12px 黑边、铺不满屏 */
+  html.is-mobile .p-wrap{padding:0;margin:0;max-width:none}
   .p-main{grid-template-columns:1fr;gap:0}
   .p-stagecol{margin:0;min-width:0}
   .stage-frame{padding:0;border-radius:0;background:none;box-shadow:none;animation:none}
