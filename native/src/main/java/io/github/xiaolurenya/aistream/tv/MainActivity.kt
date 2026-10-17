@@ -1,0 +1,61 @@
+package io.github.xiaolurenya.aistream.tv
+
+import android.content.Intent
+import android.os.Bundle
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomnavigation.BottomNavigationView
+
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // 没配过站点（或清过凭证）直接回配置页
+        if (!Prefs.configured) {
+            startActivity(Intent(this, SetupActivity::class.java))
+            finish()
+            return
+        }
+
+        setContentView(R.layout.activity_main)
+
+        val pager = findViewById<ViewPager2>(R.id.pager)
+        val nav = findViewById<BottomNavigationView>(R.id.nav)
+        val tvTitle = findViewById<TextView>(R.id.tvTitle)
+        val tvUser = findViewById<TextView>(R.id.tvUser)
+
+        tvTitle.text = Prefs.siteName.ifBlank { getString(R.string.app_name) }
+        tvUser.text = Prefs.user
+
+        // 只允许底部导航切页：页面里还有横向栏目，左右滑动翻页会和它们抢手势
+        pager.isUserInputEnabled = false
+        pager.adapter = object : FragmentStateAdapter(this) {
+            override fun getItemCount() = 4
+            override fun createFragment(pos: Int) = when (pos) {
+                0 -> HomeFragment()
+                1 -> SearchFragment()
+                2 -> FavFragment()
+                else -> HistoryFragment()
+            }
+        }
+
+        nav.setOnItemSelectedListener {
+            pager.currentItem = when (it.itemId) {
+                R.id.nav_home -> 0
+                R.id.nav_search -> 1
+                R.id.nav_fav -> 2
+                else -> 3
+            }
+            true
+        }
+
+        findViewById<TextView>(R.id.btnSetup).setOnClickListener {
+            Prefs.token = ""
+            startActivity(Intent(this, SetupActivity::class.java))
+            finish()
+        }
+    }
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF0B0D14</color>
+    <color name="bg_card">#FF141926</color>
+    <color name="bg_card2">#FF1B2233</color>
+    <color name="fg">#FFE8ECF3</color>
+    <color name="fg_dim">#FF9AA6BD</color>
+    <color name="fg_weak">#FF6B7A93</color>
+    <color name="accent">#FF2F6FED</color>
+    <color name="accent_soft">#FF7ECBFF</color>
+    <color name="danger">#FFFF9AA5</color>
+    <color name="line">#26FFFFFF</color>
+    <color name="chip_off">#FF232C3D</color>
+</resources>

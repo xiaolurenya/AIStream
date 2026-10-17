@@ -1,0 +1,50 @@
+name: Android APK (Native)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'native/**'
+      - '.github/workflows/android-native.yml'
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # 发 Release 时要把 APK 挂上去
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build debug APK
+        run: gradle -p native assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: mv native/build/outputs/apk/debug/*.apk AIStream-Native.apk
+
+      - name: Upload APK (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AIStream-Native-APK
+          path: AIStream-Native.apk
+
+      # 只在「发 Release」时执行：把 APK 挂到刚发布的版本上，别人不用登录就能下载
+      # 资产名固定为 AIStream-Native.apk -> README 里 releases/latest/download 直链永远有效
+      - name: Attach APK to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AIStream-Native.apk
