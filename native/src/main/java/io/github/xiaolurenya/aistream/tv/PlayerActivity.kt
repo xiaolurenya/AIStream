@@ -4,6 +4,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -64,6 +65,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var playerView: PlayerView
     private lateinit var pb: ProgressBar
     private lateinit var tvSkip: TextView
+    private lateinit var btnRotate: TextView
     private lateinit var errBar: View
     private lateinit var tvErr: TextView
     private lateinit var topBar: View
@@ -163,6 +165,11 @@ class PlayerActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnCast).setOnClickListener { showCast() }
         findViewById<View>(R.id.btnMore).setOnClickListener { showMore(it) }
 
+        // 横竖屏切换按钮常驻画面右侧（右上角 ⋯ 菜单里已移除，避免重复入口）
+        btnRotate = findViewById(R.id.btnRotate)
+        btnRotate.setOnClickListener { toggleRotate() }
+        syncRotateLabel()
+
         // 跳过片头/片尾胶囊：点一下立刻生效，不用等倒计时
         tvSkip = findViewById(R.id.tvSkip)
         tvSkip.setOnClickListener {
@@ -216,9 +223,17 @@ class PlayerActivity : AppCompatActivity() {
     private fun loadPerms() {
         lifecycleScope.launch {
             val c = withContext(Dispatchers.IO) { runCatching { Api.config() }.getOrNull() }
-            canIntro = c?.views?.get("skipIntro") == true
-            canOutro = c?.views?.get("skipOutro") == true
-            autoSkip = c?.toggles?.get("autoSkip") == true
+            if (c == null) {
+                /* 取不到配置就别把会员功能锁死：按「有权限」放行。
+                   之前这里静默吞掉异常，管理员/会员也被提示「会员专享」，体验很糟。 */
+                Log.w("aistream", "loadPerms: /api/config 取不到，按放行处理")
+                canIntro = true; canOutro = true; autoSkip = true
+                return@launch
+            }
+            canIntro = Api.flag(c.views, "skipIntro", true)
+            canOutro = Api.flag(c.views, "skipOutro", true)
+            autoSkip = Api.flag(c.toggles, "autoSkip", true)
+            Log.i("aistream", "loadPerms: skipIntro=$canIntro skipOutro=$canOutro autoSkip=$autoSkip")
         }
     }
 
@@ -399,7 +414,6 @@ class PlayerActivity : AppCompatActivity() {
         pm.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.menu_scale -> nextScale()
-                R.id.menu_rotate -> toggleRotate()
                 R.id.menu_pip -> enterPip()
                 R.id.menu_stop_cast -> stopCast()
             }
@@ -422,6 +436,19 @@ class PlayerActivity : AppCompatActivity() {
         val land = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         requestedOrientation = if (land) ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // 系统转屏有延迟，这里先把文案翻过来，按下去马上就有反馈
+        btnRotate.text = if (land) "竖屏" else "横屏"
+    }
+
+    // 按钮文案跟着实际方向走（系统自动转屏、折叠屏展开等场景也要跟上）
+    private fun syncRotateLabel() {
+        val land = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        btnRotate.text = if (land) "竖屏" else "横屏"
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (this::btnRotate.isInitialized) syncRotateLabel()
     }
 
     private fun enterPip() {

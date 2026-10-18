@@ -4,9 +4,6 @@
         android:id="@+id/menu_scale"
         android:title="画面比例" />
     <item
-        android:id="@+id/menu_rotate"
-        android:title="旋转屏幕" />
-    <item
         android:id="@+id/menu_pip"
         android:title="画中画" />
     <item

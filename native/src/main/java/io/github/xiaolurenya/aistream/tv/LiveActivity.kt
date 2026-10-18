@@ -3,6 +3,8 @@ package io.github.xiaolurenya.aistream.tv
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -13,6 +15,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -26,13 +31,33 @@ class LiveActivity : AppCompatActivity() {
     private var scaleIdx = 0
     private var idx = 0
     private var ready = false
-    private var viaProxy = 0      // 0=直连源站 1=走站点 /api/iptv/px 代理（直连失败时兜底）
+
+    /* 取流三档兜底：
+       0 = 直连源站（服务端 /api/iptv/stream 只把清单补成绝对地址，流量不过 NAS，最快）
+       1 = 服务端代拉（/api/iptv/px 把 master→variant→ts 全包进代理，手机到不了源时靠它）
+       2 = 换下一个频道（源本身挂了，跟网页版一样自动顺延） */
+    private var stage = 0
+    private var autoSw = 0
+
     private var curCid = ""
+    private var curDirect = false
+
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
     private lateinit var pb: ProgressBar
     private lateinit var tvTitle: TextView
     private lateinit var tvErr: TextView
+    private val ui = Handler(Looper.getMainLooper())
+
+    /* 看门狗：有些源握手成功后就挂在那儿不动，既不报错也不出画面，
+       ExoPlayer 自己不会超时（尤其是分片被边写边读时），这里到点就自己往上抬一档 */
+    private val watchdog = object : Runnable {
+        override fun run() {
+            if (!ready) return
+            val st = player.playbackState
+            if (st == Player.STATE_BUFFERING || st == Player.STATE_IDLE) escalate("连接超时")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +75,12 @@ class LiveActivity : AppCompatActivity() {
         val httpFactory = DefaultHttpDataSource.Factory()
             .setUserAgent(Api.UA)
             .setAllowCrossProtocolRedirects(true)
+            // ⚠️ 关键：ExoPlayer 默认的连接/读取超时都只有 8 秒。
+            // 直播源（尤其境外台、冷门源）拉一个分片动辄十几秒（实测翡翠台 14s、CCTV13 30s+），
+            // 8 秒一到直接抛 Source error —— 这就是「网页版能播、APP 播不了」的主因，
+            // 因为网页是浏览器在拉流，没有这条 8 秒硬限制。这里放宽到 15s / 30s。
+            .setConnectTimeoutMs(15000)
+            .setReadTimeoutMs(30000)
             .setDefaultRequestProperties(mapOf("Accept" to "*/*"))
 
         player = ExoPlayer.Builder(this)
@@ -61,24 +92,19 @@ class LiveActivity : AppCompatActivity() {
         playerView.setShowNextButton(false)
         playerView.setShowPreviousButton(false)
 
-        player.addListener(object : androidx.media3.common.Player.Listener {
+        player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == androidx.media3.common.Player.STATE_READY) pb.visibility = View.GONE
+                if (state == Player.STATE_READY) {
+                    pb.visibility = View.GONE
+                    // 出画面了就认定这一档可用，后面再出错从头开始爬
+                    autoSw = 0
+                    ui.removeCallbacks(watchdog)
+                }
             }
 
-            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                // 直连播不动先别报错：不少直播源只认服务端出网（浏览器直连一样黑屏），
-                // 自动切到站点代理通道再试一次，两次都挂才认输
-                if (curCid.isNotBlank() && viaProxy == 0) {
-                    viaProxy = 1
-                    pb.visibility = View.VISIBLE
-                    tvErr.visibility = View.GONE
-                    play()
-                    return
-                }
-                pb.visibility = View.GONE
-                tvErr.text = "这个频道播不出来：" + (error.message ?: "") + "\n换个台或稍后再试"
-                tvErr.visibility = View.VISIBLE
+            override fun onPlayerError(error: PlaybackException) {
+                ui.removeCallbacks(watchdog)
+                escalate(error.message ?: "源不可用")
             }
         })
 
@@ -111,10 +137,12 @@ class LiveActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        ui.removeCallbacks(watchdog)
         if (ready) runCatching { player.pause() }
     }
 
     override fun onDestroy() {
+        ui.removeCallbacks(watchdog)
         if (ready) runCatching { player.release() }
         ready = false
         super.onDestroy()
@@ -126,24 +154,78 @@ class LiveActivity : AppCompatActivity() {
         val names = list.map { it.name.orEmpty() }.toTypedArray()
         AlertDialog.Builder(this)
             .setTitle("切换频道")
-            .setItems(names) { _, w -> idx = w; PlayCache.iptvIndex = w; viaProxy = 0; play() }
+            .setItems(names) { _, w ->
+                idx = w; PlayCache.iptvIndex = w
+                stage = 0; autoSw = 0
+                play()
+            }
             .show()
+    }
+
+    // 上一档不行就往上抬；三档都走完才认输
+    private fun escalate(reason: String) {
+        if (curCid.isBlank()) { showErr(reason); return }
+        when (stage) {
+            0 -> {
+                stage = 1
+                pb.visibility = View.VISIBLE
+                tvErr.visibility = View.GONE
+                toast("直连不通，改用服务端代理重试…")
+                play()
+            }
+            1 -> {
+                val total = PlayCache.iptv.size
+                if (total > 1 && autoSw < 3) {
+                    autoSw++
+                    val from = PlayCache.iptv.getOrNull(idx)?.name.orEmpty()
+                    idx = (idx + 1) % total
+                    PlayCache.iptvIndex = idx
+                    stage = 0
+                    pb.visibility = View.VISIBLE
+                    tvErr.visibility = View.GONE
+                    toast("「$from」源不可用，自动切换下一个（$autoSw/3）")
+                    play()
+                } else showErr(reason)
+            }
+            else -> showErr(reason)
+        }
+    }
+
+    private fun showErr(reason: String) {
+        pb.visibility = View.GONE
+        tvErr.text = "这个频道播不出来：\n$reason\n\n点左下角「换台」手动挑一个，或稍后再试"
+        tvErr.visibility = View.VISIBLE
     }
 
     private fun play() {
         val c = PlayCache.iptv.getOrNull(idx)
-        if (c == null) {
-            tvErr.text = "没有这个频道"
-            tvErr.visibility = View.VISIBLE
-            return
-        }
+        if (c == null) { showErr("没有这个频道"); return }
         curCid = c.cid.orEmpty()
-        tvTitle.text = c.name.orEmpty()
+        curDirect = c.direct
+        tvTitle.text = c.name.orEmpty() + if (stage >= 1) "（代理）" else ""
         tvErr.visibility = View.GONE
         pb.visibility = View.VISIBLE
-        val url = if (viaProxy == 1) Api.iptvStreamPx(curCid) else Api.iptvStream(curCid)
-        player.setMediaItem(MediaItem.fromUri(url))
+
+        val url = if (stage >= 1) Api.iptvStreamPx(curCid) else Api.iptvStream(curCid)
+
+        /* ⚠️ 第二个坑：/api/iptv/stream?ch=xxx 这种地址没有 .m3u8 后缀。
+           ExoPlayer 是「按 URI 后缀推断内容类型」的，没后缀就会被当成普通视频文件
+           交给 ProgressiveMediaSource 去解，结果拿一份文本清单去抽帧 → Source error。
+           而网页端是显式 new Hls() 再 loadSource，不靠后缀，所以网页能播 APP 不能播。
+           这里对非直连频道显式声明是 HLS 清单。直连频道是 mp4/mkv 流，留给 ExoPlayer 嗅探。 */
+        val b = MediaItem.Builder().setUri(url)
+        if (!curDirect) b.setMimeType(MimeTypes.APPLICATION_M3U8)
+
+        runCatching { player.stop() }
+        player.setMediaItem(b.build())
         player.prepare()
         player.playWhenReady = true
+
+        // 25 秒还没出画面就当这档失败，往上抬一档
+        ui.removeCallbacks(watchdog)
+        ui.postDelayed(watchdog, 25000)
     }
+
+    private fun toast(s: String) =
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 }
