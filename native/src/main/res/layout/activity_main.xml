@@ -53,7 +53,7 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="64dp"
         android:background="@color/bg_card"
         app:itemIconTint="@color/nav_item"
         app:itemTextColor="@color/nav_item"

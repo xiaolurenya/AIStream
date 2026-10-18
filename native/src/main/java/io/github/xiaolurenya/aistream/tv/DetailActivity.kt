@@ -37,6 +37,9 @@ class DetailActivity : AppCompatActivity() {
         // 加载遮罩的最长等待秒数：官方 + 采集都到位会提前进，到点还没齐就用手里有的
         private const val WAIT_SEC = 10
 
+        // 选集分页：单页最多 24 集，多出来的自动收纳成下一页（上一页/下一页翻）
+        private const val EP_PAGE = 24
+
         /* 详情页线路缓存：同一部片第一次进才等遮罩，之后直接用缓存渲染（不再挡屏），
            线路在后台静默刷新。LRU 只留最近 12 部、10 分钟内有效，进程重启自然清空。 */
         private class CacheEntry(
@@ -87,6 +90,7 @@ class DetailActivity : AppCompatActivity() {
     private var lineIdx = 0
     private var parseIdx = 0
     private var epIdx = 0
+    private var epPage = 0
 
     private lateinit var rvLines: RecyclerView
     private lateinit var rvEps: RecyclerView
@@ -128,6 +132,15 @@ class DetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvMeta).text = year
         val u = Api.dimg(inPoster)
         if (u.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(u)
+        loadBackdrop(u)
+
+        // 选集分页按钮：翻页只重挂当前页的 adapter，不动 epIdx
+        findViewById<TextView>(R.id.btnEpPrev).setOnClickListener {
+            if (epPage > 0) { epPage--; paintEps() }
+        }
+        findViewById<TextView>(R.id.btnEpNext).setOnClickListener {
+            epPage++; paintEps()
+        }
 
         rvLines.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvParse.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -387,6 +400,8 @@ class DetailActivity : AppCompatActivity() {
                 .joinToString(" · ")
         val pu = Api.dimg(r.poster)
         if (pu.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(pu)
+        loadBackdrop(pu)
+        epPage = 0
         tvPlot.text = buildString {
             append(if (r.plot.isBlank()) "这部片子没有更多介绍。" else r.plot)
             // 演员/导演：上游 detail 不给，采集路数给了就拼上
@@ -417,6 +432,8 @@ class DetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvMeta).text = r.meta
         val pu = Api.dimg(r.poster)
         if (pu.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(pu)
+        loadBackdrop(pu)
+        epPage = 0
         tvPlot.text = if (r.plot.isBlank()) "这部片子没有更多介绍。" else r.plot
         paint()
     }
@@ -431,6 +448,7 @@ class DetailActivity : AppCompatActivity() {
         rvLines.adapter = ChipAdapter(names, { lineIdx }, wrap = true) { i ->
             lineIdx = i
             epIdx = 0
+            epPage = 0
             rvLines.adapter?.notifyDataSetChanged()
             paintEps()
         }
@@ -452,6 +470,7 @@ class DetailActivity : AppCompatActivity() {
         rvLines.adapter = ChipAdapter(names, { if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1 }, wrap = true) { i ->
             PlayCache.upSkip = if (i == 0) 0 else i - 1
             epIdx = 0
+            epPage = 0
             rvLines.adapter?.notifyDataSetChanged()
             paintEps()
         }
@@ -482,12 +501,52 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun paintEps() {
-        val names: List<String> = if (PlayCache.isUp)
+        val all: List<String> = if (PlayCache.isUp)
             PlayCache.upEps.mapIndexed { i, e -> Api.epName(e, i) }
         else lines[lineIdx].eps.mapIndexed { i, e -> e.name ?: "第${i + 1}集" }
-        rvEps.adapter = ChipAdapter(names, { epIdx }) { i ->
-            epIdx = i
+
+        // 不超过一页就照旧整列；超了自动收纳成分页（每页 24 集），上一页/下一页翻
+        val row = findViewById<View>(R.id.epPageRow)
+        if (all.size <= EP_PAGE) {
+            row.visibility = View.GONE
+            rvEps.adapter = ChipAdapter(all, { epIdx }) { i ->
+                epIdx = i
+                startPlayer()
+            }
+            return
+        }
+
+        val pages = ((all.size + EP_PAGE - 1) / EP_PAGE)
+        if (epPage >= pages) epPage = pages - 1
+        val page = epPage.coerceAtLeast(0)
+        val slice = all.drop(page * EP_PAGE).take(EP_PAGE)
+
+        row.visibility = View.VISIBLE
+        findViewById<TextView>(R.id.tvEpPage).text = "第 ${page + 1}/$pages 页 · 共 ${all.size} 集"
+        val hasPrev = page > 0
+        val hasNext = page < pages - 1
+        val prev = findViewById<TextView>(R.id.btnEpPrev)
+        val next = findViewById<TextView>(R.id.btnEpNext)
+        prev.isEnabled = hasPrev
+        next.isEnabled = hasNext
+        prev.alpha = if (hasPrev) 1f else 0.4f
+        next.alpha = if (hasNext) 1f else 0.4f
+
+        rvEps.adapter = ChipAdapter(slice, { epIdx - page * EP_PAGE }) { i ->
+            epIdx = page * EP_PAGE + i
             startPlayer()
+        }
+    }
+
+    /* 详情页整页海报背景：选集区透出本片海报（API31+ 加磨砂模糊，低版本不糊但能显示） */
+    private fun loadBackdrop(u: String) {
+        val iv = findViewById<ImageView>(R.id.ivBackdrop)
+        if (u.isBlank()) { iv.setImageDrawable(null); return }
+        iv.load(u)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            iv.setRenderEffect(
+                android.graphics.RenderEffect.createBlurEffect(22f, 22f, android.graphics.Shader.TileMode.CLAMP)
+            )
         }
     }
 
