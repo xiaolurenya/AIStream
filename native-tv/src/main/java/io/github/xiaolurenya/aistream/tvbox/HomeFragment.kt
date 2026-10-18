@@ -50,7 +50,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var picks = listOf<Api.Card>()
     private var cur = 0
     private var tabIdx = 0          // 顶部分类栏当前选中（0 = 首页）
-    private var cols = listOf<Api.Column>()
+    private var homeCols = listOf<Api.Column>()
 
     // 直播预览小窗
     private var pvPlayer: ExoPlayer? = null
@@ -114,7 +114,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
                 val first = lm.findFirstCompletelyVisibleItemPosition()
                 if (first < 0) return
-                if (first in cols.indices && first + 1 != tabIdx) {
+                if (first in homeCols.indices && first + 1 != tabIdx) {
                     tabIdx = first + 1
                     rvTabs.adapter?.notifyDataSetChanged()
                 }
@@ -195,7 +195,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
             // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
             val keep = cols.filter { !it.items.isNullOrEmpty() }
-            cols = keep
+            homeCols = keep
             adapter.submit(keep)
             paintTabs()
 
@@ -237,12 +237,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     /* 顶部分类栏：「首页」+ 各栏目名。点栏目滚到那一行，点首页回顶。 */
     private fun paintTabs() {
-        val names = listOf("首页") + cols.map { it.label.orEmpty().ifBlank { "栏目" } }
+        val names = listOf("首页") + homeCols.map { it.label.orEmpty().ifBlank { "栏目" } }
         rvTabs.adapter = ChipAdapter(names, { tabIdx }, wrap = true) { i ->
             tabIdx = i
             if (i == 0) rv.smoothScrollToPosition(0)
             else {
-                val pos = (i - 1).coerceIn(0, (cols.size - 1).coerceAtLeast(0))
+                val pos = (i - 1).coerceIn(0, (homeCols.size - 1).coerceAtLeast(0))
                 rv.smoothScrollToPosition(pos)
             }
         }
