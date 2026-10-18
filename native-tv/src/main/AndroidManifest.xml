@@ -55,6 +55,11 @@
             android:name=".DetailActivity"
             android:screenOrientation="landscape" />
 
+        <!-- 顶部分类标签点进来：该栏目的海报网格（对应界面到前面） -->
+        <activity
+            android:name=".CategoryActivity"
+            android:screenOrientation="landscape" />
+
         <!-- TV 版不要旋转、不要画中画：横屏固定 + 不声明 supportsPictureInPicture -->
         <activity
             android:name=".PlayerActivity"

@@ -31,16 +31,25 @@ class MeFragment : Fragment(R.layout.fragment_me) {
         val btnRedeem = v.findViewById<TextView>(R.id.btnRedeem)
         val btnSwitch = v.findViewById<TextView>(R.id.btnSwitch)
         val btnHero = v.findViewById<TextView>(R.id.btnHero)
+        val btnMute = v.findViewById<TextView>(R.id.btnMute)
         bindFocus(btnCheckin) { has -> btnCheckin.alpha = if (has) 1f else 0.9f }
         bindFocus(btnRedeem) { has -> btnRedeem.alpha = if (has) 1f else 0.9f }
         bindFocus(btnSwitch) { has -> btnSwitch.alpha = if (has) 1f else 0.9f }
         bindFocus(btnHero) { has -> btnHero.alpha = if (has) 1f else 0.9f }
+        bindFocus(btnMute) { has -> btnMute.alpha = if (has) 1f else 0.9f }
 
         btnHero.text = heroText()
         btnHero.setOnClickListener {
             Prefs.heroLive = !Prefs.heroLive
             btnHero.text = heroText()
             toast(if (Prefs.heroLive) "首页打开就播直播了" else "首页打开显示海报了")
+        }
+
+        btnMute.text = muteText()
+        btnMute.setOnClickListener {
+            Prefs.iptvMute = !Prefs.iptvMute
+            btnMute.text = muteText()
+            toast(if (Prefs.iptvMute) "直播小窗已静音" else "直播小窗恢复有声")
         }
 
         btnCheckin.setOnClickListener { doCheckin() }
@@ -76,6 +85,9 @@ class MeFragment : Fragment(R.layout.fragment_me) {
 
     private fun heroText(): String =
         if (Prefs.heroLive) "首页打开时：直播" else "首页打开时：海报"
+
+    private fun muteText(): String =
+        if (Prefs.iptvMute) "直播小窗：静音" else "直播小窗：有声"
 
     private fun toast(s: String) =
         Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show()

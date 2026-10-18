@@ -27,6 +27,7 @@ import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import coil.transform.BlurTransformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,6 +101,12 @@ class PlayerActivity : AppCompatActivity() {
         val bgPoster = findViewById<ImageView>(R.id.bgPoster)
         val pu = Api.dimg(PlayCache.poster)
         if (pu.isNotBlank()) bgPoster.load(pu)
+
+        // 选集面板背景 = 同一张海报，但加玻璃磨砂（模糊 + 遮罩），海报透出来一点不晃眼
+        val epBg = findViewById<ImageView>(R.id.epBg)
+        if (pu.isNotBlank()) epBg.load(pu) {
+            transformations(BlurTransformation(this@PlayerActivity, 18f, 1.5f))
+        }
         pb = findViewById(R.id.pb)
         tvErr = findViewById(R.id.tvErr)
         tvTitle = findViewById(R.id.tvTitle)

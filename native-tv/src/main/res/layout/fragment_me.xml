@@ -94,6 +94,20 @@
             android:textColor="@color/fg"
             android:textSize="17sp" />
 
+        <TextView
+            android:id="@+id/btnMute"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="14dp"
+            android:background="@drawable/bg_chip"
+            android:gravity="center"
+            android:paddingStart="30dp"
+            android:paddingEnd="30dp"
+            android:text="直播小窗：有声"
+            android:textColor="@color/fg"
+            android:textSize="17sp" />
+
     </LinearLayout>
 
     <TextView

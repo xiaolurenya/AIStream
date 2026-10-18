@@ -56,6 +56,9 @@ object PlayCache {
     // 节目单（EPG）：cid -> 当前/下一档节目，随 /api/iptv 一起回来
     var iptvEpg: Map<String, Api.EpgNow> = emptyMap()
 
+    // 首页栏目（已过滤空栏目）：顶部分类标签点进来弹该栏目的海报网格时直接复用，不重复请求
+    var homeCols: List<Api.Column> = emptyList()
+
     fun parseUrl(): String = parseList.getOrNull(parseIndex)?.url.orEmpty()
 
     var title: String = ""

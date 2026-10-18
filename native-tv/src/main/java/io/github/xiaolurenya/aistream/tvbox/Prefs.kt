@@ -54,6 +54,11 @@ object Prefs {
         get() = sp.getBoolean("hero_live", false)
         set(v) { sp.edit().putBoolean("hero_live", v).apply() }
 
+    // IPTV 直播（首页小窗 + 全屏直播页）静音：true = 静音，false = 有声（默认）
+    var iptvMute: Boolean
+        get() = sp.getBoolean("iptv_mute", false)
+        set(v) { sp.edit().putBoolean("iptv_mute", v).apply() }
+
     val configured: Boolean
         get() = base.isNotBlank() && token.isNotBlank()
 

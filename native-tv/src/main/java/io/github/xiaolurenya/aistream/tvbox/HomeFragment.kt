@@ -202,6 +202,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
             val keep = cols.filter { !it.items.isNullOrEmpty() }
             homeCols = keep
+            // 供顶部分类标签点进来弹该栏目的海报网格复用（不需要再请求一次首页）
+            PlayCache.homeCols = keep
             adapter.submit(keep)
             paintTabs()
 
@@ -241,15 +243,16 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    /* 顶部分类栏：「首页」+ 各栏目名。点栏目滚到那一行，点首页回顶。 */
+    /* 顶部分类栏：「首页」+ 各栏目名。
+       点「首页」回顶；点某个栏目 = 弹出该栏目的海报网格（对应界面到前面），挑一张进详情。 */
     private fun paintTabs() {
         val names = listOf("首页") + homeCols.map { it.label.orEmpty().ifBlank { "栏目" } }
         rvTabs.adapter = ChipAdapter(names, { tabIdx }, wrap = true) { i ->
             tabIdx = i
             if (i == 0) rv.smoothScrollToPosition(0)
             else {
-                val pos = (i - 1).coerceIn(0, (homeCols.size - 1).coerceAtLeast(0))
-                rv.smoothScrollToPosition(pos)
+                val idx = (i - 1).coerceIn(0, (homeCols.size - 1).coerceAtLeast(0))
+                CategoryActivity.open(requireContext(), idx)
             }
         }
     }
@@ -403,6 +406,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val b = MediaItem.Builder().setUri(url)
         // 跟直播页同一个坑：/api/iptv/stream 没 .m3u8 后缀，必须显式声明 HLS
         if (!pvDirect) b.setMimeType(MimeTypes.APPLICATION_M3U8)
+        // 直播小窗静音开关（设置里控制）：直接调播放器音量，0 = 静音
+        p.volume = if (Prefs.iptvMute) 0f else 1f
         runCatching { p.stop() }
         p.setMediaItem(b.build())
         p.prepare()

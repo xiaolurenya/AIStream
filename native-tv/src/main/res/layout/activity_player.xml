@@ -244,76 +244,97 @@
         android:textSize="16sp"
         android:visibility="gone" />
 
-    <!-- 选集面板：按「选集」从右边滑出来，遥控器左右键进去挑集 -->
-    <LinearLayout
+    <!-- 选集面板：按「选集」从右边滑出来，遥控器左右键进去挑集。
+         背景 = 当前片子海报 + 玻璃磨砂（模糊 + 半透明品牌色遮罩），海报透出来一点但不晃眼 -->
+    <FrameLayout
         android:id="@+id/epPanel"
         android:layout_width="380dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        android:background="#F20C1F3F"
-        android:orientation="vertical"
-        android:paddingStart="18dp"
-        android:paddingTop="24dp"
-        android:paddingEnd="18dp"
         android:visibility="gone">
 
-        <!-- 选集面板标题行 + 翻页（上百集一页放不下，◀ ▶ 翻） -->
+        <!-- 海报背景（模糊）：铺满面板，磨砂感主要靠它 -->
+        <ImageView
+            android:id="@+id/epBg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/app_name"
+            android:scaleType="centerCrop" />
+
+        <!-- 玻璃磨砂遮罩：半透明品牌色压一层，海报若隐若现且文字清晰 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#B30C1F3F" />
+
+        <!-- 内容层：透明，压在海报+遮罩之上 -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingBottom="12dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="18dp">
 
-            <TextView
-                android:layout_width="0dp"
+            <!-- 选集面板标题行 + 翻页（上百集一页放不下，◀ ▶ 翻） -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/label_episodes"
-                android:textColor="@color/fg"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="12dp">
 
-            <TextView
-                android:id="@+id/btnPrevPage"
-                style="@style/AIStream.FocusItem"
-                android:layout_width="44dp"
-                android:layout_height="36dp"
-                android:background="@drawable/bg_chip"
-                android:gravity="center"
-                android:text="◀"
-                android:textColor="@color/fg"
-                android:textSize="15sp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/label_episodes"
+                    android:textColor="@color/fg"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvPageInfo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:textColor="@color/fg_dim"
-                android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/btnPrevPage"
+                    style="@style/AIStream.FocusItem"
+                    android:layout_width="44dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_chip"
+                    android:gravity="center"
+                    android:text="◀"
+                    android:textColor="@color/fg"
+                    android:textSize="15sp" />
 
-            <TextView
-                android:id="@+id/btnNextPage"
-                style="@style/AIStream.FocusItem"
-                android:layout_width="44dp"
-                android:layout_height="36dp"
-                android:background="@drawable/bg_chip"
-                android:gravity="center"
-                android:text="▶"
-                android:textColor="@color/fg"
-                android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/tvPageInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/btnNextPage"
+                    style="@style/AIStream.FocusItem"
+                    android:layout_width="44dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_chip"
+                    android:gravity="center"
+                    android:text="▶"
+                    android:textColor="@color/fg"
+                    android:textSize="15sp" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvEps"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="never" />
 
         </LinearLayout>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvEps"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:overScrollMode="never" />
-
-    </LinearLayout>
+    </FrameLayout>
 
 </FrameLayout>

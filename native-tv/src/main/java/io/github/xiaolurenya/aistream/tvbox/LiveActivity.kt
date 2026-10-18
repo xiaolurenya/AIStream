@@ -376,6 +376,8 @@ class LiveActivity : AppCompatActivity() {
         runCatching { player.stop() }
         player.setMediaItem(b.build())
         player.prepare()
+        // 直播小窗静音开关同样作用于全屏直播页：0 = 静音
+        player.volume = if (Prefs.iptvMute) 0f else 1f
         player.playWhenReady = true
 
         ui.removeCallbacks(watchdog)
