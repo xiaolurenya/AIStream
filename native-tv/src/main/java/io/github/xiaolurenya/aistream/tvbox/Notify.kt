@@ -50,6 +50,24 @@ object Notify {
         job = null
     }
 
+    /* 统一去重弹窗：SSE 推的和 /api/config 兜底拉的都走这里，同一内容只弹一次 */
+    fun once(key: String, title: String, content: String, show: (String, String) -> Unit) {
+        if (title.isBlank() && content.isBlank()) return
+        synchronized(seen) { if (!seen.add(key)) return }
+        show(if (title.isBlank()) "公告" else title, content)
+    }
+
+    /* 兜底：启动时拉一次前台配置里的公告（网页版每次进页面都会弹），
+       SSE 还没连上/连不上时公告也能出来，行为跟网页版对齐 */
+    fun fetchAnnouncement(scope: CoroutineScope, show: (String, String) -> Unit) {
+        scope.launch {
+            val c = withContext(Dispatchers.IO) { runCatching { Api.config() }.getOrNull() } ?: return@launch
+            val a = c.announcement?.takeIf { it.enabled } ?: return@launch
+            once("cfg|" + a.title.orEmpty() + "|" + a.content.orEmpty(),
+                a.title.orEmpty(), a.content.orEmpty(), show)
+        }
+    }
+
     private fun handle(raw: String, show: (String, String) -> Unit) {
         // ⚠️ Gson 整树反序列化：任一字段类型不匹配整个 fromJson 就抛异常，
         // 这里 runCatching 吞掉——但 Push 字段全可空 + Long，服务端字段变动最多是缺字段
@@ -60,8 +78,6 @@ object Notify {
         val title = d.title.orEmpty()
         val content = d.content.orEmpty()
         if (title.isBlank() && content.isBlank()) return
-        val key = title + "|" + content + "|" + d.time
-        synchronized(seen) { if (!seen.add(key)) return }
-        show(if (title.isBlank()) "公告" else title, content)
+        once(d.time.toString() + "|" + title + "|" + content, title, content, show)
     }
 }

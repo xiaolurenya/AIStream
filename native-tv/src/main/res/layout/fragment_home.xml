@@ -88,8 +88,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="按确认键全屏观看 · 移开焦点关闭预览"
-                    android:textColor="@color/fg_dim"
+                    android:shadowColor="#F0000000"
+                    android:shadowDx="0"
+                    android:shadowDy="2"
+                    android:shadowRadius="8"
+                    android:text="按确认键全屏观看"
+                    android:textColor="#FFE8EEF9"
                     android:textSize="13sp" />
 
             </LinearLayout>

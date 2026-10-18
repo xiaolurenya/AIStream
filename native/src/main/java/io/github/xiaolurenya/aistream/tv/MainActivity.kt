@@ -64,15 +64,19 @@ class MainActivity : AppCompatActivity() {
             finish()
         }
 
-        // 实时推送：后台广播/公告（跟网页版同一通道，之前 APP 没接，收不到）
-        Notify.start(lifecycleScope) { title, content ->
-            runCatching {
-                AlertDialog.Builder(this)
-                    .setTitle(title)
-                    .setMessage(if (content.isBlank()) "（无正文）" else content)
-                    .setPositiveButton("知道了", null)
-                    .show()
-            }
+        // 实时推送：后台广播/公告（跟网页版同一通道）
+        Notify.start(lifecycleScope) { t, c -> showPush(t, c) }
+        // 兜底：启动时拉一次公告（网页版每次进页面都会弹，APP 之前漏了这条）
+        Notify.fetchAnnouncement(lifecycleScope) { t, c -> showPush(t, c) }
+    }
+
+    private fun showPush(title: String, content: String) {
+        runCatching {
+            AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(if (content.isBlank()) "（无正文）" else content)
+                .setPositiveButton("知道了", null)
+                .show()
         }
     }
 

@@ -329,7 +329,17 @@ object Api {
            这里统一收成 Any，取值处再按类型判真。 */
         val views: Map<String, Any>? = null,
         val toggles: Map<String, Any>? = null,
-        val iptv: IptvCfg? = null
+        val iptv: IptvCfg? = null,
+        /* 后台「公告弹窗」：网页版每次进页面都弹这个（app.js maybeShowAnno），
+           APP 之前只靠 SSE 补推，连不上就一条也收不到 —— 启动时拉一次兜底 */
+        val announcement: AnnCfg? = null
+    )
+
+    data class AnnCfg(
+        val enabled: Boolean = false,
+        val title: String? = null,
+        val content: String? = null,
+        val mode: String? = null
     )
 
     // 权限/开关表取值：值可能是布尔、数字或字符串，统一按真值判

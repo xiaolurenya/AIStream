@@ -143,7 +143,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val items = mutableListOf<Api.Card>()
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PosterAdapter.H =
             PosterAdapter.H(
-                LayoutInflater.from(parent.context).inflate(R.layout.item_poster, parent, false)
+                // 右侧推荐列用扁横卡（小图左 + 片名右，参考 base.apk），ID 跟 item_poster 一致
+                LayoutInflater.from(parent.context).inflate(R.layout.item_side_flat, parent, false)
             )
         override fun getItemCount() = items.size
         override fun onBindViewHolder(h: PosterAdapter.H, i: Int) {
@@ -338,10 +339,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         // 点预览画面直接进全屏直播。用 OnTouchListener 而不是 OnClickListener：
         // PlayerView 自己会消费触摸事件（useController=false 时也 return true），
         // OnClickListener 根本收不到 ACTION_UP。
-        heroPv.setOnTouchListener { _, _ -> openLiveFull(); true }
+        // ⚠️ 必须只认 ACTION_UP：之前所有触摸事件都调 openLiveFull，一次点按
+        // DOWN/MOVE/UP 连开好几个 LiveActivity 叠着，每个都在出声 —— 大哥说的
+        // 「小画面放大后大小画面声音串了」就是这个。
+        heroPv.setOnTouchListener { v, ev ->
+            if (ev.action == android.view.MotionEvent.ACTION_UP) openLiveFull()
+            true
+        }
     }
 
+    private var lastLiveOpen = 0L
+
     private fun openLiveFull() {
+        // 双保险：1.2 秒内重复触发直接忽略（误触/连点不会再叠出多个直播页）
+        val n = android.os.SystemClock.elapsedRealtime()
+        if (n - lastLiveOpen < 1200) return
+        lastLiveOpen = n
         stopPreview()
         startActivity(Intent(requireContext(), LiveActivity::class.java))
     }

@@ -17,7 +17,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#D90A0D15" />
+        android:background="#D90C1F3F" />
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"

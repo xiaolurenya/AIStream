@@ -100,11 +100,45 @@
 
         </LinearLayout>
 
+        <!-- 搜索频道名（别人家的直播面板有这玩意，确实好用） -->
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="#26FFFFFF"
+            android:hint="搜索频道名…"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:singleLine="true"
+            android:textColor="@color/fg"
+            android:textColorHint="@color/fg_dim"
+            android:textSize="14sp" />
+
+        <!-- 分类筛选条：全部 7135 ｜ 央视频 73 ｜ IPTV 470 …（分组从直播源自动来） -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/llCats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
+        </HorizontalScrollView>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvCh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
+            android:layout_marginTop="6dp"
             android:clipToPadding="false"
             android:overScrollMode="never" />
 

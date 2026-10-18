@@ -58,12 +58,14 @@ class MainActivity : AppCompatActivity() {
                 isFocusableInTouchMode = true
                 val pad = resources.getDimensionPixelSize(R.dimen.nav_pad)
                 setPadding(pad, pad, pad, pad)
-                // weight=1 均分：四张卡撑满导航轨，下面不留一大片空白（大哥反馈）
+                // 扁横排固定高（参考 base.apk）：weight 撑满会把卡撑成大色块，又空又蠢
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    (76 * resources.displayMetrics.density).toInt()
                 ).apply {
                     if (i > 0) topMargin = (10 * resources.displayMetrics.density).toInt()
                 }
+                gravity = android.view.Gravity.CENTER_VERTICAL
                 bindFocus(this)
                 // 「电视直播」卡聚焦 → 首页 hero 出直播小窗预览（防抖在 fragment 里做）
                 if (i == RAIL_LIVE) {
@@ -108,15 +110,19 @@ class MainActivity : AppCompatActivity() {
 
         switch(RAIL_HOME)
 
-        // 实时推送：后台广播/公告（跟网页版同一通道，之前 APP 没接，收不到）
-        Notify.start(lifecycleScope) { title, content ->
-            runCatching {
-                AlertDialog.Builder(this)
-                    .setTitle(title)
-                    .setMessage(if (content.isBlank()) "（无正文）" else content)
-                    .setPositiveButton("知道了", null)
-                    .show()
-            }
+        // 实时推送：后台广播/公告（跟网页版同一通道）
+        Notify.start(lifecycleScope) { t, c -> showPush(t, c) }
+        // 兜底：启动时拉一次公告（网页版每次进页面都会弹，APP 之前漏了这条）
+        Notify.fetchAnnouncement(lifecycleScope) { t, c -> showPush(t, c) }
+    }
+
+    private fun showPush(title: String, content: String) {
+        runCatching {
+            AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(if (content.isBlank()) "（无正文）" else content)
+                .setPositiveButton("知道了", null)
+                .show()
         }
     }
 

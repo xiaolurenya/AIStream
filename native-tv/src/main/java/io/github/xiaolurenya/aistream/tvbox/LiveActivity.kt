@@ -8,6 +8,8 @@ import android.os.Looper
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -51,6 +53,14 @@ class LiveActivity : AppCompatActivity() {
     private lateinit var btnClosePanel: TextView
     private lateinit var tvEpgNow: TextView
     private lateinit var tvEpgNext: TextView
+
+    // 频道单：分类筛选（分组从直播源自带数据来）+ 台名搜索
+    private lateinit var etSearch: EditText
+    private lateinit var llCats: LinearLayout
+    private var cats = listOf<Pair<String, Int>>()   // (分组名, 频道数)，第 0 项固定「全部」
+    private var selCat = 0
+    private var query = ""
+    private var shown: List<Api.IptvCh> = emptyList()
     private val ui = Handler(Looper.getMainLooper())
 
     // 看门狗：有些源握手成功后就挂在那儿不动，既不报错也不出画面，到点就自己往上抬一档
@@ -126,17 +136,17 @@ class LiveActivity : AppCompatActivity() {
 
         rvCh.layoutManager = LinearLayoutManager(this)
         quickAnim(rvCh)
-        val list = PlayCache.iptv
-        if (list.isNotEmpty()) {
-            rvCh.adapter = ChannelAdapter(list, PlayCache.iptvEpg) { pos ->
-                idx = pos
-                PlayCache.iptvIndex = pos
-                stage = 0
-                autoSw = 0
-                closePanel()
-                play()
+        etSearch = findViewById(R.id.etSearch)
+        llCats = findViewById(R.id.llCats)
+        etSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
+                query = s?.toString().orEmpty().trim()
+                applyFilter()
             }
-        }
+            override fun beforeTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        buildCats()
 
         play()
     }
@@ -195,9 +205,73 @@ class LiveActivity : AppCompatActivity() {
         return false
     }
 
+    // ---------- 分类筛选 + 搜索 ----------
+    /* 分组直接按频道数据里的 group 字段聚合（频道在清单里的顺序就是分组顺序），
+       跟网页版「全部 7135 / 央视频 73 / IPTV 470」一个口径。 */
+    private fun buildCats() {
+        val all = PlayCache.iptv
+        val order = LinkedHashMap<String, Int>()
+        for (c in all) {
+            val g = c.group.orEmpty().ifBlank { "其他" }
+            order[g] = (order[g] ?: 0) + 1
+        }
+        cats = listOf(Pair("全部", all.size)) + order.map { Pair(it.key, it.value) }
+        selCat = 0
+        paintCats()
+        applyFilter()
+    }
+
+    private fun paintCats() {
+        if (cats.isEmpty()) return
+        llCats.removeAllViews()
+        val dm = resources.displayMetrics.density
+        cats.forEachIndexed { i, (name, cnt) ->
+            val tv = TextView(this)
+            tv.text = "$name $cnt"
+            tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+            tv.setTextColor(getColor(if (i == selCat) R.color.fg else R.color.fg_dim))
+            tv.setBackgroundResource(if (i == selCat) R.drawable.bg_chip_on else R.drawable.bg_chip)
+            tv.isFocusable = true
+            tv.isFocusableInTouchMode = true
+            tv.setPadding((18 * dm).toInt(), (7 * dm).toInt(), (18 * dm).toInt(), (7 * dm).toInt())
+            tv.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { marginEnd = (8 * dm).toInt() }
+            tv.setOnClickListener { selCat = i; paintCats(); applyFilter() }
+            llCats.addView(tv)
+        }
+    }
+
+    private fun applyFilter() {
+        val all = PlayCache.iptv
+        if (all.isEmpty()) return
+        var list = if (selCat <= 0 || selCat >= cats.size) all
+        else all.filter { it.group.orEmpty().ifBlank { "其他" } == cats[selCat].first }
+        if (query.isNotBlank()) list = list.filter { it.name.orEmpty().contains(query, ignoreCase = true) }
+        shown = list
+        rvCh.adapter = ChannelAdapter(list, PlayCache.iptvEpg) { pos ->
+            // 拿 cid 映射回全量索引，筛选状态下选台不会错位
+            val cid = shown.getOrNull(pos)?.cid.orEmpty()
+            val gi = all.indexOfFirst { it.cid == cid }
+            if (gi < 0) return@ChannelAdapter
+            idx = gi
+            PlayCache.iptvIndex = gi
+            stage = 0
+            autoSw = 0
+            closePanel()
+            play()
+        }
+        // 筛完把焦点递给第一行，确认键直接选台
+        rvCh.post {
+            val first = rvCh.getChildAt(0)
+            if (first != null) first.requestFocus() else rvCh.requestFocus()
+        }
+    }
+
     private fun openPanel() {
         chPanel.visibility = View.VISIBLE
         btnCh.visibility = View.GONE
+        paintCats()
         paintPanelEpg()
         // 把当前正在播的台滚到可见位置，别让用户进去还得从头翻
         if (idx >= 0) rvCh.scrollToPosition(idx)
