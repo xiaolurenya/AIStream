@@ -20,6 +20,7 @@
     <dimen name="side_col">150dp</dimen>
     <dimen name="side_rv">185dp</dimen>
     <dimen name="side_card_text">15sp</dimen>
+    <dimen name="side_sub_text">13sp</dimen>
 
     <dimen name="poster_w">132dp</dimen>
     <dimen name="poster_h">190dp</dimen>
