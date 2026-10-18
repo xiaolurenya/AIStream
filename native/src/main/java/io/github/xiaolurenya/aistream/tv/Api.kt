@@ -29,6 +29,13 @@ object Api {
         .followRedirects(true)
         .build()
 
+    // 上游检索/解析动辄十几秒（服务端要逐条线路体检+顺延），单独放宽，别挤占普通接口的超时
+    private val httpSlow = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(70, TimeUnit.SECONDS)
+        .followRedirects(true)
+        .build()
+
     // ---------- 数据模型 ----------
     data class Card(
         val id: String? = null,
@@ -148,6 +155,18 @@ object Api {
         }
     }
 
+    fun getSlowRaw(path: String): String {
+        val req = Request.Builder()
+            .url(abs(Prefs.base, path))
+            .header("Authorization", "Bearer " + Prefs.token)
+            .header("Accept", "application/json")
+            .build()
+        httpSlow.newCall(req).execute().use { r ->
+            val body = r.body?.string().orEmpty()
+            return check(r.code, body)
+        }
+    }
+
     fun postRaw(path: String, json: String): String {
         val req = Request.Builder()
             .url(abs(Prefs.base, path))
@@ -181,6 +200,9 @@ object Api {
 
     inline fun <reified T> get(path: String): T? =
         try { gson.fromJson(getRaw(path), T::class.java) } catch (e: Err) { throw e } catch (e: Exception) { null }
+
+    inline fun <reified T> getSlow(path: String): T? =
+        try { gson.fromJson(getSlowRaw(path), T::class.java) } catch (e: Err) { throw e } catch (e: Exception) { null }
 
     // ---------- 登录（这一步还没 base，单独传） ----------
     fun login(base: String, user: String, pass: String): LoginResp {
@@ -272,6 +294,7 @@ object Api {
         val siteName: String? = null,
         val hasParse: Boolean = false,
         val views: Map<String, Boolean>? = null,
+        val toggles: Map<String, Boolean>? = null,
         val iptv: IptvCfg? = null
     )
 
@@ -300,8 +323,109 @@ object Api {
 
     fun iptv(): IptvResp? = get("/api/iptv")
 
-    // 频道真实地址不在列表接口里（服务端防窥只给不透明 cid），播放走这个
-    fun iptvStream(cid: String): String = Prefs.base + "/api/iptv/stream?ch=" + enc(cid)
+    // 频道真实地址不在列表接口里（服务端防窥只给不透明 cid），播放走这个。
+    // 网页端 video 标签带不了 header，所以服务端一直就收 ?token=，APP 也走参数、
+    // 别把 Bearer 头带给上游 CDN（有些源见到陌生鉴权头会拒）。
+    fun iptvStream(cid: String): String =
+        Prefs.base + "/api/iptv/stream?ch=" + enc(cid) + "&token=" + enc(Prefs.token)
+
+    // 服务端代理通道：/api/iptv/px 会把清单里的地址再包一层代理由 NAS 代拉。
+    // 有些直播源只认服务端出网（浏览器/手机直连就是黑屏），直连播不动时走这条兜底。
+    fun iptvStreamPx(cid: String): String =
+        Prefs.base + "/api/iptv/px?u=" + enc(iptvStream(cid)) + "&token=" + enc(Prefs.token)
+
+    // ---------- 上游资源库（网页端换源面板里那二十几条线路的来源） ----------
+    // 没配上游的站点这三个接口会返回 noUpstream / 空，调用方要安静降级到采集站聚合。
+    data class UpItem(
+        val id: String? = null,
+        val title: String? = null,
+        val normalized_title: String? = null,
+        val poster_url: String? = null,
+        val year: String? = null
+    )
+
+    data class UpSearchResp(val items: List<UpItem>? = null)
+
+    fun upSearch(q: String): UpSearchResp? = getSlow("/api/up/search?q=" + enc(q) + "&limit=8")
+
+    data class UpEp(
+        val id: String? = null,
+        val title: String? = null,
+        val name: String? = null,
+        val episode_title: String? = null,
+        val number: String? = null,
+        val token: String? = null,
+        val playback_token: String? = null
+    )
+
+    fun epToken(e: UpEp?): String = e?.token.orEmpty().ifBlank { e?.playback_token.orEmpty() }
+
+    fun epName(e: UpEp?, i: Int): String =
+        (e?.title ?: e?.name ?: e?.episode_title).orEmpty().ifBlank { "第 " + (i + 1) + " 集" }
+
+    data class UpEps(
+        val episodes: List<UpEp>? = null,
+        val items: List<UpEp>? = null,
+        val list: List<UpEp>? = null
+    )
+
+    data class UpPg(val total: Int = 0, val limit: Int = 0, val pages: Int = 0, val has_more: Boolean = false)
+
+    data class UpDetailData(
+        val title: String? = null,
+        val normalized_title: String? = null,
+        val poster_url: String? = null,
+        val year: String? = null,
+        val overview: String? = null,
+        val description: String? = null,
+        val content_kind: String? = null,
+        val kind: String? = null,
+        val type: String? = null
+    )
+
+    data class UpDetailResp(
+        val detail: UpDetailData? = null,
+        val episodes: UpEps? = null,
+        val noUpstream: Boolean = false,
+        val quick: Boolean = false,
+        val cached: Boolean = false,
+        val pagination: UpPg? = null
+    )
+
+    // quick=true 走 phase=1（服务端只回第一页分集先让播起来）；慢在这两个接口上，超时放宽
+    fun upDetail(id: String, quick: Boolean): UpDetailResp? =
+        getSlow("/api/up/detail?id=" + enc(id) + (if (quick) "&phase=1" else ""))
+
+    data class UpLine(
+        val label: String? = null,
+        val official: Boolean? = null,
+        val selected: Boolean? = null,
+        val weight: Int = 0,
+        val type: String? = null,
+        val url: String? = null
+    )
+
+    data class UpResolveResp(
+        val url: String? = null,
+        val label: String? = null,
+        val official: Boolean? = null,
+        val error: String? = null,
+        val total: Int = 0,
+        val lines: List<UpLine>? = null
+    )
+
+    // 服务端已经做好：拉黑过滤 → 上游 selected 置顶 → 权重降序 → 官方兜底，
+    // 还会自己顺延最多 8 条体检不过的线路，APP 拿到的就是「该用的那条」
+    fun upResolve(token: String, skip: Int, keep: String?): UpResolveResp? {
+        var s = "/api/up/resolve?token=" + enc(token)
+        if (skip > 0) s += "&skip=" + skip
+        if (!keep.isNullOrBlank()) s += "&keep=" + enc(keep)
+        return getSlow(s)
+    }
+
+    // 换源面板的全线路列表：debug=1 只列出不真播，服务端有缓存，开销很小
+    fun upLineList(token: String): UpResolveResp? =
+        getSlow("/api/up/resolve?token=" + enc(token) + "&debug=1")
 
     // ---------- 会员 / 积分 / 邀请 ----------
     data class VipInfo(
