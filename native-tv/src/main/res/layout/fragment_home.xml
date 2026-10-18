@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 首页（图1 样式）：左边功能卡列 + 中间大海报 hero + 右边推荐列，下面按栏目一行行排。
-     hero 支持直播预览小窗：焦点落在「电视直播」卡上就播当前台，
-     确认键进全屏直播，焦点离开恢复海报。 -->
+<!-- 首页（图3 参考样式）：中间大海报 hero + 右边推荐列，下面按栏目一行行排。
+     功能卡已上提到 MainActivity 左侧导航轨常驻（不再放这里）。
+     hero 支持直播预览小窗：导航轨「电视直播」卡聚焦就播当前台，确认键进全屏。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,76 +16,11 @@
         android:paddingTop="@dimen/page_pad_top"
         android:paddingEnd="@dimen/page_pad">
 
-        <!-- 左：功能卡列 -->
-        <LinearLayout
-            android:layout_width="@dimen/side_col"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/cardLive"
-                style="@style/AIStream.FocusItem"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginBottom="10dp"
-                android:background="@drawable/bg_side_live"
-                android:ellipsize="end"
-                android:gravity="center_vertical"
-                android:lineSpacingExtra="3dp"
-                android:maxLines="2"
-                android:paddingStart="18dp"
-                android:paddingEnd="12dp"
-                android:text="📺 电视直播"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/side_card_text"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/cardFav"
-                style="@style/AIStream.FocusItem"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginBottom="10dp"
-                android:background="@drawable/bg_side_fav"
-                android:ellipsize="end"
-                android:gravity="center_vertical"
-                android:lineSpacingExtra="3dp"
-                android:maxLines="2"
-                android:paddingStart="18dp"
-                android:paddingEnd="12dp"
-                android:text="❤ 我的收藏"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/side_card_text"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/cardHis"
-                style="@style/AIStream.FocusItem"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_side_his"
-                android:ellipsize="end"
-                android:gravity="center_vertical"
-                android:lineSpacingExtra="3dp"
-                android:maxLines="2"
-                android:paddingStart="18dp"
-                android:paddingEnd="12dp"
-                android:text="⏱ 观看历史"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/side_card_text"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
         <!-- 中：大海报 hero（可切直播预览小窗） -->
         <FrameLayout
             android:id="@+id/hero"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginStart="14dp"
             android:layout_weight="1"
             android:background="@color/bg_card">
 

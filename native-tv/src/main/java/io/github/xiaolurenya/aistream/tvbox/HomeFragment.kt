@@ -1,10 +1,8 @@
 package io.github.xiaolurenya.aistream.tvbox
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -108,16 +106,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             picks.getOrNull(cur)?.let { openDetail(it) }
         }
 
-        bindSide(v.findViewById(R.id.cardLive), "央视卫视在线直播",
-            onFocus = { has -> if (has) schedulePreview() else stopPreview() }
-        ) { openLive() }
-        bindSide(v.findViewById(R.id.cardFav), "精选优质影视剧") {
-            (activity as? MainActivity)?.switch(3)
-        }
-        bindSide(v.findViewById(R.id.cardHis), "接着上次的看") {
-            (activity as? MainActivity)?.switch(4)
-        }
-
         // 右侧推荐列：取服务器首页第一栏最前面几张海报
         val rvSide = v.findViewById<RecyclerView>(R.id.rvSide)
         rvSide.layoutManager = LinearLayoutManager(requireContext())
@@ -126,26 +114,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         load()
         loadIptv()
-    }
-
-    // 左侧功能卡：焦点/点击反馈 + 两行文案（标题 + 小字副标题，跟图1 一个样式）
-    private fun bindSide(
-        card: TextView,
-        sub: String,
-        onFocus: ((Boolean) -> Unit)? = null,
-        onClick: () -> Unit
-    ) {
-        card.text = Html.fromHtml(
-            card.text.toString() + "<br/><small><font color='#E6E9F2'>$sub</font></small>",
-            Html.FROM_HTML_MODE_LEGACY
-        )
-        bindFocus(card, onFocus)
-        card.setOnClickListener { onClick() }
-    }
-
-    private fun openLive() {
-        stopPreview()
-        if (PlayCache.iptv.isNotEmpty()) startActivity(Intent(requireContext(), LiveActivity::class.java))
     }
 
     private val sideAdapter = object : RecyclerView.Adapter<PosterAdapter.H>() {
@@ -291,6 +259,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             d.setBackgroundResource(if (k == cur) R.drawable.dot_on else R.drawable.dot_off)
             dots.addView(d)
         }
+    }
+
+    /* 导航轨「电视直播」卡聚焦/失焦的转发入口（卡已上提到 MainActivity）。
+       聚焦出小窗预览，失焦收起来。 */
+    fun onLiveFocus(has: Boolean) {
+        if (has) schedulePreview() else stopPreview()
     }
 
     // ---------- 直播预览小窗 ----------

@@ -8,6 +8,7 @@
     <dimen name="nav_text">15sp</dimen>
     <dimen name="nav_pad">11dp</dimen>
 
+    <dimen name="header_h">46dp</dimen>
     <dimen name="page_pad">18dp</dimen>
     <dimen name="page_pad_top">12dp</dimen>
 

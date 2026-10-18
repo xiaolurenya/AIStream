@@ -1,41 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- TV 主界面：左边一条导航轨 + 右边内容区。
-     遥控器左右键在「导航轨 ↔ 内容」之间跳，上下键在各自内部移动。 -->
+<!-- TV 主界面：顶部品牌栏（logo + 搜索 + 我的）+ 左边彩色功能卡导航轨 + 右边内容区。
+     遥控器左右键在「导航轨 ↔ 内容」之间跳，上下键在各自内部移动，确认键进对应页面。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    android:orientation="horizontal">
+    android:orientation="vertical">
 
+    <!-- 顶部品牌栏：logo 常驻，搜索和「我的」走这里进（图3 参考样式） -->
     <LinearLayout
-        android:id="@+id/rail"
-        android:layout_width="@dimen/rail_width"
-        android:layout_height="match_parent"
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/header_h"
         android:background="@color/bg_rail"
-        android:orientation="vertical"
-        android:paddingTop="@dimen/rail_pad_top"
-        android:paddingBottom="26dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/page_pad"
+        android:paddingEnd="@dimen/page_pad">
 
         <TextView
             android:id="@+id/tvBrand"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="@dimen/brand_pad_start"
-            android:paddingEnd="10dp"
-            android:paddingBottom="18dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:text="@string/app_name"
             android:textColor="@color/accent_soft"
             android:textSize="@dimen/brand_size"
             android:textStyle="bold" />
 
-        <!-- 导航项由代码塞进来（顺序写死在 MainActivity.NAV 里，改一处就行） -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/btnSearch"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chip"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="🔍 搜索"
+            android:textColor="@color/fg_dim"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btnMe"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_chip"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="我的"
+            android:textColor="@color/fg_dim"
+            android:textSize="14sp" />
 
     </LinearLayout>
 
-    <FrameLayout
-        android:id="@+id/content"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- 左侧功能卡导航轨：彩色卡由代码按 RAIL 顺序塞进来 -->
+        <LinearLayout
+            android:id="@+id/rail"
+            android:layout_width="@dimen/rail_width"
+            android:layout_height="match_parent"
+            android:background="@color/bg_rail"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="12dp" />
+
+        <FrameLayout
+            android:id="@+id/content"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+    </LinearLayout>
 
 </LinearLayout>
