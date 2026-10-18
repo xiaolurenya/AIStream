@@ -31,7 +31,7 @@ TV 版针对遥控器重做：左侧导航轨 + 顶部大海报 + 一行行栏�
 · [看看别人提了什么](https://github.com/xiaolurenya/AIStream/issues)**
 
 站点端和 APP 端都收。提的时候带上**版本 + 复现步骤 + 手机/浏览器环境 + 截图**，我好定位。
-也欢迎直接 PR。聊起来最快的是官方 TG 群：https://t.me/AIStreamTV
+也欢迎直接 PR。聊起来最快的是官方 TG 群：https://t.me/AIStream1
 
 > ⚠️ **先读这一节**：本项目免费、仅供技术研究与交流，永久免费。**禁止用于任何商业或盈利行为**。
 > 完整条款见文末 [九、免责声明与使用限制](#九免责声明与使用限制)。
@@ -218,7 +218,7 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 
 1. 打开 `http://IP:8890` → 自动落到**激活页**（不需要登录任何账号）。
 2. 页面上有一串**机器码**（如 `FB4C-EAB2-EC4E-499A`），点「复制」。
-3. **进官方 TG 群 [t.me/AIStreamTV](https://t.me/AIStreamTV)，把机器码发群里** → 换授权码 —— **永久码，免费**。
+3. **进官方 TG 群 [t.me/AIStream1](https://t.me/AIStream1)，把机器码发群里** → 换授权码 —— **永久码，免费**。
 4. 粘进激活页 → 「激活」→ 自动进站。
 
 **支持离线激活**：授权码是签名数据包，激活时本地校验，全程不需要联网；签发方不在线也能激活。
@@ -424,7 +424,7 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 **Q：发现 Bug / 想提需求，怎么提？**
 直接开 Issue 就行 → https://github.com/xiaolurenya/AIStream/issues
 里面有 **🐛 提交 Bug** 和 **💡 功能建议** 两个模板，照着填（版本 + 复现步骤 + 环境 + 截图）我就能复现定位。
-**欢迎提交 Bug，也欢迎直接 PR。** 想聊起来的话进 TG 群 https://t.me/AIStreamTV 更快。
+**欢迎提交 Bug，也欢迎直接 PR。** 想聊起来的话进 TG 群 https://t.me/AIStream1 更快。
 
 ---
 
@@ -459,7 +459,7 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 本项目按「现状」提供。作者不对功能完整性、可用性、安全性、适用性作任何明示或暗示的担保，
 也不承担因使用或无法使用本项目所导致的任何直接或间接损失。
 
-**官方 TG 群（免费获取永久授权码 / 交流反馈）：[https://t.me/AIStreamTV](https://t.me/AIStreamTV)**
+**官方 TG 群（免费获取永久授权码 / 交流反馈）：[https://t.me/AIStream1](https://t.me/AIStream1)**
 
 ![TG 群二维码](docs/tg-qr.png)
 

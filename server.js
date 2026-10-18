@@ -99,7 +99,7 @@ HwIDAQAB
 const LIC_PREFIX = 'AIST';
 /* GitHub 分发前把这里改成你自己的联系方式 —— 它随代码走，别人装好的空壳激活页会显示它。
    自己在后台「授权管理 → ⑤ 前台联系方式」填的内容会覆盖这里。 */
-const LIC_CONTACT = '进官方 TG 群 https://t.me/AIStreamTV 领取授权码（发机器码即可，永久码免费）。';
+const LIC_CONTACT = '进官方 TG 群 https://t.me/AIStream1 领取授权码（发机器码即可，永久码免费）。';
 function b64u(buf) { return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function b64uDec(s) { return Buffer.from(String(s).replace(/-/g, '+').replace(/_/g, '/'), 'base64'); }
 /* 机器码：由本机 MAC + 主机名 + 平台生成（确定性，同一台机器/同一个数据卷永远一致），
