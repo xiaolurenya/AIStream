@@ -11,18 +11,20 @@
         <item name="android:colorControlActivated">@color/accent</item>
     </style>
 
-    <style name="AIStream.TextTitle">
+    <!-- ⚠️ 点号命名的 style 必须写 parent：不写的话 AAPT 会按「点号即继承」去找
+         名为 AIStream 的父样式，找不到就报 failed linking references。 -->
+    <style name="AIStream.TextTitle" parent="android:Widget.TextView">
         <item name="android:textColor">@color/fg</item>
         <item name="android:singleLine">true</item>
     </style>
 
-    <style name="AIStream.TextSub">
+    <style name="AIStream.TextSub" parent="android:Widget.TextView">
         <item name="android:textColor">@color/fg_dim</item>
         <item name="android:singleLine">true</item>
     </style>
 
     <!-- 遥控器焦点项：TV 上「当前选中哪一项」必须一眼看得见 -->
-    <style name="AIStream.FocusItem">
+    <style name="AIStream.FocusItem" parent="">
         <item name="android:focusable">true</item>
         <item name="android:focusableInTouchMode">true</item>
         <item name="android:clickable">true</item>
