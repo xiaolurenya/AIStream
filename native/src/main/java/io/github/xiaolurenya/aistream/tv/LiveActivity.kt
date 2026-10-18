@@ -8,8 +8,10 @@ import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.GestureDetector
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -206,14 +208,18 @@ class LiveActivity : AppCompatActivity() {
         box.addView(rv)
 
         var dlg: AlertDialog? = null
-        val ad = ChannelAdapter(list) { pos ->
-            dlg?.dismiss()
-            idx = pos
-            PlayCache.iptvIndex = pos
-            stage = 0
-            autoSw = 0
-            play()
-        }
+        val ad = ChannelAdapter(
+            all = list,
+            isCurrent = { p -> p == idx },
+            onPick = { pos ->
+                dlg?.dismiss()
+                idx = pos
+                PlayCache.iptvIndex = pos
+                stage = 0
+                autoSw = 0
+                play()
+            }
+        )
         rv.adapter = ad
         et.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -240,9 +246,11 @@ class LiveActivity : AppCompatActivity() {
         play()
     }
 
-    // 换台列表的行：台名 + 分组，顶部一个搜索框做过滤
-    private inner class ChannelAdapter(
+    // 换台列表的行：台名 + 分组，顶部一个搜索框做过滤。
+    // 普通 class（不能 inner）：inner 里不允许再声明嵌套的 ViewHolder。
+    private class ChannelAdapter(
         private val all: List<Api.IptvCh>,
+        private val isCurrent: (Int) -> Boolean,
         private val onPick: (Int) -> Unit
     ) : RecyclerView.Adapter<ChannelAdapter.H>() {
 
@@ -279,7 +287,7 @@ class LiveActivity : AppCompatActivity() {
             h.name.text = c.name.orEmpty()
             h.group.text = c.group.orEmpty()
             // 当前正在播的台给个高亮
-            val on = pos == idx
+            val on = isCurrent(pos)
             h.name.setTextColor(
                 h.name.context.getColor(if (on) R.color.accent_soft else R.color.fg)
             )
