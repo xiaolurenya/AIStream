@@ -26,6 +26,8 @@ class LiveActivity : AppCompatActivity() {
     private var scaleIdx = 0
     private var idx = 0
     private var ready = false
+    private var viaProxy = 0      // 0=直连源站 1=走站点 /api/iptv/px 代理（直连失败时兜底）
+    private var curCid = ""
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
     private lateinit var pb: ProgressBar
@@ -42,12 +44,13 @@ class LiveActivity : AppCompatActivity() {
         tvTitle = findViewById(R.id.tvTitle)
         tvErr = findViewById(R.id.tvErr)
 
+        // 只带 UA：直播清单会被服务端改写成第三方源的直链，
+        // 把站点登录 token 塞进 Authorization 头会一路带给那些 CDN（不安全，有的源还因此拒播）。
+        // 站点侧的鉴权用 URL 上的 ?token= 解决（网页端 video 标签也是这么干的）
         val httpFactory = DefaultHttpDataSource.Factory()
             .setUserAgent(Api.UA)
             .setAllowCrossProtocolRedirects(true)
-            .setDefaultRequestProperties(
-                mapOf("Authorization" to ("Bearer " + Prefs.token), "Accept" to "*/*")
-            )
+            .setDefaultRequestProperties(mapOf("Accept" to "*/*"))
 
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
@@ -64,6 +67,15 @@ class LiveActivity : AppCompatActivity() {
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                // 直连播不动先别报错：不少直播源只认服务端出网（浏览器直连一样黑屏），
+                // 自动切到站点代理通道再试一次，两次都挂才认输
+                if (curCid.isNotBlank() && viaProxy == 0) {
+                    viaProxy = 1
+                    pb.visibility = View.VISIBLE
+                    tvErr.visibility = View.GONE
+                    play()
+                    return
+                }
                 pb.visibility = View.GONE
                 tvErr.text = "这个频道播不出来：" + (error.message ?: "") + "\n换个台或稍后再试"
                 tvErr.visibility = View.VISIBLE
@@ -114,7 +126,7 @@ class LiveActivity : AppCompatActivity() {
         val names = list.map { it.name.orEmpty() }.toTypedArray()
         AlertDialog.Builder(this)
             .setTitle("切换频道")
-            .setItems(names) { _, w -> idx = w; PlayCache.iptvIndex = w; play() }
+            .setItems(names) { _, w -> idx = w; PlayCache.iptvIndex = w; viaProxy = 0; play() }
             .show()
     }
 
@@ -125,10 +137,12 @@ class LiveActivity : AppCompatActivity() {
             tvErr.visibility = View.VISIBLE
             return
         }
+        curCid = c.cid.orEmpty()
         tvTitle.text = c.name.orEmpty()
         tvErr.visibility = View.GONE
         pb.visibility = View.VISIBLE
-        player.setMediaItem(MediaItem.fromUri(Api.iptvStream(c.cid.orEmpty())))
+        val url = if (viaProxy == 1) Api.iptvStreamPx(curCid) else Api.iptvStream(curCid)
+        player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()
         player.playWhenReady = true
     }

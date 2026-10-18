@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 import kotlin.math.abs
+import kotlin.math.ceil
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -51,6 +52,10 @@ class PlayerActivity : AppCompatActivity() {
     private var lastT = 0L
     private var resuming = false
 
+    // 后台「首页配置 → 自动跳过片头片尾」：开了显示倒计时并自动跳，关了胶囊就是个手动按钮
+    private var autoSkip = false
+    private var skipAct = 0     // 0=无/会员引导 1=跳过片头 2=下一集
+
     // 投屏
     private var castUrl = ""
     private var castControl = ""
@@ -58,6 +63,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
     private lateinit var pb: ProgressBar
+    private lateinit var tvSkip: TextView
     private lateinit var errBar: View
     private lateinit var tvErr: TextView
     private lateinit var topBar: View
@@ -77,25 +83,26 @@ class PlayerActivity : AppCompatActivity() {
         topBar = findViewById(R.id.topBar)
         tvTitle = findViewById(R.id.tvTitle)
 
-        if (PlayCache.lines.isEmpty()) {
+        if (PlayCache.lines.isEmpty() && !PlayCache.isUp) {
             tvErr.text = "播放数据已丢失，请退回详情页重新点一次"
             errBar.visibility = View.VISIBLE
             pb.visibility = View.GONE
             return
         }
 
-        // 采集站/解析站普遍看 Referer 和 UA，缺了直接 403
+        // 采集站/解析站普遍看 Referer 和 UA，缺了直接 403；
+        // 上游线路是解析出来的第三方地址，不设 Referer（网页端也只带自己页面的）
+        val props = HashMap<String, String>()
+        props["Accept"] = "*/*"
+        if (!PlayCache.isUp) {
+            props["Referer"] = refererOf(
+                PlayCache.lines.getOrNull(lineIdx)?.eps?.getOrNull(epIdx)?.url.orEmpty()
+            )
+        }
         val httpFactory = DefaultHttpDataSource.Factory()
             .setUserAgent(Api.UA)
             .setAllowCrossProtocolRedirects(true)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Referer" to refererOf(
-                        PlayCache.lines.getOrNull(lineIdx)?.eps?.getOrNull(epIdx)?.url.orEmpty()
-                    ),
-                    "Accept" to "*/*"
-                )
-            )
+            .setDefaultRequestProperties(props)
 
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
@@ -130,6 +137,16 @@ class PlayerActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnBack).setOnClickListener { finish() }
         findViewById<View>(R.id.btnRetry).setOnClickListener { play(lineIdx, epIdx) }
         findViewById<View>(R.id.btnNextLine).setOnClickListener {
+            if (PlayCache.isUp) {
+                // 上游模式：线路列表 = 智能选择 + 解析面板里那几条，轮着试
+                val n = PlayCache.upLines.size + 1
+                if (n <= 1) { showErr("这个站点没有列出可换的线路"); return@setOnClickListener }
+                PlayCache.upSkip = (PlayCache.upSkip + 1) % n
+                upAutoSw = 0
+                pb.visibility = View.VISIBLE
+                play(lineIdx, epIdx)
+                return@setOnClickListener
+            }
             val n = PlayCache.lines.size
             if (n <= 1) { showErr("只有这一条线路，没法再换了"); return@setOnClickListener }
             val nx = (lineIdx + 1) % n
@@ -145,6 +162,26 @@ class PlayerActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btnCast).setOnClickListener { showCast() }
         findViewById<View>(R.id.btnMore).setOnClickListener { showMore(it) }
+
+        // 跳过片头/片尾胶囊：点一下立刻生效，不用等倒计时
+        tvSkip = findViewById(R.id.tvSkip)
+        tvSkip.setOnClickListener {
+            when (skipAct) {
+                1 -> {
+                    introDone = true
+                    runCatching { player.seekTo((SKIP_INTRO_TO * 1000).toLong()) }
+                    tvSkip.visibility = View.GONE
+                    toast("已跳过片头")
+                }
+                2 -> {
+                    outroDone = true
+                    tvSkip.visibility = View.GONE
+                    toast("自动播放下一集 ▶")
+                    nextEp()
+                }
+                else -> toast("跳过片头/片尾为会员特权，可在「积分中心」用积分兑换")
+            }
+        }
 
         play(lineIdx, epIdx)
         ticker()
@@ -175,12 +212,13 @@ class PlayerActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= 26 && playerReady && player.isPlaying) enterPip()
     }
 
-    // 能不能自动跳片头片尾，得看后台给这个账号开的权限
+    // 能不能自动跳片头片尾，得看后台给这个账号开的权限 + 自动跳开关
     private fun loadPerms() {
         lifecycleScope.launch {
             val c = withContext(Dispatchers.IO) { runCatching { Api.config() }.getOrNull() }
             canIntro = c?.views?.get("skipIntro") == true
             canOutro = c?.views?.get("skipOutro") == true
+            autoSkip = c?.toggles?.get("autoSkip") == true
         }
     }
 
@@ -202,6 +240,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun play(line: Int, ep: Int) {
+        if (PlayCache.isUp) { playUp(ep); return }
         val ln = PlayCache.lines.getOrNull(line)
         if (ln == null) { showErr("没有可用线路"); return }
         val e = ln.eps.getOrNull(ep)
@@ -222,6 +261,59 @@ class PlayerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val finalUrl = withContext(Dispatchers.IO) { resolveUrl(raw) }
             applyMedia(finalUrl)
+        }
+    }
+
+    // ---------- 上游模式：分集凭证 → 服务端解析出真实地址 ----------
+    // 服务端在 resolve 里已经做完「官方优先 + 体检 + 失败顺延 8 条」，
+    // APP 这边只负责把「换线」这个动作喂给它（skip=N），跟网页端 switchLine 一个路数
+    private fun playUp(ep: Int) {
+        val e = PlayCache.upEps.getOrNull(ep)
+        if (e == null) { showErr("没有这一集"); return }
+
+        epIdx = ep
+        lineIdx = 0
+        introDone = false
+        outroDone = false
+        outBlocked = false
+        lastT = 0L
+        errBar.visibility = View.GONE
+        pb.visibility = View.VISIBLE
+        tvTitle.text = PlayCache.title + " · " + Api.epName(e, ep)
+        playerView.visibility = View.VISIBLE
+
+        lifecycleScope.launch {
+            val tk = Api.epToken(e)
+            if (tk.isBlank()) { showErr("这一集没有播放凭证"); return@launch }
+            // 没手动换线时沿用正在播的这条源（keep=线路名）：起播快、画质一致，跟网页端一样
+            val keep = if (PlayCache.upSkip == 0 && curLabel.isNotBlank()) curLabel else null
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    Api.upResolve(tk, if (PlayCache.upSkip == 0) 0 else PlayCache.upSkip, keep)
+                }.getOrNull()
+            }
+            if (r == null) { upFail("线路连接超时"); return@launch }
+            curLabel = r.label.orEmpty()
+            if (curLabel.isNotBlank()) tvTitle.text = PlayCache.title + " · " + Api.epName(e, ep) + " · " + curLabel
+            if (r.url.isNullOrBlank()) { upFail(r.error ?: "该线路暂不可用"); return@launch }
+            applyMedia(r.url.orEmpty())
+        }
+    }
+
+    // 换集/重进播放器时清零；同集内失败才累加（网页端 LINE_SKIP/AUTO_SW 同一套口径）
+    private var upAutoSw = 0
+    private var curLabel = ""
+
+    private fun upFail(reason: String) {
+        if (upAutoSw < 3) {
+            upAutoSw++
+            PlayCache.upSkip = PlayCache.upSkip + 1
+            pb.visibility = View.VISIBLE
+            toast(reason + "，自动换线 " + upAutoSw + "/3")
+            playUp(epIdx)
+        } else {
+            pb.visibility = View.GONE
+            showErr(reason + "，自动换到第 " + upAutoSw + " 条还不行，点「换线路」手动换一条")
         }
     }
 
@@ -290,8 +382,10 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun nextEp() {
-        val ln = PlayCache.lines.getOrNull(lineIdx) ?: return
-        if (epIdx + 1 < ln.eps.size) {
+        val total = if (PlayCache.isUp) PlayCache.upEps.size
+        else PlayCache.lines.getOrNull(lineIdx)?.eps?.size ?: 0
+        if (epIdx + 1 < total) {
+            upAutoSw = 0          // 换集重新给 3 次自动换线预算（跟网页端 selectEp 一个口径）
             play(lineIdx, epIdx + 1)
         } else {
             pb.visibility = View.GONE
@@ -389,7 +483,7 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    // ---------- 自动跳过片头片尾 ----------
+    // ---------- 自动跳过片头 / 片尾（跟网页端 player.js 同一套判定、同一套文案） ----------
     private fun skipWatch() {
         lifecycleScope.launch {
             while (true) {
@@ -401,18 +495,58 @@ class PlayerActivity : AppCompatActivity() {
 
                 // 用户手动拖进度条时别把「拖到片尾」当成播到片尾
                 if (dur > 60 && t > dur * 0.8 && abs(t - lastT) > 2) outBlocked = true
+                // 网页端同款「自然播放」判定：进度在往前慢慢走才算，跳变不算
+                val natural = t - lastT >= 0 && t - lastT < 2
 
-                if (canIntro && !introDone && !resuming && t >= SKIP_INTRO_AT && t < SKIP_INTRO_TO - 5) {
+                val epTotal = if (PlayCache.isUp) PlayCache.upEps.size
+                else PlayCache.lines.getOrNull(lineIdx)?.eps?.size ?: 0
+                val isMovie = PlayCache.isMovie(epTotal)
+                val autoIn = autoSkip && !isMovie
+                val introZone = t >= 3 && t < SKIP_INTRO_TO - 5
+                val guard = minOf(100.0, maxOf(12.0, dur * 0.10))
+                val outZone = dur > 60 && t > 30 && dur - t <= guard && dur - t > 3 && epIdx < epTotal - 1
+                val outAuto = outZone && !outBlocked
+
+                // 自动模式：自然播放进区间才触发，每集各一次；固定第 20 秒跳到 100 秒
+                if (autoIn && canIntro && !introDone && natural && introZone && !resuming && t >= SKIP_INTRO_AT) {
                     introDone = true
                     runCatching { player.seekTo((SKIP_INTRO_TO * 1000).toLong()) }
-                    toast("已跳过片头")
+                    lastT = SKIP_INTRO_TO.toLong()
+                    tvSkip.visibility = View.GONE
+                    toast("已自动跳过片头 ▶")
+                    continue
+                }
+                if (autoSkip && canOutro && !outroDone && natural && outAuto) {
+                    outroDone = true
+                    tvSkip.visibility = View.GONE
+                    toast("已自动跳过片尾 · 播放下一集 ▶")
+                    nextEp()
+                    continue
                 }
 
-                val guard = minOf(100.0, maxOf(12.0, dur * 0.10))
-                if (canOutro && !outroDone && !outBlocked && dur > 60 && t >= dur - guard) {
-                    outroDone = true
-                    toast("已跳过片尾，下一集")
-                    nextEp()
+                // 胶囊：自动模式显示倒计时（点了立刻跳不等倒计时），手动模式就是个按钮，
+                // 没权限显示会员引导 —— 文案跟网页端一字不差
+                when {
+                    introZone -> {
+                        tvSkip.text = when {
+                            !canIntro -> "👑 会员专享 · 跳过片头"
+                            autoIn -> "即将自动跳过片头 " + maxOf(1, ceil(SKIP_INTRO_AT - t).toInt()) + "s ⏭"
+                            else -> "跳过片头 ⏭"
+                        }
+                        skipAct = if (canIntro) 1 else 0
+                        tvSkip.visibility = View.VISIBLE
+                    }
+                    outZone -> {
+                        val showAuto = autoSkip && canOutro && !outBlocked
+                        tvSkip.text = when {
+                            !canOutro -> "👑 会员专享 · 跳过片尾"
+                            showAuto -> "即将自动跳过片尾 · 下一集 ⏭"
+                            else -> "跳过片尾 · 下一集 ⏭"
+                        }
+                        skipAct = if (canOutro) 2 else 0
+                        tvSkip.visibility = View.VISIBLE
+                    }
+                    else -> tvSkip.visibility = View.GONE
                 }
                 lastT = t.toLong()
             }
@@ -442,7 +576,9 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun reportHistory() {
         if (PlayCache.title.isBlank() || !playerReady) return
-        val ln = PlayCache.lines.getOrNull(lineIdx) ?: return
+        val epTotal = if (PlayCache.isUp) PlayCache.upEps.size
+        else PlayCache.lines.getOrNull(lineIdx)?.eps?.size ?: return
+        if (epTotal <= 0) return
         val pos = (player.currentPosition / 1000).coerceAtLeast(0)
         val dur = (player.duration / 1000).coerceAtLeast(0)
         if (dur <= 0) return
@@ -452,7 +588,7 @@ class PlayerActivity : AppCompatActivity() {
             poster = PlayCache.poster,
             year = PlayCache.year,
             ep = (epIdx + 1).toString(),
-            epTotal = ln.eps.size.toString(),
+            epTotal = epTotal.toString(),
             pos = pos.toString(),
             dur = dur.toString()
         )

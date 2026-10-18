@@ -106,6 +106,71 @@ class DetailActivity : AppCompatActivity() {
 
     private fun load() {
         lifecycleScope.launch {
+            // 先试上游：站点配了上游时，那二十几条线路是解析时动态挑的，
+            // 采集站聚合根本拿不到（表现就是「只有 360zy」）。没配上游/检索不到就安静降级。
+            if (loadUp()) return@launch
+            loadCollect()
+        }
+    }
+
+    // 去掉「第X季 / Season N」再去检索：上游按裸片名归档，带着季名经常搜不到（网页端同款处理）
+    private fun bareTitle(): String =
+        title.replace(Regex("\\s*[（(]?第[一二三四五六七八九十0-9]+季[）)]?\\s*$"), "")
+            .replace(Regex("\\s*Season\\s*\\d+\\s*$", RegexOption.IGNORE_CASE), "")
+            .trim().ifBlank { title }
+
+    private suspend fun loadUp(): Boolean = withContext(Dispatchers.IO) {
+        var upId = if (inId.startsWith("av_")) inId else ""
+        if (upId.isBlank()) {
+            val s = runCatching { Api.upSearch(bareTitle()) }.getOrNull()
+            upId = s?.items.orEmpty().firstOrNull { it.id.orEmpty().startsWith("av_") }?.id.orEmpty()
+            if (upId.isBlank() && bareTitle() != title) {
+                val s2 = runCatching { Api.upSearch(title) }.getOrNull()
+                upId = s2?.items.orEmpty().firstOrNull { it.id.orEmpty().startsWith("av_") }?.id.orEmpty()
+            }
+        }
+        if (upId.isBlank()) return@withContext false
+        val d = runCatching { Api.upDetail(upId, quick = true) }.getOrNull() ?: return@withContext false
+        if (d.noUpstream) return@withContext false
+        val eps = (d.episodes?.episodes ?: d.episodes?.items ?: d.episodes?.list).orEmpty()
+            .filter { Api.epToken(it).isNotBlank() }
+        if (eps.isEmpty()) return@withContext false
+
+        PlayCache.clearUp()
+        PlayCache.lines = emptyList()
+        PlayCache.isUp = true
+        PlayCache.upEps = eps
+        PlayCache.upSkip = 0
+        PlayCache.title = d.detail?.title ?: d.detail?.normalized_title ?: title
+        PlayCache.year = d.detail?.year ?: year
+        PlayCache.itemId = upId
+        PlayCache.upKind = (d.detail?.content_kind ?: d.detail?.kind ?: d.detail?.type) ?: ""
+        PlayCache.poster = (d.detail?.poster_url ?: inPoster).orEmpty()
+        // 线路列表拿第一集凭证查一次：debug=1 只列出不真播，服务端有缓存，开销很小
+        PlayCache.upLines = runCatching { Api.upLineList(Api.epToken(eps[0])) }.getOrNull()?.lines.orEmpty()
+
+        withContext(Dispatchers.Main) {
+            findViewById<TextView>(R.id.tvTitle).text = PlayCache.title
+            findViewById<TextView>(R.id.tvScore).text = ""
+            findViewById<TextView>(R.id.tvMeta).text = PlayCache.year
+            val pu = Api.dimg(PlayCache.poster)
+            if (pu.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(pu)
+            val plot = (d.detail?.overview ?: d.detail?.description).orEmpty()
+            tvPlot.text = if (plot.isBlank()) "这部片子没有更多介绍。" else plot
+            lines = emptyList()
+            parses = emptyList()
+            PlayCache.parseList = emptyList()
+            PlayCache.hasParse = false
+            parseIdx = 0
+            paint()
+        }
+        true
+    }
+
+    private fun loadCollect() {
+        lifecycleScope.launch {
+            // 这条路只走采集站聚合，先把上游模式的残留清干净
+            PlayCache.clearUp()
             val resp = fetchAll()
 
             if (resp == null) {
@@ -174,6 +239,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun paint() {
+        if (PlayCache.isUp) { paintUp(); return }
         val names = lines.map {
             val tag = if (PlayCache.isOfficial(it)) "★ " else ""
             tag + it.station + " · " + it.from + " (" + it.eps.size + ")"
@@ -187,6 +253,28 @@ class DetailActivity : AppCompatActivity() {
         labEps.text = "选集（共 ${lines[lineIdx].eps.size} 集）"
         paintEps()
         paintParse()
+
+        findViewById<TextView>(R.id.btnPlay).setOnClickListener { startPlayer() }
+    }
+
+    // 上游模式：第一条「智能选择」= 服务端官方优先 + 失败自动顺延；
+    // 后面是换源面板里那几条，点了就把 skip 下标喂给 resolve
+    private fun paintUp() {
+        val names = mutableListOf("智能选择")
+        names.addAll(PlayCache.upLines.map {
+            (if (it.official == true) "★ " else "") + (it.label ?: "线路") + (if (it.selected == true) " ·推荐" else "")
+        })
+        // picked 必须实时读 PlayCache：点完换线只 notifyDataSetChanged，本地算好的值会过期
+        rvLines.adapter = ChipAdapter(names, { if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1 }) { i ->
+            PlayCache.upSkip = if (i == 0) 0 else i - 1
+            epIdx = 0
+            rvLines.adapter?.notifyDataSetChanged()
+            paintEps()
+        }
+        labEps.text = "选集（共 ${PlayCache.upEps.size} 集）"
+        paintEps()
+        labParse.visibility = View.GONE
+        rvParse.visibility = View.GONE
 
         findViewById<TextView>(R.id.btnPlay).setOnClickListener { startPlayer() }
     }
@@ -210,8 +298,9 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun paintEps() {
-        val eps = lines[lineIdx].eps
-        val names = eps.mapIndexed { i, e -> e.name ?: "第${i + 1}集" }
+        val names: List<String> = if (PlayCache.isUp)
+            PlayCache.upEps.mapIndexed { i, e -> Api.epName(e, i) }
+        else lines[lineIdx].eps.mapIndexed { i, e -> e.name ?: "第${i + 1}集" }
         rvEps.adapter = ChipAdapter(names, { epIdx }) { i ->
             epIdx = i
             startPlayer()
@@ -219,6 +308,17 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun startPlayer() {
+        if (PlayCache.isUp) {
+            if (PlayCache.upEps.isEmpty()) {
+                Toast.makeText(this, "没有可用分集", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val i = Intent(this, PlayerActivity::class.java)
+            i.putExtra("line", 0)
+            i.putExtra("ep", epIdx)
+            startActivity(i)
+            return
+        }
         if (lines.isEmpty()) {
             Toast.makeText(this, "没有可用线路", Toast.LENGTH_SHORT).show()
             return

@@ -26,6 +26,30 @@ object PlayCache {
     // 当前选中的解析器下标（后台可以配多条解析线路，用户可挑一条）
     var parseIndex: Int = 0
 
+    // ---------- 上游资源库模式（站点配了上游时走这条，网页端那 24 条线路就是它给的） ----------
+    // 上游模式和采集模式不一样：分集是同一份，线路是解析时动态挑的，
+    // 所以分集列表和线路列表分开存，线路只记「当前用第几条」。
+    var isUp: Boolean = false
+    var upEps: List<Api.UpEp> = emptyList()
+    var upLines: List<Api.UpLine> = emptyList()
+    var upSkip: Int = 0            // 线路下标：0 = 智能选择（官方优先，失败自动顺延）
+    var upKind: String = ""        // content_kind：电影不自动跳片头（跟网页端同一口径）
+
+    fun clearUp() {
+        isUp = false
+        upEps = emptyList()
+        upLines = emptyList()
+        upSkip = 0
+        upKind = ""
+    }
+
+    // 电影不【自动】跳片头：网页端按 content_kind 判，采集模式没有 kind 就按「单集即电影」判
+    fun isMovie(eps: Int): Boolean {
+        val k = upKind.lowercase()
+        if (k.contains("movie") || k.contains("film") || k.contains("电影")) return true
+        return eps <= 1
+    }
+
     // IPTV 频道列表与当前台号：直播播放页要能上下换台
     var iptv: List<Api.IptvCh> = emptyList()
     var iptvIndex: Int = 0
