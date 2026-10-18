@@ -91,6 +91,7 @@ class ChannelAdapter(
 ) : RecyclerView.Adapter<ChannelAdapter.H>() {
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
+        val num: TextView = v.findViewById(R.id.tvNum)
         val name: TextView = v.findViewById(R.id.tvName)
         val logo: ImageView = v.findViewById(R.id.imgLogo)
         val epg: TextView = v.findViewById(R.id.tvEpg)
@@ -103,6 +104,7 @@ class ChannelAdapter(
 
     override fun onBindViewHolder(h: H, i: Int) {
         val c = items[i]
+        h.num.text = "%03d".format(i + 1)
         h.name.text = c.name.orEmpty()
         // 服务端返回的台标路径已经带上了自己的 token，直接拼域名就行
         val lg = c.logo.orEmpty()

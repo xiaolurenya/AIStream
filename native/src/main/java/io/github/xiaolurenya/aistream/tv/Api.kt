@@ -330,7 +330,8 @@ object Api {
 
     /* EPG 节目单（服务端从 xmltv 解析好随 /api/iptv 一起回）：
        t=正在播的节目｜ce=本档结束时间戳｜next=下一档｜ns=下一档开始时间戳 */
-    data class EpgNow(val t: String? = null, val ce: Long = 0, val next: String? = null, val ns: Long = 0)
+    /* cs=本档开始时间戳：选台列表的播放进度条按 (now-cs)/(ce-cs) 算 */
+    data class EpgNow(val t: String? = null, val cs: Long = 0, val ce: Long = 0, val next: String? = null, val ns: Long = 0)
 
     data class IptvResp(
         val enabled: Boolean = false,

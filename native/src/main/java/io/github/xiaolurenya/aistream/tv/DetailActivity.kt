@@ -36,6 +36,16 @@ class DetailActivity : AppCompatActivity() {
 
         // 加载遮罩的最长等待秒数：官方 + 采集都到位会提前进，到点还没齐就用手里有的
         private const val WAIT_SEC = 15
+
+        /* 详情页线路缓存：同一部片第一次进才等遮罩，之后直接用缓存渲染（不再挡屏），
+           线路在后台静默刷新。LRU 只留最近 12 部、10 分钟内有效，进程重启自然清空。 */
+        private class CacheEntry(
+            val up: UpReady?, val col: CollectReady?, val t: Long = System.currentTimeMillis()
+        )
+        private val detailCache = object : LinkedHashMap<String, CacheEntry>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CacheEntry>): Boolean = size > 12
+        }
+        private const val CACHE_TTL = 10 * 60 * 1000L
     }
 
     /* 两路结果先各存各的，等「官方 + 采集」都到位（或倒计时到点/用户点立即播放）
@@ -135,8 +145,44 @@ class DetailActivity : AppCompatActivity() {
             startPlayer()
         }
 
-        startTicker()
-        load()
+        val hit = cacheGet()
+        if (hit != null) {
+            // 有缓存：不挡屏直接进，线路在后台静默刷新
+            settled = true
+            when {
+                hit.up != null -> applyUp(hit.up)
+                hit.col != null -> applyCollect(hit.col)
+            }
+            load(quiet = true)
+        } else {
+            startTicker()
+            load(quiet = false)
+        }
+    }
+
+    // ---------- 详情缓存：第二次进同一部片不再等 ----------
+    private fun cacheKey(): String = title.trim() + "|" + year.trim()
+
+    private fun cacheGet(): CacheEntry? {
+        synchronized(detailCache) {
+            val e = detailCache[cacheKey()] ?: return null
+            if (System.currentTimeMillis() - e.t > CACHE_TTL) {
+                detailCache.remove(cacheKey())
+                return null
+            }
+            return e
+        }
+    }
+
+    private fun cachePut() {
+        synchronized(detailCache) {
+            // 静默刷新时某一路没拿到就沿用旧缓存的那一路，别把好数据刷没了
+            val old = detailCache[cacheKey()]
+            val up = upReady ?: old?.up
+            val col = collectReady ?: old?.col
+            if (up == null && col == null) return
+            detailCache[cacheKey()] = CacheEntry(up, col)
+        }
     }
 
     // ---------- 加载遮罩：倒计时 + 进度 ----------
@@ -185,8 +231,8 @@ class DetailActivity : AppCompatActivity() {
         val up = upReady
         val col = collectReady
         when {
-            up != null -> applyUp(up)
-            col != null -> applyCollect(col)
+            up != null -> { applyUp(up); cachePut() }
+            col != null -> { applyCollect(col); cachePut() }
             else -> {
                 overlay.visibility = View.GONE
                 tvPlot.text = "这部片子暂时取不到片源。\n\n可能是站方接口抽风、片名对不上，或者后台还没配采集站，稍后再试一次。"
@@ -220,9 +266,11 @@ class DetailActivity : AppCompatActivity() {
     }
 
     // ⚡ 两路并发：谁先回来先存着，等两边都到位再渲染（遮罩上能看到进度和倒计时）
-    private fun load() {
-        lifecycleScope.launch { runCatching { loadUp() } }
-        lifecycleScope.launch { runCatching { loadCollect() } }
+    /* quiet=true：缓存命中后的静默刷新 —— 结果只写缓存不重渲染，
+       否则页面会当着用户的面从一条线路跳成另一条（闪跳很难看）。 */
+    private fun load(quiet: Boolean) {
+        lifecycleScope.launch { runCatching { loadUp(quiet) } }
+        lifecycleScope.launch { runCatching { loadCollect(quiet) } }
     }
 
     // 去掉「第X季 / Season N」再去检索：上游按裸片名归档，带着季名经常搜不到（网页端同款处理）
@@ -231,7 +279,7 @@ class DetailActivity : AppCompatActivity() {
             .replace(Regex("\\s*Season\\s*\\d+\\s*$", RegexOption.IGNORE_CASE), "")
             .trim().ifBlank { title }
 
-    private suspend fun loadUp() {
+    private suspend fun loadUp(quiet: Boolean) {
         val r = withContext(Dispatchers.IO) {
             var upId = if (inId.startsWith("av_")) inId else ""
             if (upId.isBlank()) {
@@ -263,10 +311,10 @@ class DetailActivity : AppCompatActivity() {
         }
         upDone = true
         if (r != null) upReady = r
-        withContext(Dispatchers.Main) { settleIfReady() }
+        withContext(Dispatchers.Main) { if (quiet) cachePut() else settleIfReady() }
     }
 
-    private fun loadCollect() {
+    private fun loadCollect(quiet: Boolean) {
         lifecycleScope.launch {
             val r = withContext(Dispatchers.IO) {
                 val resp = fetchAll() ?: return@withContext null
@@ -308,7 +356,7 @@ class DetailActivity : AppCompatActivity() {
             }
             collectDone = true
             if (r != null) collectReady = r
-            withContext(Dispatchers.Main) { settleIfReady() }
+            withContext(Dispatchers.Main) { if (quiet) cachePut() else settleIfReady() }
         }
     }
 
@@ -371,7 +419,7 @@ class DetailActivity : AppCompatActivity() {
             val tag = if (PlayCache.isOfficial(it)) "★ " else ""
             tag + it.station + " · " + it.from + " (" + it.eps.size + ")"
         }
-        rvLines.adapter = ChipAdapter(names, { lineIdx }) { i ->
+        rvLines.adapter = ChipAdapter(names, { lineIdx }, wrap = true) { i ->
             lineIdx = i
             epIdx = 0
             rvLines.adapter?.notifyDataSetChanged()
@@ -392,7 +440,7 @@ class DetailActivity : AppCompatActivity() {
             (if (it.official == true) "★ " else "") + (it.label ?: "线路") + (if (it.selected == true) " ·推荐" else "")
         })
         // picked 必须实时读 PlayCache：点完换线只 notifyDataSetChanged，本地算好的值会过期
-        rvLines.adapter = ChipAdapter(names, { if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1 }) { i ->
+        rvLines.adapter = ChipAdapter(names, { if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1 }, wrap = true) { i ->
             PlayCache.upSkip = if (i == 0) 0 else i - 1
             epIdx = 0
             rvLines.adapter?.notifyDataSetChanged()
@@ -416,7 +464,7 @@ class DetailActivity : AppCompatActivity() {
         labParse.visibility = View.VISIBLE
         rvParse.visibility = View.VISIBLE
         val names = parses.map { it.name ?: "解析器" }
-        rvParse.adapter = ChipAdapter(names, { parseIdx }) { i ->
+        rvParse.adapter = ChipAdapter(names, { parseIdx }, wrap = true) { i ->
             parseIdx = i
             PlayCache.parseIndex = i
             rvParse.adapter?.notifyDataSetChanged()
