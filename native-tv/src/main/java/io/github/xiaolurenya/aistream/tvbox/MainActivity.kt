@@ -2,6 +2,11 @@ package io.github.xiaolurenya.aistream.tvbox
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.text.Html
 import android.view.View
 import android.view.ViewGroup
@@ -52,8 +57,9 @@ class MainActivity : AppCompatActivity() {
                 isFocusableInTouchMode = true
                 val pad = resources.getDimensionPixelSize(R.dimen.nav_pad)
                 setPadding(pad, pad, pad, pad)
+                // weight=1 均分：四张卡撑满导航轨，下面不留一大片空白（大哥反馈）
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
                 ).apply {
                     if (i > 0) topMargin = (10 * resources.displayMetrics.density).toInt()
                 }
@@ -79,8 +85,40 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { switch(ME) }
         }
 
+        // 导航轨底部快捷区：签到 / 会员兑换 / 首页直播开关（「我的」页那几项搬下来）
+        val btnQuickCheckin = findViewById<TextView>(R.id.btnQuickCheckin)
+        val btnQuickRedeem = findViewById<TextView>(R.id.btnQuickRedeem)
+        val btnQuickHero = findViewById<TextView>(R.id.btnQuickHero)
+        bindFocus(btnQuickCheckin)
+        bindFocus(btnQuickRedeem)
+        bindFocus(btnQuickHero)
+        btnQuickRedeem.setOnClickListener { startActivity(Intent(this, RedeemActivity::class.java)) }
+        btnQuickHero.setOnClickListener {
+            Prefs.heroLive = !Prefs.heroLive
+            btnQuickHero.text = heroText()
+            Toast.makeText(this, if (Prefs.heroLive) "首页打开就播直播了" else "首页打开显示海报了",
+                Toast.LENGTH_SHORT).show()
+        }
+        btnQuickHero.text = heroText()
+        btnQuickCheckin.setOnClickListener {
+            btnQuickCheckin.isEnabled = false
+            lifecycleScope.launch {
+                val r = withContext(Dispatchers.IO) { runCatching { Api.checkin() }.getOrNull() }
+                btnQuickCheckin.isEnabled = true
+                when {
+                    r == null -> toast("签到失败，可能没开积分权限")
+                    r.ok -> toast("签到成功，+" + r.gained.orEmpty() + " 积分（连签 " + r.streak.orEmpty() + " 天）")
+                    else -> toast(r.msg ?: r.error ?: "今天已经签过到了")
+                }
+            }
+        }
+
         switch(RAIL_HOME)
     }
+
+    private fun heroText(): String = if (Prefs.heroLive) "首页：直播" else "首页：海报"
+
+    private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 
     // 沉浸式：TV 上没差别，但 TV 版装在手机上时能把底部手势条让出来（图1 底部那条白）
     override fun onResume() {

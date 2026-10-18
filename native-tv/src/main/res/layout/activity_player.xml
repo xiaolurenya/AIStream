@@ -244,14 +244,55 @@
         android:paddingEnd="18dp"
         android:visibility="gone">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- 选集面板标题行 + 翻页（上百集一页放不下，◀ ▶ 翻） -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="12dp"
-            android:text="@string/label_episodes"
-            android:textColor="@color/fg"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/label_episodes"
+                android:textColor="@color/fg"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnPrevPage"
+                style="@style/AIStream.FocusItem"
+                android:layout_width="44dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:text="◀"
+                android:textColor="@color/fg"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvPageInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:textColor="@color/fg_dim"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnNextPage"
+                style="@style/AIStream.FocusItem"
+                android:layout_width="44dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:text="▶"
+                android:textColor="@color/fg"
+                android:textSize="15sp" />
+
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvEps"

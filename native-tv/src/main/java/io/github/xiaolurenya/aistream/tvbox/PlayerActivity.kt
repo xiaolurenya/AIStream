@@ -74,6 +74,8 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var btnSpeed: TextView
     private lateinit var btnAuto: TextView
     private lateinit var tvSkip: TextView
+    private lateinit var tvPageInfo: TextView
+    private var epPage = 0          // 选集面板当前页（上百集分页）
     private val ui = Handler(Looper.getMainLooper())
 
     // 选集面板 10 秒无操作自动隐藏（图3 参考）；连播默认开
@@ -183,6 +185,11 @@ class PlayerActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnRefresh).setOnClickListener { play(lineIdx, epIdx) }
         findViewById<View>(R.id.btnSkipIntro).setOnClickListener { skipIntroNow() }
         btnAuto = findViewById(R.id.btnAuto)
+        tvPageInfo = findViewById(R.id.tvPageInfo)
+        for (id in intArrayOf(R.id.btnPrevPage, R.id.btnNextPage)) {
+            val b = findViewById<View>(id)
+            bindFocus(b) { has -> b.alpha = if (has) 1f else 0.85f }
+        }
         btnAuto.setOnClickListener {
             autoNext = !autoNext
             btnAuto.text = if (autoNext) "连播 开" else "连播 关"
@@ -307,18 +314,49 @@ class PlayerActivity : AppCompatActivity() {
             epPanel.visibility = View.GONE
             return
         }
-        val names: List<String> = if (PlayCache.isUp)
+        epNames = if (PlayCache.isUp)
             PlayCache.upEps.mapIndexed { i, e -> Api.epName(e, i) }
         else PlayCache.lines.getOrNull(lineIdx)?.eps?.mapIndexed { i, e -> e.name ?: "第${i + 1}集" }.orEmpty()
-        if (names.isEmpty()) { toast("还没有分集列表"); return }
-        rvEps.adapter = ChipAdapter(names, { epIdx }) { i ->
-            epIdx = i
-            epPanel.visibility = View.GONE
-            play(lineIdx, epIdx)
-        }
+        if (epNames.isEmpty()) { toast("还没有分集列表"); return }
+        // 当前集落在第几页就显示哪页
+        epPage = if (epIdx < epNames.size) epIdx / EP_PAGE else 0
+        paintEpPage()
         epPanel.visibility = View.VISIBLE
         armEpAutoHide()
         // 面板本身是个容器拿不到焦点，得把焦点递给第一张卡，否则确认键会被页面当成「播放/暂停」
+        rvEps.post {
+            val first = rvEps.getChildAt(0)
+            if (first != null) first.requestFocus() else rvEps.requestFocus()
+        }
+    }
+
+    private var epNames: List<String> = emptyList()
+
+    // 选集分页：一页 EP_PAGE 集，◀ ▶ 翻页（上百集不用再滑半天）
+    private fun paintEpPage() {
+        val from = epPage * EP_PAGE
+        val page = epNames.drop(from).take(EP_PAGE)
+        rvEps.adapter = ChipAdapter(page, { epIdx - from }) { i ->
+            epIdx = from + i
+            ui.removeCallbacks(epAutoHide)
+            epPanel.visibility = View.GONE
+            play(lineIdx, epIdx)
+        }
+        val pages = (epNames.size + EP_PAGE - 1) / EP_PAGE
+        tvPageInfo.text = "${epPage + 1}/$pages"
+        val hasPrev = epPage > 0
+        val hasNext = epPage + 1 < pages
+        findViewById<TextView>(R.id.btnPrevPage).apply {
+            visibility = if (hasPrev) View.VISIBLE else View.INVISIBLE
+            setOnClickListener { epPage--; paintEpPage(); armEpAutoHide(); focusEpFirst() }
+        }
+        findViewById<TextView>(R.id.btnNextPage).apply {
+            visibility = if (hasNext) View.VISIBLE else View.INVISIBLE
+            setOnClickListener { epPage++; paintEpPage(); armEpAutoHide(); focusEpFirst() }
+        }
+    }
+
+    private fun focusEpFirst() {
         rvEps.post {
             val first = rvEps.getChildAt(0)
             if (first != null) first.requestFocus() else rvEps.requestFocus()
@@ -670,6 +708,7 @@ class PlayerActivity : AppCompatActivity() {
         const val SKIP_INTRO_AT = 20.0
         const val SKIP_INTRO_TO = 100.0
         const val EP_AUTO_HIDE_MS = 10000L
+        const val EP_PAGE = 24          // 选集每页集数（6 列 × 4 行左右，随屏幕分档）
 
         private val RX_M3U8 = Regex("""(https?:)?//[^"'\s<>]+?\.m3u8[^"'\s<>]*""")
         private val RX_MP4 = Regex("""(https?:)?//[^"'\s<>]+?\.(mp4|flv)(\?[^"'\s<>]*)?""")

@@ -44,12 +44,6 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_scrim_left" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="130dp"
-                android:layout_gravity="bottom"
-                android:background="@drawable/bg_scrim_bottom" />
-
             <!-- 直播预览小窗：盖在海报上，只有预览时可见 -->
             <androidx.media3.ui.PlayerView
                 android:id="@+id/heroPv"
@@ -71,8 +65,10 @@
                     android:id="@+id/tvLiveName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:shadowColor="#CC000000"
-                    android:shadowRadius="6"
+                    android:shadowColor="#F0000000"
+                    android:shadowDx="0"
+                    android:shadowDy="2"
+                    android:shadowRadius="8"
                     android:textColor="@android:color/white"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -114,8 +110,10 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:shadowColor="#CC000000"
-                    android:shadowRadius="6"
+                    android:shadowColor="#F0000000"
+                    android:shadowDx="0"
+                    android:shadowDy="2"
+                    android:shadowRadius="8"
                     android:textColor="@android:color/white"
                     android:textSize="@dimen/hero_title"
                     android:textStyle="bold" />
@@ -177,7 +175,7 @@
         android:layout_weight="1"
         android:clipToPadding="false"
         android:overScrollMode="never"
-        android:paddingTop="10dp"
+        android:paddingTop="4dp"
         android:paddingBottom="24dp" />
 
 </LinearLayout>

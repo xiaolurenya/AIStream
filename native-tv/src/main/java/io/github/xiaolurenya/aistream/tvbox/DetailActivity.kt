@@ -377,13 +377,20 @@ class DetailActivity : AppCompatActivity() {
         PlayCache.hasParse = false
 
         findViewById<TextView>(R.id.tvTitle).text = r.title
-        findViewById<TextView>(R.id.tvMeta).text = r.year
+        // 上游只给年份/简介，元数据从采集路数补（地区/语言/评分那串 meta）—— 两路都有就都显示
+        findViewById<TextView>(R.id.tvMeta).text =
+            listOfNotNull(r.year, collectReady?.meta?.takeIf { it.isNotBlank() && it != r.year })
+                .joinToString(" · ")
         val pu = Api.dimg(r.poster)
         if (pu.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(pu)
         val kind = r.kind
         tvPlot.text = buildString {
             if (kind.isNotBlank()) append("类型：").append(kind).append("\n\n")
             append(if (r.plot.isBlank()) "这部片子没有更多介绍。" else r.plot)
+            // 演员/导演：上游 detail 不给，采集路数给了就拼上（乱弄是不存在的，站上有什么显示什么）
+            val cast = collectReady?.plot.orEmpty().lineSequence()
+                .filter { it.startsWith("演员：") || it.startsWith("导演：") }.joinToString("\n")
+            if (cast.isNotBlank()) append("\n\n").append(cast)
         }
         paintUp()
     }

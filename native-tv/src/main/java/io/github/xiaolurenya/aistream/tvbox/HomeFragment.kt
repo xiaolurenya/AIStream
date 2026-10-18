@@ -1,5 +1,6 @@
 package io.github.xiaolurenya.aistream.tvbox
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +17,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -165,6 +167,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onResume()
         ui.removeCallbacks(rot)
         ui.postDelayed(rot, ROT_MS)
+        // 从详情页/播放器返回：设置开了「首页直接播直播」就恢复小窗
+        // （loadIptv 提前 return 那条分支不会触发 startPreview，这里补上）
+        if (Prefs.heroLive && PlayCache.iptv.isNotEmpty() && !previewOn) startPreview()
     }
 
     override fun onPause() {
@@ -330,6 +335,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         tvLiveEpg.text = if (e?.t.isNullOrBlank()) "节目单暂无信息" else "正在播：" + e!!.t
 
         pvPlay()
+        // 点预览画面直接进全屏直播。用 OnTouchListener 而不是 OnClickListener：
+        // PlayerView 自己会消费触摸事件（useController=false 时也 return true），
+        // OnClickListener 根本收不到 ACTION_UP。
+        heroPv.setOnTouchListener { _, _ -> openLiveFull(); true }
+    }
+
+    private fun openLiveFull() {
+        stopPreview()
+        startActivity(Intent(requireContext(), LiveActivity::class.java))
     }
 
     private fun stopPreview() {
@@ -358,6 +372,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             .build().also {
                 pvPlayer = it
                 heroPv.player = it
+                // 小窗预览不要控制条（会挡住画面），比例 FIT 不拉伸
+                heroPv.useController = false
+                heroPv.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                 it.addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(state: Int) {
                         if (state == Player.STATE_READY) ui.removeCallbacks(pvWatchdog)
