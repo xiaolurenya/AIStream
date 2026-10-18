@@ -11,6 +11,7 @@ class App : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
         Prefs.init(this)
+        Crash.init(this, BuildConfig.VERSION_NAME)
     }
 
     // 海报统一走站点图片代理，这里只管缓存与并发

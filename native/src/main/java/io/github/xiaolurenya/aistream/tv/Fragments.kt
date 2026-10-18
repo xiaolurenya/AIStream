@@ -5,18 +5,20 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.viewpager2.widget.ViewPager2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,15 +28,25 @@ import kotlinx.coroutines.withContext
 // ---------- 首页：顶部海报轮播 + 下面按栏目竖着排，每栏横滑 ----------
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
-    private lateinit var banner: BannerAdapter
     private lateinit var adapter: ColumnAdapter
+    private lateinit var bannerBox: View
+    private lateinit var bannerPager: ViewPager2
+    private lateinit var dots: LinearLayout
     private val ui = Handler(Looper.getMainLooper())
+    private var cur = 0
 
-    /* 轮播自动翻页。只在页面可见时跑，退后台就停，别在后台白耗电；
-       用户手动滑走后也会顺延一个周期再自动翻 */
+    /* 轮播自动翻页。只在页面可见时跑，退后台就停，别在后台白耗电。
+       翻页这一步整体包在 runCatching 里：轮播只是锦上添花，
+       出任何岔子都不能把整个首页拖崩。 */
     private val rot = object : Runnable {
         override fun run() {
-            banner.next()
+            runCatching {
+                val n = bannerPager.adapter?.itemCount ?: 0
+                if (n > 1) {
+                    cur = (cur + 1) % n
+                    bannerPager.setCurrentItem(cur, true)
+                }
+            }.onFailure { Log.w("aistream", "banner next: " + it.message) }
             ui.postDelayed(this, ROT_MS)
         }
     }
@@ -42,11 +54,20 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onViewCreated(v: View, savedInstanceState: Bundle?) {
         val swipe = v.findViewById<SwipeRefreshLayout>(R.id.swipe)
         val rv = v.findViewById<RecyclerView>(R.id.recycler)
+        bannerBox = v.findViewById(R.id.bannerBox)
+        bannerPager = v.findViewById(R.id.banner)
+        dots = v.findViewById(R.id.bannerDots)
+
         rv.layoutManager = LinearLayoutManager(requireContext())
-        banner = BannerAdapter { c -> DetailActivity.open(requireContext(), c) }
         adapter = ColumnAdapter { c -> DetailActivity.open(requireContext(), c) }
-        // 海报栏是第 0 项，跟着列表一起滚，不长期占用屏幕高度
-        rv.adapter = ConcatAdapter(banner, adapter)
+        rv.adapter = adapter
+
+        // 海报栏直接挂在页面顶部，不塞进 RecyclerView，省掉嵌套滑动的麻烦
+        bannerPager.adapter = BannerPageAdapter { c -> DetailActivity.open(requireContext(), c) }
+        bannerPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(p: Int) { cur = p; paintDots() }
+        })
+
         swipe.setOnRefreshListener { load(swipe) }
         load(swipe)
     }
@@ -97,7 +118,35 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
             val keep = cols.filter { !it.items.isNullOrEmpty() }
             adapter.submit(keep)
-            banner.submit(pickBanner(keep))
+
+            val picks = pickBanner(keep)
+            val pg = bannerPager.adapter as? BannerPageAdapter
+            if (pg != null && picks.isNotEmpty()) {
+                pg.submit(picks)
+                bannerBox.visibility = View.VISIBLE
+                paintDots()
+            } else {
+                bannerBox.visibility = View.GONE
+            }
+        }
+    }
+
+    // 轮播下面的小圆点：当前页那颗拉长成小横条
+    private fun paintDots() {
+        val n = bannerPager.adapter?.itemCount ?: 0
+        dots.removeAllViews()
+        if (n <= 1) return
+        val ctx = dots.context
+        val dm = ctx.resources.displayMetrics.density
+        for (k in 0 until n) {
+            val d = View(ctx)
+            val w = ((if (k == cur) 16 else 6) * dm).toInt()
+            val h = (6 * dm).toInt()
+            val lp = LinearLayout.LayoutParams(w, h)
+            lp.marginEnd = (5 * dm).toInt()
+            d.layoutParams = lp
+            d.setBackgroundResource(if (k == cur) R.drawable.dot_on else R.drawable.dot_off)
+            dots.addView(d)
         }
     }
 
