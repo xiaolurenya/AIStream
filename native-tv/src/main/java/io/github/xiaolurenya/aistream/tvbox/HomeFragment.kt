@@ -195,7 +195,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
             // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
             val keep = cols.filter { !it.items.isNullOrEmpty() }
-            this.cols = keep
+            cols = keep
             adapter.submit(keep)
             paintTabs()
 
