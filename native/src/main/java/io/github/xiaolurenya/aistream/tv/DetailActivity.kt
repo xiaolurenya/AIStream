@@ -35,7 +35,7 @@ class DetailActivity : AppCompatActivity() {
         }
 
         // 加载遮罩的最长等待秒数：官方 + 采集都到位会提前进，到点还没齐就用手里有的
-        private const val WAIT_SEC = 15
+        private const val WAIT_SEC = 10
 
         /* 详情页线路缓存：同一部片第一次进才等遮罩，之后直接用缓存渲染（不再挡屏），
            线路在后台静默刷新。LRU 只留最近 12 部、10 分钟内有效，进程重启自然清空。 */
