@@ -3,6 +3,8 @@ package io.github.xiaolurenya.aistream.tv
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.EditText
 import android.widget.TextView
@@ -10,6 +12,7 @@ import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,19 +23,68 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// ---------- 首页：按栏目竖着排，每栏横滑 ----------
+// ---------- 首页：顶部海报轮播 + 下面按栏目竖着排，每栏横滑 ----------
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
+    private lateinit var banner: BannerAdapter
     private lateinit var adapter: ColumnAdapter
+    private val ui = Handler(Looper.getMainLooper())
+
+    /* 轮播自动翻页。只在页面可见时跑，退后台就停，别在后台白耗电；
+       用户手动滑走后也会顺延一个周期再自动翻 */
+    private val rot = object : Runnable {
+        override fun run() {
+            banner.next()
+            ui.postDelayed(this, ROT_MS)
+        }
+    }
 
     override fun onViewCreated(v: View, savedInstanceState: Bundle?) {
         val swipe = v.findViewById<SwipeRefreshLayout>(R.id.swipe)
         val rv = v.findViewById<RecyclerView>(R.id.recycler)
         rv.layoutManager = LinearLayoutManager(requireContext())
+        banner = BannerAdapter { c -> DetailActivity.open(requireContext(), c) }
         adapter = ColumnAdapter { c -> DetailActivity.open(requireContext(), c) }
-        rv.adapter = adapter
+        // 海报栏是第 0 项，跟着列表一起滚，不长期占用屏幕高度
+        rv.adapter = ConcatAdapter(banner, adapter)
         swipe.setOnRefreshListener { load(swipe) }
         load(swipe)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ui.removeCallbacks(rot)
+        ui.postDelayed(rot, ROT_MS)
+    }
+
+    override fun onPause() {
+        ui.removeCallbacks(rot)
+        super.onPause()
+    }
+
+    override fun onDestroyView() {
+        ui.removeCallbacks(rot)
+        super.onDestroyView()
+    }
+
+    /* 轮播内容自动挑，不占后台配置项：
+       先排「推荐/最新/热门」这类栏目，按片名+年份去重，没海报的不要，取前 6 条。
+       这样不管接的是采集站还是内置豆瓣源，装好就有轮播。 */
+    private fun pickBanner(cols: List<Api.Column>): List<Api.Card> {
+        val hot = Regex("推荐|最新|热门|热播|正在热|影视|电影|剧集|剧场")
+        val ordered = cols.sortedByDescending { if (hot.containsMatchIn(it.label.orEmpty())) 1 else 0 }
+        val seen = HashSet<String>()
+        val out = mutableListOf<Api.Card>()
+        for (col in ordered) {
+            for (c in col.items.orEmpty()) {
+                val key = c.title.orEmpty().trim() + "|" + c.year.orEmpty().trim()
+                if (!seen.add(key)) continue
+                if (Api.dimg(c.poster).isBlank()) continue
+                out.add(c)
+                if (out.size >= BANNER_MAX) return out
+            }
+        }
+        return out
     }
 
     private fun load(swipe: SwipeRefreshLayout) {
@@ -43,8 +95,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
             swipe.isRefreshing = false
             // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
-            adapter.submit(cols.filter { !it.items.isNullOrEmpty() })
+            val keep = cols.filter { !it.items.isNullOrEmpty() }
+            adapter.submit(keep)
+            banner.submit(pickBanner(keep))
         }
+    }
+
+    private companion object {
+        const val ROT_MS = 5000L   // 轮播间隔
+        const val BANNER_MAX = 6   // 最多轮播几条
     }
 }
 

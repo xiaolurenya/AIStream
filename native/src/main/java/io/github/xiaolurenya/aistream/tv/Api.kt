@@ -293,10 +293,27 @@ object Api {
     data class CfgResp(
         val siteName: String? = null,
         val hasParse: Boolean = false,
-        val views: Map<String, Boolean>? = null,
-        val toggles: Map<String, Boolean>? = null,
+        /* ⚠️ 这两张表千万不能声明成 Map<String, Boolean>。
+           服务端 config.toggles 里混着字符串（antiScamText）和数字
+           （antiScamSpeed / antiScamSize / antiScamFrom / antiScamTo），
+           Gson 把数字喂给 Boolean 适配器时会走 JsonReader.nextBoolean()，
+           遇到 NUMBER 直接抛 IllegalStateException —— 整个 config 解析报废返回 null。
+           后果就是「明明管理员、明明是会员，播放器却提示跳过片头是会员特权」。
+           这里统一收成 Any，取值处再按类型判真。 */
+        val views: Map<String, Any>? = null,
+        val toggles: Map<String, Any>? = null,
         val iptv: IptvCfg? = null
     )
+
+    // 权限/开关表取值：值可能是布尔、数字或字符串，统一按真值判
+    fun flag(m: Map<String, Any>?, k: String, def: Boolean): Boolean {
+        val x = m?.get(k) ?: return def
+        return when (x) {
+            is Boolean -> x
+            is Number -> x.toInt() != 0
+            else -> x.toString().equals("true", ignoreCase = true)
+        }
+    }
 
     fun config(): CfgResp? = get("/api/config")
 
