@@ -33,6 +33,9 @@ class DetailActivity : AppCompatActivity() {
             i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             ctx.startActivity(i)
         }
+
+        // 加载遮罩的最长等待秒数：官方 + 采集都到位会提前进，到点还没齐就用手里有的
+        private const val WAIT_SEC = 15
     }
 
     /* 两路结果先各存各的，等「官方 + 采集」都到位（或倒计时到点/用户点立即播放）
@@ -477,6 +480,4 @@ class DetailActivity : AppCompatActivity() {
         ui.removeCallbacks(tick)
         super.onDestroy()
     }
-
-    private companion object { const val WAIT_SEC = 15 }
 }
