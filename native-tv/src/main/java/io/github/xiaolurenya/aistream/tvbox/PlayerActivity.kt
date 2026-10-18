@@ -109,7 +109,7 @@ class PlayerActivity : AppCompatActivity() {
             epBg.load(pu)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 epBg.setRenderEffect(
-                    RenderEffect.createBlurEffect(22f, 22f, android.graphics.Shader.TileMode.CLAMP)
+                    android.graphics.RenderEffect.createBlurEffect(22f, 22f, android.graphics.Shader.TileMode.CLAMP)
                 )
             }
         }
