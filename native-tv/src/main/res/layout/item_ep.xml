@@ -6,9 +6,9 @@
     android:layout_height="wrap_content"
     android:layout_margin="3dp"
     android:background="@drawable/bg_chip"
-    android:paddingStart="16dp"
-    android:paddingTop="9dp"
-    android:paddingEnd="16dp"
-    android:paddingBottom="9dp"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp"
     android:textColor="@color/fg_dim"
-    android:textSize="14sp" />
+    android:textSize="13sp" />

@@ -55,6 +55,8 @@ object PlayCache {
     var iptvIndex: Int = 0
     // 节目单（EPG）：cid -> 当前/下一档节目，随 /api/iptv 一起回来
     var iptvEpg: Map<String, Api.EpgNow> = emptyMap()
+    // 后台配置的分组顺序（/api/iptv 的 groupOrder）：频道单分组 tab 按这个排，没配到的按出现顺序补后面
+    var iptvGroupOrder: List<String> = emptyList()
 
     // 首页栏目（已过滤空栏目）：顶部分类标签点进来弹该栏目的海报网格时直接复用，不重复请求
     var homeCols: List<Api.Column> = emptyList()

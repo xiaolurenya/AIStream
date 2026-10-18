@@ -5,6 +5,19 @@
     android:layout_height="match_parent"
     android:background="@color/bg">
 
+    <!-- 海报背景：播放前的选集区也透出本片海报（磨砂），不再是一块死蓝底 -->
+    <ImageView
+        android:id="@+id/ivBackdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B30C1F3F" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">

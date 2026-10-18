@@ -124,6 +124,7 @@ class DetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvMeta).text = year
         val u = Api.dimg(inPoster)
         if (u.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(u)
+        loadBackdrop(u)
 
         rvLines.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         // 列数按屏幕分档：手机 4 列、平板 6、大电视 8（integers.xml）
@@ -383,6 +384,7 @@ class DetailActivity : AppCompatActivity() {
                 .joinToString(" · ")
         val pu = Api.dimg(r.poster)
         if (pu.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(pu)
+        loadBackdrop(pu)
         val kind = r.kind
         tvPlot.text = buildString {
             if (kind.isNotBlank()) append("类型：").append(kind).append("\n\n")
@@ -413,6 +415,7 @@ class DetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvMeta).text = r.meta
         val pu = Api.dimg(r.poster)
         if (pu.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(pu)
+        loadBackdrop(pu)
         tvPlot.text = if (r.plot.isBlank()) "这部片子没有更多介绍。" else r.plot
         paint()
     }
@@ -497,6 +500,18 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+
+    /* 详情页整页海报背景：选集区透出本片海报（API31+ 加磨砂模糊，低版本不糊但能显示） */
+    private fun loadBackdrop(u: String) {
+        val iv = findViewById<ImageView>(R.id.ivBackdrop)
+        if (u.isBlank()) { iv.setImageDrawable(null); return }
+        iv.load(u)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            iv.setRenderEffect(
+                android.graphics.RenderEffect.createBlurEffect(22f, 22f, android.graphics.Shader.TileMode.CLAMP)
+            )
+        }
+    }
 
     override fun onDestroy() {
         ui.removeCallbacks(tick)

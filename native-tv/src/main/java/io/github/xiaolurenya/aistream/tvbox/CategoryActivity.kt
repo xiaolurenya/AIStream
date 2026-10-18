@@ -38,7 +38,8 @@ class CategoryActivity : AppCompatActivity() {
         tvTitle.text = col.label.orEmpty().ifBlank { "栏目" }
 
         val rv = findViewById<RecyclerView>(R.id.recycler)
-        rv.layoutManager = GridLayoutManager(this, resources.getInteger(R.integer.grid_cols))
+        // 列数按 poster_w 现算：让每格只比卡片宽 0~2 个间距，排出来是紧凑的海报墙
+        rv.layoutManager = GridLayoutManager(this, posterSpanCount(this))
         quickAnim(rv)
         rv.adapter = PosterAdapter(col.items.orEmpty().toMutableList()) { c ->
             // 选一张海报：进详情页（从那里直接播），跟首页/收藏/历史挑海报一个入口

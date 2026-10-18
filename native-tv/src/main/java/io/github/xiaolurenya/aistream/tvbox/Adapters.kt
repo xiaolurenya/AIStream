@@ -40,6 +40,16 @@ fun noAnim(rv: RecyclerView) {
     rv.itemAnimator = null
 }
 
+/* 海报网格列数：按「poster_w + 间距」现算，不再用固定的 grid_cols。
+   固定列数在大屏上每格空一大截（栏目网格间隔大得离谱的根因）；
+   动态算出来的列数让每格只比卡片宽 0~2 个间距，排出来是紧凑的一面海报墙。 */
+fun posterSpanCount(ctx: android.content.Context): Int {
+    val dm = ctx.resources.displayMetrics
+    val pad = ctx.resources.getDimensionPixelSize(R.dimen.page_pad) * 2
+    val item = ctx.resources.getDimensionPixelSize(R.dimen.poster_w) + (12 * dm.density).toInt()
+    return (((dm.widthPixels - pad).toFloat() / item).coerceIn(3f, 9f).toInt())
+}
+
 // ---------- 海报卡（栏目行 / 网格页共用） ----------
 class PosterAdapter(
     private val items: MutableList<Api.Card> = mutableListOf(),
@@ -64,7 +74,10 @@ class PosterAdapter(
         val card = items[i]
         h.title.text = card.title.orEmpty()
         val sc = card.score.orEmpty().toDoubleOrNull()
-        h.sub.text = if (sc != null && sc > 0) "%.1f".format(sc) else ""
+        val sub = if (sc != null && sc > 0) "%.1f".format(sc) else ""
+        h.sub.text = sub
+        // 评分空就整行收起：空 TextView 也占一行高，网格里会白出一截空档
+        h.sub.visibility = if (sub.isBlank()) View.GONE else View.VISIBLE
         val y = card.year.orEmpty()
         h.badge.text = y
         h.badge.visibility = if (y.isBlank()) View.GONE else View.VISIBLE

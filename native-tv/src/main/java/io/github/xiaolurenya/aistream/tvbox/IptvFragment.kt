@@ -25,6 +25,7 @@ class IptvFragment : Fragment(R.layout.fragment_iptv) {
             val r = withContext(Dispatchers.IO) { runCatching { Api.iptv() }.getOrNull() }
             val list = r?.channels.orEmpty()
             PlayCache.iptvEpg = r?.now.orEmpty()
+            PlayCache.iptvGroupOrder = r?.groupOrder.orEmpty()
             hint.text = when {
                 r == null -> "取频道列表失败，检查站点连通性"
                 r.denied -> "管理员没给你的账号开直播权限"

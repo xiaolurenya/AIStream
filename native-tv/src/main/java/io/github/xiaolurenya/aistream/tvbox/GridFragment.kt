@@ -32,7 +32,8 @@ abstract class GridFragment : Fragment(R.layout.fragment_grid) {
         val et = v.findViewById<EditText>(R.id.etSearch)
         empty = v.findViewById(R.id.tvEmpty)
 
-        rv.layoutManager = GridLayoutManager(requireContext(), resources.getInteger(R.integer.grid_cols))
+        // 列数按 poster_w 现算：固定列数在大屏上每格空一大截，排出来间隔大得离谱
+        rv.layoutManager = GridLayoutManager(requireContext(), posterSpanCount(requireContext()))
         quickAnim(rv)
         adapter = PosterAdapter(mutableListOf()) { c -> DetailActivity.open(requireContext(), c) }
         rv.adapter = adapter

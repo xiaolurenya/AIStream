@@ -202,16 +202,22 @@ class LiveActivity : AppCompatActivity() {
     }
 
     // ---------- 分类筛选 + 搜索 ----------
-    /* 分组直接按频道数据里的 group 字段聚合（频道在清单里的顺序就是分组顺序），
-       跟网页版「全部 7135 / 央视频 73 / IPTV 470」一个口径。 */
+    /* 分组排序跟手机版一个口径：管理员后台配置的 groupOrder 优先（随 /api/iptv 一起下发，
+       自动获取，改后台即生效），没配到的分组按频道出现顺序补在后面。 */
     private fun buildCats() {
         val all = PlayCache.iptv
-        val order = LinkedHashMap<String, Int>()
+        val counts = LinkedHashMap<String, Int>()
         for (c in all) {
             val g = c.group.orEmpty().ifBlank { "其他" }
-            order[g] = (order[g] ?: 0) + 1
+            counts[g] = (counts[g] ?: 0) + 1
         }
-        cats = listOf(Pair("全部", all.size)) + order.map { Pair(it.key, it.value) }
+        val ordered = LinkedHashMap<String, Int>()
+        for (g in PlayCache.iptvGroupOrder) {
+            val n = counts.remove(g) ?: continue
+            ordered[g] = n
+        }
+        ordered.putAll(counts)
+        cats = listOf(Pair("全部", all.size)) + ordered.map { Pair(it.key, it.value) }
         selCat = 0
         paintCats()
         applyFilter()

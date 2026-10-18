@@ -236,6 +236,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             if (list.isNotEmpty()) {
                 PlayCache.iptv = list
                 PlayCache.iptvEpg = r?.now.orEmpty()
+                PlayCache.iptvGroupOrder = r?.groupOrder.orEmpty()
             }
             iptvLoaded = true
             // 设置里开了「首页直接播直播」：频道一到就播，不等焦点

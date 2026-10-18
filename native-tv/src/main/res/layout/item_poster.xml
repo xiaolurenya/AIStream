@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- TV 海报卡：比手机版大一圈，焦点落在上面会描边 + 放大（代码里做缩放动画） -->
+<!-- TV 海报卡：标题/评分直接压在海报底部（渐变压暗），卡片间不再留一截文字空档
+     —— 网格页「行间隔大得离谱」的根因就是卡片下方那块文字区，压进海报后间距归零 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/card"
     android:layout_width="@dimen/poster_w"
@@ -24,7 +25,7 @@
             android:id="@+id/tvBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|start"
+            android:layout_gravity="top|start"
             android:background="#99000000"
             android:paddingStart="7dp"
             android:paddingTop="2dp"
@@ -33,25 +34,39 @@
             android:textColor="@color/accent_soft"
             android:textSize="12sp" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bg_poster_scrim"
+            android:orientation="vertical"
+            android:paddingStart="7dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="7dp"
+            android:paddingBottom="5dp">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                style="@style/AIStream.TextTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/fg"
+                android:textSize="@dimen/poster_title" />
+
+            <TextView
+                android:id="@+id/tvSub"
+                style="@style/AIStream.TextSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/gold"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/tvTitle"
-        style="@style/AIStream.TextTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="7dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textSize="@dimen/poster_title" />
-
-    <TextView
-        android:id="@+id/tvSub"
-        style="@style/AIStream.TextSub"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textSize="12sp" />
 
 </LinearLayout>
