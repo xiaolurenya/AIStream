@@ -2,6 +2,7 @@ package io.github.xiaolurenya.aistream.tvbox
 
 import android.content.Context
 import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -27,7 +28,6 @@ import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
-import coil.transform.BlurTransformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -102,10 +102,16 @@ class PlayerActivity : AppCompatActivity() {
         val pu = Api.dimg(PlayCache.poster)
         if (pu.isNotBlank()) bgPoster.load(pu)
 
-        // 选集面板背景 = 同一张海报，但加玻璃磨砂（模糊 + 遮罩），海报透出来一点不晃眼
+        // 选集面板背景 = 同一张海报，加玻璃磨砂：Android 12+ 用 RenderEffect 真模糊，
+        // 老系统靠上面的半透明品牌色遮罩也能出磨砂感；海报透出来一点不晃眼
         val epBg = findViewById<ImageView>(R.id.epBg)
-        if (pu.isNotBlank()) epBg.load(pu) {
-            transformations(BlurTransformation(this@PlayerActivity, 18f, 1.5f))
+        if (pu.isNotBlank()) {
+            epBg.load(pu)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                epBg.setRenderEffect(
+                    RenderEffect.createBlurEffect(22f, 22f, android.graphics.Shader.TileMode.CLAMP)
+                )
+            }
         }
         pb = findViewById(R.id.pb)
         tvErr = findViewById(R.id.tvErr)
