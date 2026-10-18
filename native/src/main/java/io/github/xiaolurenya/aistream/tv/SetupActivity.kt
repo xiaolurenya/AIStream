@@ -75,6 +75,10 @@ class SetupActivity : AppCompatActivity() {
 
         etHost.addTextChangedListener { detectProto() }
 
+        /* 上次崩过就先把堆栈摆出来，并停在配置页——否则一自动跳转又崩，
+           陷入「打开就闪退」的死循环，大哥啥也看不到 */
+        val hadCrash = Crash.showIfAny(this)
+
         if (Prefs.configured) {
             setProto(Prefs.proto)
             etHost.setText(Prefs.host)
@@ -82,6 +86,11 @@ class SetupActivity : AppCompatActivity() {
             etUser.setText(Prefs.user)
             etPass.setText(Prefs.pass)
             tvClear.visibility = View.VISIBLE
+            if (hadCrash) {
+                Crash.reset(this)
+                showErr("上次启动就崩了，已停在配置页。点「进入」重试，或复制上面的报错发我")
+                return
+            }
             // 凭证还在有效期就别让用户再输一遍密码
             verifyAndEnter()
         }
