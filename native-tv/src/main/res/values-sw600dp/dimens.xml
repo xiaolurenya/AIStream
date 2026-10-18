@@ -12,13 +12,13 @@
     <dimen name="page_pad">18dp</dimen>
     <dimen name="page_pad_top">12dp</dimen>
 
-    <dimen name="hero_height">330dp</dimen>
+    <dimen name="hero_height">390dp</dimen>
     <dimen name="hero_title">26sp</dimen>
     <dimen name="hero_meta">14sp</dimen>
     <dimen name="hero_btn_h">44dp</dimen>
     <dimen name="hero_btn_text">16sp</dimen>
     <dimen name="side_col">150dp</dimen>
-    <dimen name="side_rv">225dp</dimen>
+    <dimen name="side_rv">185dp</dimen>
     <dimen name="side_card_text">15sp</dimen>
 
     <dimen name="poster_w">132dp</dimen>

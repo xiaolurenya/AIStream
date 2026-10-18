@@ -7,12 +7,10 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.text.Html
-import android.view.View
+import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -25,10 +23,10 @@ import androidx.fragment.app.Fragment
    确认键直接全屏。 */
 class MainActivity : AppCompatActivity() {
 
-    private val nav = mutableListOf<TextView>()
+    private val nav = mutableListOf<View>()
     private var cur = -1
 
-    private class RailItem(val label: String, val bg: Int)
+    private class RailItem(val icon: String, val title: String, val sub: String, val bg: Int)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,39 +43,61 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvBrand).text =
             Prefs.siteName.ifBlank { getString(R.string.app_name) }
 
-        RAIL.forEachIndexed { i, item ->
-            val tv = TextView(this).apply {
-                // 副文案小字号：label 里已带 <br/><small>（图1 样式）
-                text = Html.fromHtml(item.label, Html.FROM_HTML_MODE_LEGACY)
-                // 字号/内边距走 dimen：手机上装 TV 版自动用小一号（sw 分档）
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
-                    resources.getDimension(R.dimen.side_card_text))
-                setTextColor(getColor(R.color.fg))
-                setBackgroundResource(item.bg)
+        // 左侧功能卡 + 快捷卡同款：竖排两行（图标+标题 / 副标题），整体居中。
+        // 之前副标题塞在一个 Html <small> 里又小又糊还贴顶，大哥看了骂；现在两行都清楚且居中。
+        fun mkRailCard(
+            icon: String, title: String, sub: String, bg: Int,
+            onClick: () -> Unit, onFocus: ((Boolean) -> Unit)? = null, topMarginDp: Int = 10
+        ): LinearLayout {
+            val dm = resources.displayMetrics.density
+            val pad = (resources.getDimensionPixelSize(R.dimen.nav_pad) * 1.5f).toInt()
+            return LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                setBackgroundResource(bg)
                 isFocusable = true
                 isFocusableInTouchMode = true
-                val pad = resources.getDimensionPixelSize(R.dimen.nav_pad)
-                setPadding(pad, pad, pad, pad)
-                // 扁横排固定高（参考 base.apk）：weight 撑满会把卡撑成大色块，又空又蠢
+                setPadding(pad, (10 * dm).toInt(), pad, (10 * dm).toInt())
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    (76 * resources.displayMetrics.density).toInt()
-                ).apply {
-                    if (i > 0) topMargin = (10 * resources.displayMetrics.density).toInt()
-                }
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                bindFocus(this)
-                // 「电视直播」卡聚焦 → 首页 hero 出直播小窗预览（防抖在 fragment 里做）
-                if (i == RAIL_LIVE) {
-                    setOnFocusChangeListener { _, has -> home()?.onLiveFocus(has) }
-                }
-                setOnClickListener {
-                    if (i == RAIL_LIVE) openLive() else switch(i)
-                }
+                    ViewGroup.LayoutParams.MATCH_PARENT, (76 * dm).toInt()
+                ).apply { topMargin = (topMarginDp * dm).toInt() }
+                addView(TextView(this@MainActivity).apply {
+                    text = icon + "  " + title
+                    gravity = android.view.Gravity.CENTER
+                    setTextColor(getColor(R.color.fg))
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.side_card_text))
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                })
+                addView(TextView(this@MainActivity).apply {
+                    text = sub
+                    gravity = android.view.Gravity.CENTER
+                    setTextColor(0xFFC9D6EC.toInt())
+                    setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.side_sub_text))
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = (4 * dm).toInt() }
+                })
+                bindFocus(this) { h -> onFocus?.invoke(h) }
+                setOnClickListener { onClick() }
             }
-            rail.addView(tv)
-            nav.add(tv)
         }
+
+        RAIL.forEachIndexed { i, item ->
+            val card = mkRailCard(
+                item.icon, item.title, item.sub, item.bg,
+                onClick = { if (i == RAIL_LIVE) openLive() else switch(i) },
+                onFocus = { if (i == RAIL_LIVE) home()?.onLiveFocus(it) },
+                topMarginDp = if (i == 0) 0 else 10
+            )
+            rail.addView(card)
+            nav.add(card)
+        }
+
+        // 签到/兑换：跟上面 4 张卡同一个家族，排在「观看历史」下面（大哥指定挪过来）
+        rail.addView(mkRailCard("📮", "每日签到", "点击领取积分", R.drawable.bg_side_his,
+            onClick = { doCheckin() }, topMarginDp = 12))
+        rail.addView(mkRailCard("🎁", "会员兑换", "积分换会员权益", R.drawable.bg_side_live,
+            onClick = { startActivity(Intent(this, RedeemActivity::class.java)) }, topMarginDp = 10))
 
         findViewById<TextView>(R.id.btnSearch).apply {
             bindFocus(this)
@@ -86,26 +106,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.btnMe).apply {
             bindFocus(this)
             setOnClickListener { switch(ME) }
-        }
-
-        // 导航轨底部快捷区：扁横排两个小 chip（签到 | 兑换）。
-        // 「首页直播开关」撤了 —— 跟功能卡里的「首页」重复，放「我的」页
-        val btnQuickCheckin = findViewById<TextView>(R.id.btnQuickCheckin)
-        val btnQuickRedeem = findViewById<TextView>(R.id.btnQuickRedeem)
-        bindFocus(btnQuickCheckin)
-        bindFocus(btnQuickRedeem)
-        btnQuickRedeem.setOnClickListener { startActivity(Intent(this, RedeemActivity::class.java)) }
-        btnQuickCheckin.setOnClickListener {
-            btnQuickCheckin.isEnabled = false
-            lifecycleScope.launch {
-                val r = withContext(Dispatchers.IO) { runCatching { Api.checkin() }.getOrNull() }
-                btnQuickCheckin.isEnabled = true
-                when {
-                    r == null -> toast("签到失败，可能没开积分权限")
-                    r.ok -> toast("签到成功，+" + r.gained.orEmpty() + " 积分（连签 " + r.streak.orEmpty() + " 天）")
-                    else -> toast(r.msg ?: r.error ?: "今天已经签过到了")
-                }
-            }
         }
 
         switch(RAIL_HOME)
@@ -132,6 +132,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+
+    private fun doCheckin() {
+        lifecycleScope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { Api.checkin() }.getOrNull() }
+            when {
+                r == null -> toast("签到失败，可能没开积分权限")
+                r.ok -> toast("签到成功，+" + r.gained.orEmpty() + " 积分（连签 " + r.streak.orEmpty() + " 天）")
+                else -> toast(r.msg ?: r.error ?: "今天已经签过到了")
+            }
+        }
+    }
 
     // 沉浸式：TV 上没差别，但 TV 版装在手机上时能把底部手势条让出来（图1 底部那条白）
     override fun onResume() {
@@ -188,12 +199,11 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         // 顺序即左侧卡顺序（图1 样式，加了张「首页」卡回主内容）
-        private fun sub(s: String) = "<br/><small><font color=\"#E6E9F2\">$s</font></small>"
         private val RAIL = listOf(
-            RailItem("🏠 首页" + sub("为你推荐"), R.drawable.bg_side_home),
-            RailItem("❤ 我的收藏" + sub("精选优质影视剧"), R.drawable.bg_side_fav),
-            RailItem("📺 电视直播" + sub("央视卫视在线直播"), R.drawable.bg_side_live),
-            RailItem("⏱ 观看历史" + sub("接着上次的看"), R.drawable.bg_side_his)
+            RailItem("🏠", "首页", "为你推荐", R.drawable.bg_side_home),
+            RailItem("❤", "我的收藏", "精选优质影视剧", R.drawable.bg_side_fav),
+            RailItem("📺", "电视直播", "央视卫视在线直播", R.drawable.bg_side_live),
+            RailItem("⏱", "观看历史", "接着上次的看", R.drawable.bg_side_his)
         )
         private const val RAIL_HOME = 0
         private const val RAIL_FAV = 1

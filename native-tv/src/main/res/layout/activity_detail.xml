@@ -42,6 +42,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="26dp"
                 android:layout_weight="1"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:orientation="vertical">
 
                 <TextView
@@ -74,6 +76,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
                     android:orientation="horizontal">
 
                     <TextView
@@ -83,8 +87,8 @@
                         android:layout_height="48dp"
                         android:background="@drawable/bg_btn"
                         android:gravity="center"
-                        android:paddingStart="32dp"
-                        android:paddingEnd="32dp"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"
                         android:text="@string/play_now"
                         android:textColor="@android:color/white"
                         android:textSize="17sp"

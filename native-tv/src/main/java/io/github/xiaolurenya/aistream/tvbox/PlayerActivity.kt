@@ -51,6 +51,7 @@ class PlayerActivity : AppCompatActivity() {
     private var lastReport = 0L
 
     private var upAutoSw = 0
+    private var collectAutoSw = 0
     private var curLabel = ""
 
     // 自动跳过片头 / 片尾（能不能跳由后台权限决定）
@@ -149,12 +150,20 @@ class PlayerActivity : AppCompatActivity() {
 
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_READY) { pb.visibility = View.GONE; resuming = false }
+                if (state == Player.STATE_READY) { pb.visibility = View.GONE; resuming = false; collectAutoSw = 0; upAutoSw = 0 }
                 if (state == Player.STATE_ENDED && autoNext) nextEp()
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 pb.visibility = View.GONE
+                // 采集模式下某条线路挂了：自动顺延下一条（最多 3 次），免得用户手动一个个换
+                if (!PlayCache.isUp && PlayCache.lines.size > 1 && collectAutoSw < 3) {
+                    collectAutoSw++
+                    val nx = (lineIdx + 1) % PlayCache.lines.size
+                    toast("该线路暂不可用，自动换线 " + collectAutoSw + "/3")
+                    play(nx, if (epIdx < PlayCache.lines[nx].eps.size) epIdx else 0)
+                    return
+                }
                 showErr("播放失败：" + (error.message ?: "未知错误"))
             }
         })
@@ -550,6 +559,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun nextLine() {
+        collectAutoSw = 0
         if (PlayCache.isUp) {
             val n = PlayCache.upLines.size + 1
             if (n <= 1) { toast("这个站点没有列出可换的线路"); return }

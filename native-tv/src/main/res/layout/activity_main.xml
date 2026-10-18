@@ -71,7 +71,8 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <!-- 左侧功能卡导航轨：彩色卡由代码按 RAIL 顺序塞进来（weight=1 均分） -->
+        <!-- 左侧功能卡导航轨：彩色卡（含签到/兑换）由代码按 RAIL 顺序塞进来，
+             整体居中、与首页右侧推荐栏同高，不再用底部小 chip -->
         <LinearLayout
             android:id="@+id/rail"
             android:layout_width="@dimen/rail_width"
@@ -80,44 +81,7 @@
             android:orientation="vertical"
             android:paddingStart="12dp"
             android:paddingTop="16dp"
-            android:paddingEnd="12dp">
-
-            <!-- 底部快捷区：扁横排两个小 chip（每日签到 | 会员兑换）。
-                 「首页打开时：直播/海报」挪去「我的」页了 —— 放这里跟「首页」卡重复 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingTop="10dp">
-
-                <TextView
-                    android:id="@+id/btnQuickCheckin"
-                    style="@style/AIStream.FocusItem"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_chip"
-                    android:gravity="center"
-                    android:text="签到"
-                    android:textColor="@color/fg_dim"
-                    android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/btnQuickRedeem"
-                    style="@style/AIStream.FocusItem"
-                    android:layout_width="0dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_chip"
-                    android:gravity="center"
-                    android:text="兑换"
-                    android:textColor="@color/fg_dim"
-                    android:textSize="13sp" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:paddingEnd="12dp" />
 
         <FrameLayout
             android:id="@+id/content"
