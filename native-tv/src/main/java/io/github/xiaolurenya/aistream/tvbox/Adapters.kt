@@ -124,12 +124,14 @@ class ColumnAdapter(
 }
 
 // ---------- 线路 / 选集（chip 样式） ----------
+/* wrap 必须放在 onClick 前面：Kotlin 的尾随 lambda 绑定最后一个参数，
+   放在后面时 ChipAdapter(x, { picked }) { onClick } 会被当成传给 Boolean 报错。 */
 class ChipAdapter(
     private val items: List<String>,
     private val picked: () -> Int,
-    private val onClick: (Int) -> Unit,
     // 横向线路/解析器列表里 chip 别占满整行（全宽 chip 很难看），选集网格保持等分
-    private val wrap: Boolean = false
+    private val wrap: Boolean = false,
+    private val onClick: (Int) -> Unit
 ) : RecyclerView.Adapter<ChipAdapter.H>() {
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
