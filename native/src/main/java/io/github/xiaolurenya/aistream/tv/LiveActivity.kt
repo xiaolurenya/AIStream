@@ -5,7 +5,13 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -23,6 +29,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kotlin.math.abs
 
 // 直播播放：频道地址走 /api/iptv/stream?ch=，请求必须带上登录 token
 class LiveActivity : AppCompatActivity() {
@@ -92,6 +101,30 @@ class LiveActivity : AppCompatActivity() {
         playerView.setShowNextButton(false)
         playerView.setShowPreviousButton(false)
 
+        /* 手势换台：左右快滑 = 上一个/下一个台，双击 = 打开换台列表。
+           触摸事件不消费（返回 false），PlayerView 自己那套「点一下出控制条」照常工作。 */
+        val gesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
+                if (e1 == null) return false
+                val dx = e2.x - e1.x
+                val dy = e2.y - e1.y
+                if (abs(dx) > abs(dy) * 1.4f && abs(dx) > 110f) {
+                    stepChannel(if (dx < 0) 1 else -1)
+                    return true
+                }
+                return false
+            }
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                pickChannel()
+                return true
+            }
+        })
+        playerView.setOnTouchListener { _, ev ->
+            gesture.onTouchEvent(ev)
+            false
+        }
+
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_READY) {
@@ -151,15 +184,107 @@ class LiveActivity : AppCompatActivity() {
     private fun pickChannel() {
         val list = PlayCache.iptv
         if (list.isEmpty()) { Toast.makeText(this, "频道列表为空", Toast.LENGTH_SHORT).show(); return }
-        val names = list.map { it.name.orEmpty() }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("切换频道")
-            .setItems(names) { _, w ->
-                idx = w; PlayCache.iptvIndex = w
-                stage = 0; autoSw = 0
-                play()
-            }
+
+        /* 频道动辄几千个，AlertDialog.setItems 会一次全实例化直接卡死，
+           这里用「搜索框 + RecyclerView」：按台名/分组过滤，顺滑不卡。 */
+        val dm = resources.displayMetrics.density
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        box.setPadding((18 * dm).toInt(), (10 * dm).toInt(), (18 * dm).toInt(), 0)
+
+        val et = EditText(this).apply {
+            hint = "搜台名或分组"
+            setSingleLine(true)
+        }
+        box.addView(et)
+
+        val rv = RecyclerView(this).apply {
+            layoutManager = LinearLayoutManager(this@LiveActivity)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (420 * dm).toInt()
+            )
+        }
+        box.addView(rv)
+
+        var dlg: AlertDialog? = null
+        val ad = ChannelAdapter(list) { pos ->
+            dlg?.dismiss()
+            idx = pos
+            PlayCache.iptvIndex = pos
+            stage = 0
+            autoSw = 0
+            play()
+        }
+        rv.adapter = ad
+        et.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) = ad.filter(s?.toString().orEmpty())
+        })
+
+        dlg = AlertDialog.Builder(this)
+            .setTitle("换台（${list.size} 个频道）")
+            .setView(box)
+            .setNegativeButton("关闭", null)
             .show()
+    }
+
+    // 左右滑一下就切台：dir=1 下一个，dir=-1 上一个（到头循环）
+    private fun stepChannel(dir: Int) {
+        val total = PlayCache.iptv.size
+        if (total <= 1) return
+        idx = ((idx + dir) % total + total) % total
+        PlayCache.iptvIndex = idx
+        stage = 0
+        autoSw = 0
+        toast("▶ " + (PlayCache.iptv.getOrNull(idx)?.name.orEmpty()))
+        play()
+    }
+
+    // 换台列表的行：台名 + 分组，顶部一个搜索框做过滤
+    private inner class ChannelAdapter(
+        private val all: List<Api.IptvCh>,
+        private val onPick: (Int) -> Unit
+    ) : RecyclerView.Adapter<ChannelAdapter.H>() {
+
+        private val shown = mutableListOf<Int>()
+        private var cur = ""
+
+        class H(v: View) : RecyclerView.ViewHolder(v) {
+            val name: TextView = v.findViewById(R.id.tvName)
+            val group: TextView = v.findViewById(R.id.tvGroup)
+        }
+
+        init { filter("") }
+
+        fun filter(q: String) {
+            cur = q.trim().lowercase()
+            shown.clear()
+            all.forEachIndexed { i, c ->
+                if (cur.isBlank() ||
+                    c.name.orEmpty().lowercase().contains(cur) ||
+                    c.group.orEmpty().lowercase().contains(cur)
+                ) shown.add(i)
+            }
+            notifyDataSetChanged()
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+            H(LayoutInflater.from(parent.context).inflate(R.layout.item_channel_row, parent, false))
+
+        override fun getItemCount() = shown.size
+
+        override fun onBindViewHolder(h: H, i: Int) {
+            val pos = shown[i]
+            val c = all[pos]
+            h.name.text = c.name.orEmpty()
+            h.group.text = c.group.orEmpty()
+            // 当前正在播的台给个高亮
+            val on = pos == idx
+            h.name.setTextColor(
+                h.name.context.getColor(if (on) R.color.accent_soft else R.color.fg)
+            )
+            h.itemView.setOnClickListener { onPick(pos) }
+        }
     }
 
     // 上一档不行就往上抬；三档都走完才认输
