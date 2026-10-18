@@ -2,6 +2,10 @@ package io.github.xiaolurenya.aistream.tv
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +15,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import coil.size.Size
+import coil.transform.Transformation
 
 // ---------- 海报卡（首页横向栏目、搜索/收藏/历史网格共用） ----------
 class PosterAdapter(
@@ -135,8 +141,10 @@ class BannerPageAdapter(
             h.bg.setImageDrawable(null)
             h.poster.setImageDrawable(null)
         } else {
-            // 背景那张靠 layout 里的 alpha=0.55 压暗，再叠一层底部渐变，标题才看得清
-            h.bg.load(u)
+            // 背景那张做轻度模糊：海报是竖图，铺在横幅里必然裁上下，
+            // 不模糊就会出现「人物缺半张脸」的观感；抹平后只剩色块，前景海报才立得住。
+            // 透明度压到 0.5 + 底部渐变叠上去，标题照样看得清。
+            h.bg.load(u) { transformations(SoftBlur()) }
             h.poster.load(u)
         }
         h.itemView.setOnClickListener { onClick(c) }
@@ -147,6 +155,25 @@ class BannerPageAdapter(
         items.addAll(list)
         notifyDataSetChanged()
     }
+}
+
+// 轻度高斯近似：先降采样再 BlurMaskFilter，不碰 RenderScript（API 31 起废弃），低版本也能跑
+private class SoftBlur : Transformation {
+    override val cacheKey = "softblur-v1"
+    override suspend fun transform(input: Bitmap, size: Size): Bitmap {
+        val k = 0.12f
+        val w = (input.width * k).toInt().coerceAtLeast(1)
+        val h = (input.height * k).toInt().coerceAtLeast(1)
+        val small = Bitmap.createScaledBitmap(input, w, h, true)
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        p.maskFilter = BlurMaskFilter(6f, BlurMaskFilter.Blur.NORMAL)
+        c.drawBitmap(small, 0f, 0f, p)
+        return out
+    }
+    override fun equals(other: Any?) = other is SoftBlur
+    override fun hashCode() = cacheKey.hashCode()
 }
 
 // ---------- 线路 / 分集（chip 样式） ----------

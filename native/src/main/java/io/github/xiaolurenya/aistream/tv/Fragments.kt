@@ -89,14 +89,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     /* 轮播内容自动挑，不占后台配置项：
-       先排「推荐/最新/热门」这类栏目，按片名+年份去重，没海报的不要，取前 6 条。
-       这样不管接的是采集站还是内置豆瓣源，装好就有轮播。 */
+       严格按服务器首页返回的栏目顺序取（第一栏最优先），按「片名+年份」去重，
+       没海报的不要，取前 6 条。这样每个人看到的就是「他自己首页排最前的那些推荐」，
+       服务端首页配了什么、排了什么顺序，APP 就跟着来，不做任何本地重排。 */
     private fun pickBanner(cols: List<Api.Column>): List<Api.Card> {
-        val hot = Regex("推荐|最新|热门|热播|正在热|影视|电影|剧集|剧场")
-        val ordered = cols.sortedByDescending { if (hot.containsMatchIn(it.label.orEmpty())) 1 else 0 }
         val seen = HashSet<String>()
         val out = mutableListOf<Api.Card>()
-        for (col in ordered) {
+        for (col in cols) {
             for (c in col.items.orEmpty()) {
                 val key = c.title.orEmpty().trim() + "|" + c.year.orEmpty().trim()
                 if (!seen.add(key)) continue
