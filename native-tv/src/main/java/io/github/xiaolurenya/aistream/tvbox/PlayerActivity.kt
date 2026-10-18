@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -25,6 +26,7 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -93,6 +95,10 @@ class PlayerActivity : AppCompatActivity() {
         epIdx = intent.getIntExtra("ep", 0)
 
         playerView = findViewById(R.id.playerView)
+        // 播放器底色 = 当前片子的海报（大哥要求：别一片死黑）
+        val bgPoster = findViewById<ImageView>(R.id.bgPoster)
+        val pu = Api.dimg(PlayCache.poster)
+        if (pu.isNotBlank()) bgPoster.load(pu)
         pb = findViewById(R.id.pb)
         tvErr = findViewById(R.id.tvErr)
         tvTitle = findViewById(R.id.tvTitle)

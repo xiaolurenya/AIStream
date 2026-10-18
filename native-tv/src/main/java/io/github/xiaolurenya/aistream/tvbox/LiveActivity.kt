@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -114,6 +115,14 @@ class LiveActivity : AppCompatActivity() {
                 escalate(error.message ?: "源不可用")
             }
         })
+
+        // 触摸：点屏幕左半边 = 呼出频道单（手机/投影没遥控器，这是主要入口）；右半边 = 控制条
+        playerView.setOnTouchListener { v, ev ->
+            if (ev.action == MotionEvent.ACTION_UP) {
+                if (ev.x < v.width / 2f) openPanel() else playerView.showController()
+            }
+            true
+        }
 
         rvCh.layoutManager = LinearLayoutManager(this)
         quickAnim(rvCh)

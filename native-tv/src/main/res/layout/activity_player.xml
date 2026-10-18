@@ -6,6 +6,19 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
+    <!-- 播放器底色：当前影视剧的海报 + 压暗。加载中/暂停时露出，跟正在放的片子走 -->
+    <ImageView
+        android:id="@+id/bgPoster"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#D90A0D15" />
+
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_width="match_parent"
@@ -237,7 +250,7 @@
         android:layout_width="380dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        android:background="#F211151F"
+        android:background="#F20C1F3F"
         android:orientation="vertical"
         android:paddingStart="18dp"
         android:paddingTop="24dp"

@@ -36,6 +36,13 @@ object Api {
         .followRedirects(true)
         .build()
 
+    // SSE 长连接：广播可能几小时才推一条，readTimeout 设 0（无限等），别按普通请求超时
+    private val httpSse = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.MILLISECONDS)
+        .followRedirects(true)
+        .build()
+
     // ---------- 数据模型 ----------
     data class Card(
         val id: String? = null,
@@ -183,6 +190,26 @@ object Api {
     const val UA = "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
 
     fun gsonText(o: Any): String = gson.toJson(o)
+
+    /* SSE 实时推送（跟网页版同一条通道 /api/stream）：阻塞式读流，
+       每收到一条 data: 回调一次。要在 IO 协程里跑；返回即断线，调用方负责重连。
+       EventSource（网页版那个）浏览器才有，APP 这边自己按 SSE 文本协议解。 */
+    fun sseConnect(onMsg: (String) -> Unit) {
+        val req = Request.Builder()
+            .url(Prefs.base + "/api/stream?token=" + enc(Prefs.token))
+            .header("User-Agent", UA)
+            .header("Accept", "text/event-stream")
+            .build()
+        httpSse.newCall(req).execute().use { r ->
+            if (r.code !in 200..299) throw Err("SSE HTTP ${r.code}")
+            val src = r.body?.source() ?: return
+            while (true) {
+                val line = src.readUtf8Line() ?: break
+                // SSE 协议：消息行以 "data: " 开头，注释行(:开头)/空行跳过
+                if (line.startsWith("data: ")) onMsg(line.substring(6))
+            }
+        }
+    }
 
     // 解析站返回的多半是个网页，ExoPlayer 啃不动，这里自己去把里面的真实地址抠出来
     fun fetchText(url: String): String {

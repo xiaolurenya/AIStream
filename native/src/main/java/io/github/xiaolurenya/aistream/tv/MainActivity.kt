@@ -3,7 +3,9 @@ package io.github.xiaolurenya.aistream.tv
 import android.content.Intent
 import android.os.Bundle
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -61,5 +63,21 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SetupActivity::class.java))
             finish()
         }
+
+        // 实时推送：后台广播/公告（跟网页版同一通道，之前 APP 没接，收不到）
+        Notify.start(lifecycleScope) { title, content ->
+            runCatching {
+                AlertDialog.Builder(this)
+                    .setTitle(title)
+                    .setMessage(if (content.isBlank()) "（无正文）" else content)
+                    .setPositiveButton("知道了", null)
+                    .show()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        Notify.stop()
+        super.onDestroy()
     }
 }

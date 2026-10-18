@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -85,21 +86,13 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener { switch(ME) }
         }
 
-        // 导航轨底部快捷区：签到 / 会员兑换 / 首页直播开关（「我的」页那几项搬下来）
+        // 导航轨底部快捷区：扁横排两个小 chip（签到 | 兑换）。
+        // 「首页直播开关」撤了 —— 跟功能卡里的「首页」重复，放「我的」页
         val btnQuickCheckin = findViewById<TextView>(R.id.btnQuickCheckin)
         val btnQuickRedeem = findViewById<TextView>(R.id.btnQuickRedeem)
-        val btnQuickHero = findViewById<TextView>(R.id.btnQuickHero)
         bindFocus(btnQuickCheckin)
         bindFocus(btnQuickRedeem)
-        bindFocus(btnQuickHero)
         btnQuickRedeem.setOnClickListener { startActivity(Intent(this, RedeemActivity::class.java)) }
-        btnQuickHero.setOnClickListener {
-            Prefs.heroLive = !Prefs.heroLive
-            btnQuickHero.text = heroText()
-            Toast.makeText(this, if (Prefs.heroLive) "首页打开就播直播了" else "首页打开显示海报了",
-                Toast.LENGTH_SHORT).show()
-        }
-        btnQuickHero.text = heroText()
         btnQuickCheckin.setOnClickListener {
             btnQuickCheckin.isEnabled = false
             lifecycleScope.launch {
@@ -114,9 +107,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         switch(RAIL_HOME)
+
+        // 实时推送：后台广播/公告（跟网页版同一通道，之前 APP 没接，收不到）
+        Notify.start(lifecycleScope) { title, content ->
+            runCatching {
+                AlertDialog.Builder(this)
+                    .setTitle(title)
+                    .setMessage(if (content.isBlank()) "（无正文）" else content)
+                    .setPositiveButton("知道了", null)
+                    .show()
+            }
+        }
     }
 
-    private fun heroText(): String = if (Prefs.heroLive) "首页：直播" else "首页：海报"
+    override fun onDestroy() {
+        Notify.stop()
+        super.onDestroy()
+    }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 
