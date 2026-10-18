@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- TV 详情页：左边大海报，右边片名/信息/按钮/简介，下面线路和选集。
-     全部可聚焦，遥控器上下键一路往下走就行。 -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 外层 FrameLayout 为了盖「正在优化加载线路」遮罩：官方 + 采集都到位再渲染，不闪 360zy -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -153,4 +156,70 @@
 
     </LinearLayout>
 
-</ScrollView>
+    </ScrollView>
+
+    <!-- 加载遮罩：倒计时 + 已找到线路数 + 立即播放（遥控器确认键直接播） -->
+    <LinearLayout
+        android:id="@+id/loadOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="正在优化加载线路"
+            android:textColor="@color/fg"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLoadCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/accent_soft"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tvLoadInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/fg_dim"
+            android:textSize="15sp" />
+
+        <ProgressBar
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/btnLoadPlay"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="wrap_content"
+            android:layout_height="52dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/bg_btn"
+            android:gravity="center"
+            android:paddingStart="40dp"
+            android:paddingEnd="40dp"
+            android:text="立即播放"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="等全部线路就绪自动进入 · 急着看按确认键直接播"
+            android:textColor="@color/fg_dim"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 import kotlin.math.abs
+import kotlin.math.ceil
 
 /* TV 播放器。遥控器映射：
    确认键 = 暂停/继续｜左右键 = 快退/快进 10 秒｜上下键 = 呼出进度条
@@ -71,7 +72,11 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var rvEps: RecyclerView
     private lateinit var btnFull: TextView
     private lateinit var btnSpeed: TextView
+    private lateinit var tvSkip: TextView
     private val ui = Handler(Looper.getMainLooper())
+
+    // 跳过片头/片尾胶囊当前的动作：0=无/会员引导 1=跳过片头 2=下一集
+    private var skipAct = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,6 +149,27 @@ class PlayerActivity : AppCompatActivity() {
         rvEps.layoutManager = GridLayoutManager(this, 3)
         noAnim(rvEps)
 
+        // 跳过片头/片尾胶囊：确认键点了立刻生效，不用等倒计时
+        tvSkip = findViewById(R.id.tvSkip)
+        tvSkip.setOnClickListener {
+            when (skipAct) {
+                1 -> {
+                    introDone = true
+                    runCatching { player.seekTo((SKIP_INTRO_TO * 1000).toLong()) }
+                    tvSkip.visibility = View.GONE
+                    toast("已跳过片头")
+                }
+                2 -> {
+                    outroDone = true
+                    tvSkip.visibility = View.GONE
+                    toast("自动播放下一集 ▶")
+                    nextEp()
+                }
+                else -> toast("跳过片头/片尾为会员特权，可在「我的 → 会员兑换」用积分兑换")
+            }
+        }
+        bindFocus(tvSkip) { has -> tvSkip.alpha = if (has) 1f else 0.9f }
+
         findViewById<View>(R.id.btnLine).setOnClickListener { nextLine() }
         findViewById<View>(R.id.btnEps).setOnClickListener { toggleEps() }
         btnFull.setOnClickListener { toggleFull() }
@@ -184,8 +210,9 @@ class PlayerActivity : AppCompatActivity() {
     // ---------- 遥控器按键 ----------
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (ev.action == KeyEvent.ACTION_DOWN) {
-            // 焦点已经在播放器控制条/选集面板里时，一切交给它们，别抢
-            if (focusInPlayer() || (epPanel.visibility == View.VISIBLE && focusInPanel())) {
+            // 焦点已经在播放器控制条/选集面板/底部按钮/跳过胶囊里时，一切交给它们，别抢
+            // （否则焦点在「跳过片头」上按确认键会被这里当成播放/暂停，胶囊就点不动了）
+            if (focusInPlayer() || focusInPanel() || focusIn(barBtns) || currentFocus === tvSkip) {
                 return super.dispatchKeyEvent(ev)
             }
             when (ev.keyCode) {
@@ -304,6 +331,17 @@ class PlayerActivity : AppCompatActivity() {
         tvErr.visibility = View.VISIBLE
     }
 
+    // 拦截提示：飘 6 秒自己消失，别挡画面
+    private fun showAdBadge(n: Int) {
+        val tv = findViewById<TextView>(R.id.tvAd)
+        tv.text = "🛡 已拦截 $n 个插播广告"
+        tv.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            delay(6000)
+            if (!isDestroyed) tv.visibility = View.GONE
+        }
+    }
+
     private fun play(line: Int, ep: Int) {
         if (PlayCache.isUp) { playUp(ep); return }
         val ln = PlayCache.lines.getOrNull(line)
@@ -319,7 +357,20 @@ class PlayerActivity : AppCompatActivity() {
         val raw = e.url.orEmpty()
         lifecycleScope.launch {
             val finalUrl = withContext(Dispatchers.IO) { resolveUrl(raw) }
-            applyMedia(finalUrl)
+            var playUrl = finalUrl
+            var blocked = 0
+            /* 采集线路的 m3u8：让服务端按「广告过滤」页同一套规则检测插播，
+               命中就走 /api/m3u8filter 改写过的清单（切片仍是采集站直链，不占上行）。
+               官方线路和 mp4 直链不动。 */
+            if (!PlayCache.isUp && Api.isM3u8(finalUrl)) {
+                val r = withContext(Dispatchers.IO) { runCatching { Api.adPreview(finalUrl) }.getOrNull() }
+                if (r != null && r.blocked > 0) {
+                    blocked = r.blocked
+                    playUrl = Api.m3u8FilterUrl(finalUrl)
+                }
+            }
+            applyMedia(playUrl)
+            if (blocked > 0) showAdBadge(blocked)
         }
     }
 
@@ -328,6 +379,7 @@ class PlayerActivity : AppCompatActivity() {
         outroDone = false
         outBlocked = false
         lastT = 0L
+        skipAct = 0
         tvErr.visibility = View.GONE
         pb.visibility = View.VISIBLE
     }
@@ -482,14 +534,41 @@ class PlayerActivity : AppCompatActivity() {
                     introDone = true
                     runCatching { player.seekTo((SKIP_INTRO_TO * 1000).toLong()) }
                     lastT = SKIP_INTRO_TO.toLong()
+                    tvSkip.visibility = View.GONE
                     toast("已自动跳过片头 ▶")
                     continue
                 }
                 if (autoSkip && canOutro && !outroDone && natural && outAuto) {
                     outroDone = true
+                    tvSkip.visibility = View.GONE
                     toast("已自动跳过片尾 · 播放下一集 ▶")
                     nextEp()
                     continue
+                }
+
+                // 胶囊：自动模式显示倒计时（确认键点了立刻跳），没权限显示会员引导
+                // —— 文案跟手机版/网页端一字不差，TV 版之前漏了这个，被大哥点名了
+                when {
+                    introZone -> {
+                        tvSkip.text = when {
+                            !canIntro -> "👑 会员专享 · 跳过片头"
+                            autoIn -> "即将自动跳过片头 " + maxOf(1, ceil(SKIP_INTRO_AT - t).toInt()) + "s ⏭"
+                            else -> "跳过片头 ⏭"
+                        }
+                        skipAct = if (canIntro) 1 else 0
+                        tvSkip.visibility = View.VISIBLE
+                    }
+                    outZone -> {
+                        val showAuto = autoSkip && canOutro && !outBlocked
+                        tvSkip.text = when {
+                            !canOutro -> "👑 会员专享 · 跳过片尾"
+                            showAuto -> "即将自动跳过片尾 · 下一集 ⏭"
+                            else -> "跳过片尾 · 下一集 ⏭"
+                        }
+                        skipAct = if (canOutro) 2 else 0
+                        tvSkip.visibility = View.VISIBLE
+                    }
+                    else -> tvSkip.visibility = View.GONE
                 }
                 lastT = t.toLong()
             }

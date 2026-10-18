@@ -117,6 +117,40 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/tvAd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="70dp"
+        android:background="@drawable/bg_chip_on"
+        android:paddingStart="18dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="9dp"
+        android:text="已拦截 0 个插播广告"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+    <!-- 跳过片头/片尾胶囊：倒计时自动跳，遥控器确认键点了立刻跳 -->
+    <TextView
+        android:id="@+id/tvSkip"
+        style="@style/AIStream.FocusItem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="30dp"
+        android:background="@drawable/bg_chip_on"
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="10dp"
+        android:text="跳过片头 ⏭"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
     <!-- 选集面板：按「选集」从右边滑出来，遥控器左右键进去挑集 -->
     <LinearLayout
         android:id="@+id/epPanel"

@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 class IptvFragment : Fragment(R.layout.fragment_iptv) {
 
     private var all: List<Api.IptvCh> = emptyList()
+    private var epg: Map<String, Api.EpgNow> = emptyMap()
     private var groups: List<String> = listOf("全部")
     private var groupIdx = 0
 
@@ -48,6 +49,7 @@ class IptvFragment : Fragment(R.layout.fragment_iptv) {
             swipe.isRefreshing = false
 
             all = r?.channels.orEmpty()
+            epg = r?.now.orEmpty()
             empty.visibility = if (all.isEmpty()) View.VISIBLE else View.GONE
             if (r?.denied == true) empty.setText(R.string.iptv_empty)
             if (!r?.error.isNullOrBlank()) empty.text = "清单拉取失败：" + r!!.error
@@ -75,7 +77,7 @@ class IptvFragment : Fragment(R.layout.fragment_iptv) {
         val g = groups.getOrNull(groupIdx) ?: "全部"
         val list = if (groupIdx == 0) all else all.filter { it.group == g }
         PlayCache.iptv = list
-        recycler.adapter = ChannelAdapter(list) { idx ->
+        recycler.adapter = ChannelAdapter(list, epg) { idx ->
             PlayCache.iptvIndex = idx
             startActivity(android.content.Intent(requireContext(), LiveActivity::class.java))
         }
@@ -84,12 +86,14 @@ class IptvFragment : Fragment(R.layout.fragment_iptv) {
 
 class ChannelAdapter(
     private val items: List<Api.IptvCh>,
+    private val epg: Map<String, Api.EpgNow>,
     private val onClick: (Int) -> Unit
 ) : RecyclerView.Adapter<ChannelAdapter.H>() {
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val name: TextView = v.findViewById(R.id.tvName)
         val logo: ImageView = v.findViewById(R.id.imgLogo)
+        val epg: TextView = v.findViewById(R.id.tvEpg)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
@@ -108,6 +112,25 @@ class ChannelAdapter(
         } else {
             h.logo.visibility = View.GONE
         }
+
+        // 节目单：正在播的节目 + 几点结束 + 接下来播什么
+        val e = epg[c.cid]
+        if (e == null || e.t.isNullOrBlank()) {
+            h.epg.visibility = View.GONE
+        } else {
+            h.epg.visibility = View.VISIBLE
+            h.epg.text = buildString {
+                append("▶ ").append(e.t)
+                if (e.ce > 0) append("（至 ").append(hhmm(e.ce)).append("）")
+                if (!e.next.isNullOrBlank()) {
+                    append("\n接下来 ").append(e.next)
+                    if (e.ns > 0) append(" ").append(hhmm(e.ns))
+                }
+            }
+        }
         h.itemView.setOnClickListener { onClick(i) }
     }
+
+    private fun hhmm(ts: Long): String =
+        java.text.SimpleDateFormat("HH:mm", java.util.Locale.CHINA).format(java.util.Date(ts))
 }

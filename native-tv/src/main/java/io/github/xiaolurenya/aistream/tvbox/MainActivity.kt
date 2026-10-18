@@ -34,9 +34,10 @@ class MainActivity : AppCompatActivity() {
         NAV.forEachIndexed { i, label ->
             val tv = TextView(this).apply {
                 text = label
-                textSize = 17f
+                textSize = 16f
                 setTextColor(getColor(R.color.fg_dim))
-                val pad = (18 * resources.displayMetrics.density).toInt()
+                // 13dp：6 个导航项在 1080p 电视上一屏放得下，不会像上一版那样最后一条被截掉
+                val pad = (13 * resources.displayMetrics.density).toInt()
                 setPadding(pad, pad, pad, pad)
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT

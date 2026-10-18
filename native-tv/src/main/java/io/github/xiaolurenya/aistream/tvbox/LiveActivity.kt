@@ -108,7 +108,7 @@ class LiveActivity : AppCompatActivity() {
         quickAnim(rvCh)
         val list = PlayCache.iptv
         if (list.isNotEmpty()) {
-            rvCh.adapter = ChannelAdapter(list) { pos ->
+            rvCh.adapter = ChannelAdapter(list, PlayCache.iptvEpg) { pos ->
                 idx = pos
                 PlayCache.iptvIndex = pos
                 stage = 0
@@ -248,7 +248,11 @@ class LiveActivity : AppCompatActivity() {
         if (c == null) { showErr("没有这个频道"); return }
         curCid = c.cid.orEmpty()
         curDirect = c.direct
-        tvTitle.text = c.name.orEmpty() + if (stage >= 1) "（代理）" else ""
+        // 台名 + 正在播的节目（后台配了节目单才有）：信息量和网页版对齐
+        val e = PlayCache.iptvEpg[curCid]
+        tvTitle.text = c.name.orEmpty() +
+            (if (!e?.t.isNullOrBlank()) "  ·  正在播：" + e!!.t else "") +
+            (if (stage >= 1) "（代理）" else "")
         tvErr.visibility = View.GONE
         pb.visibility = View.VISIBLE
 

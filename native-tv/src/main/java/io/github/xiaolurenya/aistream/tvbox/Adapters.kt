@@ -157,6 +157,7 @@ class ChipAdapter(
 // ---------- 直播频道列表 ----------
 class ChannelAdapter(
     private val items: List<Api.IptvCh>,
+    private val epg: Map<String, Api.EpgNow> = emptyMap(),
     private val onPick: (Int) -> Unit
 ) : RecyclerView.Adapter<ChannelAdapter.H>() {
 
@@ -164,6 +165,7 @@ class ChannelAdapter(
         val row: View = v.findViewById(R.id.row)
         val name: TextView = v.findViewById(R.id.tvName)
         val group: TextView = v.findViewById(R.id.tvGroup)
+        val epg: TextView = v.findViewById(R.id.tvEpg)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
@@ -175,11 +177,31 @@ class ChannelAdapter(
         val c = items[i]
         h.name.text = c.name.orEmpty()
         h.group.text = c.group.orEmpty()
+
+        // 节目单：正在播 + 几点结束 + 接下来播什么（后台没配 EPG 就不显示这行）
+        val e = epg[c.cid]
+        if (e == null || e.t.isNullOrBlank()) {
+            h.epg.visibility = View.GONE
+        } else {
+            h.epg.visibility = View.VISIBLE
+            h.epg.text = buildString {
+                append("▶ ").append(e.t)
+                if (e.ce > 0) append("（至 ").append(hhmm(e.ce)).append("）")
+                if (!e.next.isNullOrBlank()) {
+                    append("  ·  接下来 ").append(e.next)
+                    if (e.ns > 0) append(" ").append(hhmm(e.ns))
+                }
+            }
+        }
+
         bindFocus(h.row) { has ->
             h.row.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_card)
         }
         h.itemView.setOnClickListener { onPick(i) }
     }
+
+    private fun hhmm(ts: Long): String =
+        java.text.SimpleDateFormat("HH:mm", java.util.Locale.CHINA).format(java.util.Date(ts))
 }
 
 // ---------- 会员兑换列表 ----------

@@ -53,6 +53,8 @@ object PlayCache {
     // IPTV 频道列表与当前台号：直播播放页要能上下换台
     var iptv: List<Api.IptvCh> = emptyList()
     var iptvIndex: Int = 0
+    // 节目单（EPG）：cid -> 当前/下一档节目，随 /api/iptv 一起回来
+    var iptvEpg: Map<String, Api.EpgNow> = emptyMap()
 
     fun parseUrl(): String = parseList.getOrNull(parseIndex)?.url.orEmpty()
 
