@@ -44,13 +44,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         nav.setOnItemSelectedListener {
-            pager.currentItem = when (it.itemId) {
+            // false = 不做滑动补间：底部导航切页要的是立刻到位，
+            // 那 300ms 的横滑动画在 Fragment 还没渲染完时反而是一段卡顿
+            pager.setCurrentItem(when (it.itemId) {
                 R.id.nav_home -> 0
                 R.id.nav_search -> 1
                 R.id.nav_iptv -> 2
                 R.id.nav_fav -> 3
                 else -> 4
-            }
+            }, false)
             true
         }
 
