@@ -126,7 +126,8 @@ class DetailActivity : AppCompatActivity() {
         if (u.isNotBlank()) findViewById<ImageView>(R.id.imgPoster).load(u)
 
         rvLines.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        rvEps.layoutManager = GridLayoutManager(this, 8)
+        // 列数按屏幕分档：手机 4 列、平板 6、大电视 8（integers.xml）
+        rvEps.layoutManager = GridLayoutManager(this, resources.getInteger(R.integer.ep_cols))
         noAnim(rvLines)
         noAnim(rvEps)
 

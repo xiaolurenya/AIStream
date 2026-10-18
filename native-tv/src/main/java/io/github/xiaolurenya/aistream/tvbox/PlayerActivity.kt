@@ -146,7 +146,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        rvEps.layoutManager = GridLayoutManager(this, 3)
+        rvEps.layoutManager = GridLayoutManager(this, resources.getInteger(R.integer.player_ep_cols))
         noAnim(rvEps)
 
         // 跳过片头/片尾胶囊：确认键点了立刻生效，不用等倒计时

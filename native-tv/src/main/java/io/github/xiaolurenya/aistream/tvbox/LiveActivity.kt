@@ -46,6 +46,8 @@ class LiveActivity : AppCompatActivity() {
     private lateinit var tvErr: TextView
     private lateinit var chPanel: View
     private lateinit var rvCh: RecyclerView
+    private lateinit var btnCh: TextView
+    private lateinit var btnClosePanel: TextView
     private lateinit var tvEpgNow: TextView
     private lateinit var tvEpgNext: TextView
     private val ui = Handler(Looper.getMainLooper())
@@ -70,6 +72,11 @@ class LiveActivity : AppCompatActivity() {
         tvErr = findViewById(R.id.tvErr)
         chPanel = findViewById(R.id.chPanel)
         rvCh = findViewById(R.id.rvCh)
+        btnCh = findViewById(R.id.btnCh)
+        btnClosePanel = findViewById(R.id.btnClosePanel)
+        // 手机/投影上没有遥控器按键：屏幕右上角这个「☰ 频道」就是触摸入口
+        btnCh.setOnClickListener { openPanel() }
+        btnClosePanel.setOnClickListener { closePanel() }
         tvEpgNow = findViewById(R.id.tvEpgNow)
         tvEpgNext = findViewById(R.id.tvEpgNext)
 
@@ -181,6 +188,7 @@ class LiveActivity : AppCompatActivity() {
 
     private fun openPanel() {
         chPanel.visibility = View.VISIBLE
+        btnCh.visibility = View.GONE
         paintPanelEpg()
         // 把当前正在播的台滚到可见位置，别让用户进去还得从头翻
         if (idx >= 0) rvCh.scrollToPosition(idx)
@@ -209,6 +217,7 @@ class LiveActivity : AppCompatActivity() {
 
     private fun closePanel() {
         chPanel.visibility = View.GONE
+        btnCh.visibility = View.VISIBLE
         playerView.requestFocus()
     }
 

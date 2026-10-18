@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 平板 / 小电视档 -->
+<resources>
+    <dimen name="rail_width">180dp</dimen>
+    <dimen name="rail_pad_top">22dp</dimen>
+    <dimen name="brand_size">19sp</dimen>
+    <dimen name="brand_pad_start">20dp</dimen>
+    <dimen name="nav_text">15sp</dimen>
+    <dimen name="nav_pad">11dp</dimen>
+
+    <dimen name="page_pad">18dp</dimen>
+    <dimen name="page_pad_top">12dp</dimen>
+
+    <dimen name="hero_height">255dp</dimen>
+    <dimen name="hero_title">26sp</dimen>
+    <dimen name="hero_meta">14sp</dimen>
+    <dimen name="hero_btn_h">44dp</dimen>
+    <dimen name="hero_btn_text">16sp</dimen>
+    <dimen name="side_col">150dp</dimen>
+    <dimen name="side_rv">140dp</dimen>
+    <dimen name="side_card_text">15sp</dimen>
+
+    <dimen name="poster_w">132dp</dimen>
+    <dimen name="poster_h">190dp</dimen>
+    <dimen name="poster_title">13sp</dimen>
+
+    <dimen name="chpanel_w">420dp</dimen>
+    <dimen name="live_title">19sp</dimen>
+    <dimen name="ch_num_w">42dp</dimen>
+    <dimen name="ch_logo_w">50dp</dimen>
+    <dimen name="ch_logo_h">32dp</dimen>
+</resources>

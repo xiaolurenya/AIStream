@@ -7,6 +7,9 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 
 /* TV 主界面：左边导航轨 + 右边内容区。
@@ -34,10 +37,11 @@ class MainActivity : AppCompatActivity() {
         NAV.forEachIndexed { i, label ->
             val tv = TextView(this).apply {
                 text = label
-                textSize = 16f
+                // 字号/内边距走 dimen：手机上装 TV 版自动用小一号（sw 分档）
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
+                    resources.getDimension(R.dimen.nav_text))
                 setTextColor(getColor(R.color.fg_dim))
-                // 13dp：6 个导航项在 1080p 电视上一屏放得下，不会像上一版那样最后一条被截掉
-                val pad = (13 * resources.displayMetrics.density).toInt()
+                val pad = resources.getDimensionPixelSize(R.dimen.nav_pad)
                 setPadding(pad, pad, pad, pad)
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
@@ -78,6 +82,16 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.content, f)
             .commitAllowingStateLoss()
+    }
+
+    // 沉浸式：TV 上没差别，但 TV 版装在手机上时能把底部手势条让出来（图1 底部那条白）
+    override fun onResume() {
+        super.onResume()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val c = WindowInsetsControllerCompat(window, window.decorView)
+        c.hide(WindowInsetsCompat.Type.systemBars())
+        c.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
     // 退到首页再按返回键才退出，别一不小心就把 APP 关了

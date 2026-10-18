@@ -2,7 +2,7 @@
 <!-- TV 海报卡：比手机版大一圈，焦点落在上面会描边 + 放大（代码里做缩放动画） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/card"
-    android:layout_width="150dp"
+    android:layout_width="@dimen/poster_w"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingStart="6dp"
@@ -10,7 +10,7 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="216dp"
+        android:layout_height="@dimen/poster_h"
         android:background="@drawable/bg_card">
 
         <ImageView
@@ -43,7 +43,7 @@
         android:layout_marginTop="7dp"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textSize="14sp" />
+        android:textSize="@dimen/poster_title" />
 
     <TextView
         android:id="@+id/tvSub"

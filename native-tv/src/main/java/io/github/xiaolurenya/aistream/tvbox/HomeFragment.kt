@@ -216,8 +216,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 cur = 0
                 paintHero()
             }
-            // 右侧推荐列：第一栏最前面几张
-            sideAdapter.submit(keep.firstOrNull()?.items.orEmpty().take(SIDE_MAX))
+            // 右侧推荐列：第一栏最前面几张（张数按屏幕分档，手机少放两张）
+            sideAdapter.submit(keep.firstOrNull()?.items.orEmpty()
+                .take(resources.getInteger(R.integer.side_max)))
         }
     }
 
@@ -371,6 +372,5 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private companion object {
         const val ROT_MS = 6000L   // hero 轮换间隔
         const val HERO_MAX = 6     // 最多轮换几条
-        const val SIDE_MAX = 4     // 右侧推荐列几张
     }
 }

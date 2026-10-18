@@ -21,7 +21,7 @@ class RedeemActivity : AppCompatActivity() {
         val rv = findViewById<RecyclerView>(R.id.recycler)
         val empty = findViewById<TextView>(R.id.tvEmpty)
         val tvMe = findViewById<TextView>(R.id.tvMe)
-        rv.layoutManager = GridLayoutManager(this, 3)
+        rv.layoutManager = GridLayoutManager(this, resources.getInteger(R.integer.redeem_cols))
         quickAnim(rv)
 
         lifecycleScope.launch {

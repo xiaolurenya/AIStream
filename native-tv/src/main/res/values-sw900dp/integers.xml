@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 大电视档：1080p 电视一屏放得下，列数维持原值 -->
+<resources>
+    <integer name="ep_cols">8</integer>
+    <integer name="grid_cols">6</integer>
+    <integer name="player_ep_cols">3</integer>
+    <integer name="redeem_cols">3</integer>
+    <integer name="side_max">4</integer>
+</resources>

@@ -9,23 +9,23 @@
 
     <LinearLayout
         android:id="@+id/rail"
-        android:layout_width="210dp"
+        android:layout_width="@dimen/rail_width"
         android:layout_height="match_parent"
         android:background="@color/bg_rail"
         android:orientation="vertical"
-        android:paddingTop="26dp"
+        android:paddingTop="@dimen/rail_pad_top"
         android:paddingBottom="26dp">
 
         <TextView
             android:id="@+id/tvBrand"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="22dp"
+            android:paddingStart="@dimen/brand_pad_start"
             android:paddingEnd="10dp"
             android:paddingBottom="18dp"
             android:text="@string/app_name"
             android:textColor="@color/accent_soft"
-            android:textSize="20sp"
+            android:textSize="@dimen/brand_size"
             android:textStyle="bold" />
 
         <!-- 导航项由代码塞进来（顺序写死在 MainActivity.NAV 里，改一处就行） -->

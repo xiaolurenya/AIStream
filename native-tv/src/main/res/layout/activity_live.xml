@@ -10,6 +10,22 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- 触摸入口：装在手机/投影遥控 App 上没有遥控器按键，点这里也能呼出频道单 -->
+    <TextView
+        android:id="@+id/btnCh"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="24dp"
+        android:background="#66000000"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="☰ 频道"
+        android:textColor="@android:color/white"
+        android:textSize="14sp" />
+
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
@@ -21,7 +37,7 @@
         android:shadowColor="#CC000000"
         android:shadowRadius="6"
         android:textColor="@android:color/white"
-        android:textSize="20sp"
+        android:textSize="@dimen/live_title"
         android:textStyle="bold" />
 
     <ProgressBar
@@ -43,7 +59,7 @@
 
     <LinearLayout
         android:id="@+id/chPanel"
-        android:layout_width="480dp"
+        android:layout_width="@dimen/chpanel_w"
         android:layout_height="match_parent"
         android:background="#F211151F"
         android:orientation="vertical"
@@ -53,14 +69,36 @@
         android:paddingBottom="16dp"
         android:visibility="gone">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- 面板标题行：触摸用户点 × 关闭（遥控器按返回/左键也能关） -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="10dp"
-            android:text="频道"
-            android:textColor="@color/fg"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="10dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="频道"
+                android:textColor="@color/fg"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnClosePanel"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="#33FFFFFF"
+                android:gravity="center"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="✕ 关闭"
+                android:textColor="@color/fg"
+                android:textSize="13sp" />
+
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvCh"

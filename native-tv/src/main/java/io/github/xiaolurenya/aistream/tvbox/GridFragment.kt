@@ -32,7 +32,7 @@ abstract class GridFragment : Fragment(R.layout.fragment_grid) {
         val et = v.findViewById<EditText>(R.id.etSearch)
         empty = v.findViewById(R.id.tvEmpty)
 
-        rv.layoutManager = GridLayoutManager(requireContext(), 6)
+        rv.layoutManager = GridLayoutManager(requireContext(), resources.getInteger(R.integer.grid_cols))
         quickAnim(rv)
         adapter = PosterAdapter(mutableListOf()) { c -> DetailActivity.open(requireContext(), c) }
         rv.adapter = adapter

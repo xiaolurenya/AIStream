@@ -16,7 +16,7 @@
 
     <TextView
         android:id="@+id/tvNum"
-        android:layout_width="44dp"
+        android:layout_width="@dimen/ch_num_w"
         android:layout_height="wrap_content"
         android:gravity="center_vertical|start"
         android:textColor="#FFD9A441"
@@ -24,8 +24,8 @@
         android:textStyle="bold" />
 
     <FrameLayout
-        android:layout_width="52dp"
-        android:layout_height="34dp"
+        android:layout_width="@dimen/ch_logo_w"
+        android:layout_height="@dimen/ch_logo_h"
         android:layout_marginEnd="10dp">
 
         <ImageView
