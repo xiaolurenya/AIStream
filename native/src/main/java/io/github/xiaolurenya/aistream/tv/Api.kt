@@ -328,6 +328,10 @@ object Api {
         val logo: String? = null
     )
 
+    /* EPG 节目单（服务端从 xmltv 解析好随 /api/iptv 一起回）：
+       t=正在播的节目｜ce=本档结束时间戳｜next=下一档｜ns=下一档开始时间戳 */
+    data class EpgNow(val t: String? = null, val ce: Long = 0, val next: String? = null, val ns: Long = 0)
+
     data class IptvResp(
         val enabled: Boolean = false,
         val denied: Boolean = false,
@@ -335,10 +339,29 @@ object Api {
         val total: Int = 0,
         val error: String? = null,
         val channels: List<IptvCh>? = null,
+        val now: Map<String, EpgNow>? = null,
         val groupOrder: List<String>? = null
     )
 
     fun iptv(): IptvResp? = get("/api/iptv")
+
+    // ---------- 插播广告过滤（跟网页版同一套服务端规则） ----------
+    /* /api/ad-preview：让服务端按「广告过滤」页同一套规则分析一条播放地址，
+       blocked = 命中黑名单的插播段数，discAd = 断点插播段数。 */
+    data class AdPreview(
+        val blocked: Int = 0,
+        val discAd: Int = 0,
+        val verdict: String? = null,
+        val enabled: Boolean = false,
+        val error: String? = null
+    )
+
+    fun adPreview(url: String): AdPreview? =
+        get("/api/ad-preview?url=" + enc(url) + "&token=" + enc(Prefs.token))
+
+    // 服务端改写清单（去掉插播段、切片保持采集站直链不占上行）。要配合 ?token= 带 AUTH
+    fun m3u8FilterUrl(url: String): String =
+        Prefs.base + "/api/m3u8filter?url=" + enc(url) + "&token=" + enc(Prefs.token)
 
     // 频道真实地址不在列表接口里（服务端防窥只给不透明 cid），播放走这个。
     // 网页端 video 标签带不了 header，所以服务端一直就收 ?token=，APP 也走参数、

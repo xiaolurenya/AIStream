@@ -254,6 +254,17 @@ class PlayerActivity : AppCompatActivity() {
         errBar.visibility = View.VISIBLE
     }
 
+    // 拦截提示：飘 6 秒自己消失，别挡画面
+    private fun showAdBadge(n: Int) {
+        val tv = findViewById<TextView>(R.id.tvAd)
+        tv.text = "🛡 已拦截 $n 个插播广告"
+        tv.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            delay(6000)
+            if (!isDestroyed) tv.visibility = View.GONE
+        }
+    }
+
     private fun play(line: Int, ep: Int) {
         if (PlayCache.isUp) { playUp(ep); return }
         val ln = PlayCache.lines.getOrNull(line)
@@ -275,7 +286,20 @@ class PlayerActivity : AppCompatActivity() {
         val raw = e.url.orEmpty()
         lifecycleScope.launch {
             val finalUrl = withContext(Dispatchers.IO) { resolveUrl(raw) }
-            applyMedia(finalUrl)
+            var playUrl = finalUrl
+            var blocked = 0
+            /* 采集线路的 m3u8：让服务端按「广告过滤」页同一套规则检测插播，
+               命中就走 /api/m3u8filter 改写过的清单（切片仍是采集站直链，不占家庭上行）。
+               官方线路和 mp4 直链不动。 */
+            if (!PlayCache.isUp && Api.isM3u8(finalUrl)) {
+                val r = withContext(Dispatchers.IO) { runCatching { Api.adPreview(finalUrl) }.getOrNull() }
+                if (r != null && r.blocked > 0) {
+                    blocked = r.blocked
+                    playUrl = Api.m3u8FilterUrl(finalUrl)
+                }
+            }
+            applyMedia(playUrl)
+            if (blocked > 0) showAdBadge(blocked)
         }
     }
 

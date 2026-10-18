@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 横向渐变：左边压暗右边透明。轮播背景用原图不模糊，标题可读性全靠它 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:endColor="#00000000"
+        android:startColor="#D90A0D15" />
+</shape>

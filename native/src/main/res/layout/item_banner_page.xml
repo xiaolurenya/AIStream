@@ -11,9 +11,14 @@
         android:id="@+id/bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.62"
         android:contentDescription="@string/app_name"
         android:scaleType="centerCrop" />
+
+    <!-- 背景用原图不模糊（大哥要求高清），标题可读性靠这两层渐变 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_scrim_left" />
 
     <View
         android:layout_width="match_parent"

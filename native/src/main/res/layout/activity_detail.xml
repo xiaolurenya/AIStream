@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 外层 FrameLayout 是为了盖一层「正在优化加载线路」遮罩：
+     官方线路和采集线路都到位前不渲染，免得先看到 360zy 又跳成智能选择 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -184,4 +190,71 @@
 
     </LinearLayout>
 
-</ScrollView>
+    </ScrollView>
+
+    <!-- 加载遮罩：倒计时 + 已找到线路数 + 立即播放 -->
+    <LinearLayout
+        android:id="@+id/loadOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvLoadTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="正在优化加载线路"
+            android:textColor="@color/fg"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLoadCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/accent_soft"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/tvLoadInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/fg_dim"
+            android:textSize="13sp" />
+
+        <ProgressBar
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="18dp" />
+
+        <TextView
+            android:id="@+id/btnLoadPlay"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_btn"
+            android:gravity="center"
+            android:paddingStart="34dp"
+            android:paddingEnd="34dp"
+            android:text="立即播放"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLoadTip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="等全部线路就绪自动进入 · 急着看可点上面直接播"
+            android:textColor="@color/fg_dim"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+</FrameLayout>
