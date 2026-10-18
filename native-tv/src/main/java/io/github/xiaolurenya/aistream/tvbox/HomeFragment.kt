@@ -1,15 +1,27 @@
 package io.github.xiaolurenya.aistream.tvbox
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Html
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -17,25 +29,53 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/* 首页：顶部一张自动轮换的大海报（hero），下面按栏目一行行竖着排。
-   hero 用的是海报原图 + 左侧渐变压暗，不做任何模糊 —— TV 版要的就是清晰。 */
+/* 首页（图1 样式）：左侧功能卡列 + 中间大海报 hero + 右侧推荐列，下面按栏目一行行竖着排。
+   hero 支持直播预览小窗：焦点落在「电视直播」卡上就小窗播当前台（带防抖，快速滑过不误播），
+   确认键进全屏直播页，焦点移开就停掉预览、恢复海报。hero 用海报原图 + 渐变压暗，不做模糊。 */
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var adapter: ColumnAdapter
     private lateinit var hero: View
     private lateinit var heroBg: ImageView
+    private lateinit var heroText: View
     private lateinit var heroTitle: TextView
     private lateinit var heroMeta: TextView
     private lateinit var dots: LinearLayout
+    private lateinit var heroPv: PlayerView
+    private lateinit var liveInfo: View
+    private lateinit var tvLiveName: TextView
+    private lateinit var tvLiveEpg: TextView
+
     private val ui = Handler(Looper.getMainLooper())
     private var picks = listOf<Api.Card>()
     private var cur = 0
+
+    // 直播预览小窗
+    private var pvPlayer: ExoPlayer? = null
+    private var previewOn = false
+    private var pvStage = 0            // 0 直连 → 1 服务端代理（跟直播页同一套兜底）
+    private var pvCid = ""
+    private var pvDirect = false
+    private var iptvLoaded = false
+
+    private val startPreviewDebounced = Runnable { startPreview() }
+
+    // 预览看门狗：卡在缓冲就静默换代理档，再不行就放弃（预览不打扰用户）
+    private val pvWatchdog = object : Runnable {
+        override fun run() {
+            val p = pvPlayer ?: return
+            val st = p.playbackState
+            if (st == Player.STATE_BUFFERING || st == Player.STATE_IDLE) {
+                if (pvStage < 1) { pvStage = 1; pvPlay() }
+            }
+        }
+    }
 
     // 只在页面可见时轮换，退后台就停，别在后台白耗电
     private val rot = object : Runnable {
         override fun run() {
             runCatching {
-                if (picks.size > 1) {
+                if (picks.size > 1 && !previewOn) {
                     cur = (cur + 1) % picks.size
                     paintHero()
                 }
@@ -47,9 +87,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onViewCreated(v: View, savedInstanceState: Bundle?) {
         hero = v.findViewById(R.id.hero)
         heroBg = v.findViewById(R.id.heroBg)
+        heroText = v.findViewById(R.id.heroText)
         heroTitle = v.findViewById(R.id.heroTitle)
         heroMeta = v.findViewById(R.id.heroMeta)
         dots = v.findViewById(R.id.heroDots)
+        heroPv = v.findViewById(R.id.heroPv)
+        liveInfo = v.findViewById(R.id.liveInfo)
+        tvLiveName = v.findViewById(R.id.tvLiveName)
+        tvLiveEpg = v.findViewById(R.id.tvLiveEpg)
         val rv = v.findViewById<RecyclerView>(R.id.recycler)
 
         rv.layoutManager = LinearLayoutManager(requireContext())
@@ -63,7 +108,68 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             picks.getOrNull(cur)?.let { openDetail(it) }
         }
 
+        bindSide(v.findViewById(R.id.cardLive), "央视卫视在线直播",
+            onFocus = { has -> if (has) schedulePreview() else stopPreview() }
+        ) { openLive() }
+        bindSide(v.findViewById(R.id.cardFav), "精选优质影视剧") {
+            (activity as? MainActivity)?.switch(3)
+        }
+        bindSide(v.findViewById(R.id.cardHis), "接着上次的看") {
+            (activity as? MainActivity)?.switch(4)
+        }
+
+        // 右侧推荐列：取服务器首页第一栏最前面几张海报
+        val rvSide = v.findViewById<RecyclerView>(R.id.rvSide)
+        rvSide.layoutManager = LinearLayoutManager(requireContext())
+        noAnim(rvSide)
+        rvSide.adapter = sideAdapter
+
         load()
+        loadIptv()
+    }
+
+    // 左侧功能卡：焦点/点击反馈 + 两行文案（标题 + 小字副标题，跟图1 一个样式）
+    private fun bindSide(
+        card: TextView,
+        sub: String,
+        onFocus: ((Boolean) -> Unit)? = null,
+        onClick: () -> Unit
+    ) {
+        card.text = Html.fromHtml(
+            card.text.toString() + "<br/><small><font color='#E6E9F2'>$sub</font></small>",
+            Html.FROM_HTML_MODE_LEGACY
+        )
+        bindFocus(card, onFocus)
+        card.setOnClickListener { onClick() }
+    }
+
+    private fun openLive() {
+        stopPreview()
+        if (PlayCache.iptv.isNotEmpty()) startActivity(Intent(requireContext(), LiveActivity::class.java))
+    }
+
+    private val sideAdapter = object : RecyclerView.Adapter<PosterAdapter.H>() {
+        val items = mutableListOf<Api.Card>()
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PosterAdapter.H =
+            PosterAdapter.H(
+                LayoutInflater.from(parent.context).inflate(R.layout.item_poster, parent, false)
+            )
+        override fun getItemCount() = items.size
+        override fun onBindViewHolder(h: PosterAdapter.H, i: Int) {
+            val c = items[i]
+            h.title.text = c.title.orEmpty()
+            h.sub.text = ""
+            h.badge.visibility = View.GONE
+            val u = Api.dimg(c.poster)
+            if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
+            bindFocus(h.card) { has ->
+                h.card.setBackgroundResource(if (has) R.drawable.bg_focus else 0)
+            }
+            h.itemView.setOnClickListener { openDetail(c) }
+        }
+        fun submit(list: List<Api.Card>) {
+            items.clear(); items.addAll(list); notifyDataSetChanged()
+        }
     }
 
     override fun onResume() {
@@ -74,11 +180,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onPause() {
         ui.removeCallbacks(rot)
+        ui.removeCallbacks(startPreviewDebounced)
+        stopPreview()
         super.onPause()
     }
 
     override fun onDestroyView() {
         ui.removeCallbacks(rot)
+        ui.removeCallbacks(startPreviewDebounced)
+        ui.removeCallbacks(pvWatchdog)
+        stopPreview()
+        pvPlayer?.release()
+        pvPlayer = null
         super.onDestroyView()
     }
 
@@ -103,6 +216,28 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 cur = 0
                 paintHero()
             }
+            // 右侧推荐列：第一栏最前面几张
+            sideAdapter.submit(keep.firstOrNull()?.items.orEmpty().take(SIDE_MAX))
+        }
+    }
+
+    /* 频道数据提前拉好：预览小窗和全屏直播页都用 PlayCache.iptv 这一份。
+       已加载过就不再拉（30 秒内回来不用重新等）。 */
+    private fun loadIptv() {
+        if (iptvLoaded || PlayCache.iptv.isNotEmpty()) {
+            iptvLoaded = true
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val r = withContext(Dispatchers.IO) {
+                runCatching { Api.iptv() }.getOrNull()
+            }
+            val list = r?.channels.orEmpty()
+            if (list.isNotEmpty()) {
+                PlayCache.iptv = list
+                PlayCache.iptvEpg = r?.now.orEmpty()
+            }
+            iptvLoaded = true
         }
     }
 
@@ -157,8 +292,85 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    // ---------- 直播预览小窗 ----------
+    private fun schedulePreview() {
+        // 防抖：遥控器连着滑过别的卡，500ms 后还停在直播卡上才开播
+        ui.removeCallbacks(startPreviewDebounced)
+        ui.postDelayed(startPreviewDebounced, 500)
+    }
+
+    private fun startPreview() {
+        val c = PlayCache.iptv.getOrNull(PlayCache.iptvIndex) ?: return
+        if (previewOn && pvCid == c.cid.orEmpty()) return
+        previewOn = true
+        pvStage = 0
+        pvCid = c.cid.orEmpty()
+        pvDirect = c.direct
+
+        heroBg.visibility = View.GONE
+        heroText.visibility = View.GONE
+        dots.visibility = View.GONE
+        heroPv.visibility = View.VISIBLE
+        liveInfo.visibility = View.VISIBLE
+        tvLiveName.text = c.name.orEmpty()
+        val e = PlayCache.iptvEpg[pvCid]
+        tvLiveEpg.text = if (e?.t.isNullOrBlank()) "节目单暂无信息" else "正在播：" + e!!.t
+
+        pvPlay()
+    }
+
+    private fun stopPreview() {
+        ui.removeCallbacks(startPreviewDebounced)
+        if (!previewOn) return
+        previewOn = false
+        ui.removeCallbacks(pvWatchdog)
+        runCatching { pvPlayer?.stop() }
+        heroBg.visibility = View.VISIBLE
+        heroText.visibility = View.VISIBLE
+        dots.visibility = View.VISIBLE
+        heroPv.visibility = View.GONE
+        liveInfo.visibility = View.GONE
+    }
+
+    private fun pvPlay() {
+        val p = pvPlayer ?: ExoPlayer.Builder(requireContext())
+            .setMediaSourceFactory(DefaultMediaSourceFactory(
+                DefaultHttpDataSource.Factory()
+                    .setUserAgent(Api.UA)
+                    .setAllowCrossProtocolRedirects(true)
+                    .setConnectTimeoutMs(15000)
+                    .setReadTimeoutMs(30000)
+                    .setDefaultRequestProperties(mapOf("Accept" to "*/*"))
+            ))
+            .build().also {
+                pvPlayer = it
+                heroPv.player = it
+                it.addListener(object : Player.Listener {
+                    override fun onPlaybackStateChanged(state: Int) {
+                        if (state == Player.STATE_READY) ui.removeCallbacks(pvWatchdog)
+                    }
+                    override fun onPlayerError(error: PlaybackException) {
+                        ui.removeCallbacks(pvWatchdog)
+                        if (pvStage < 1) { pvStage = 1; pvPlay() }
+                        else tvLiveEpg.text = "这个频道暂时预览不了，进全屏试试"
+                    }
+                })
+            }
+        val url = if (pvStage >= 1) Api.iptvStreamPx(pvCid) else Api.iptvStream(pvCid)
+        val b = MediaItem.Builder().setUri(url)
+        // 跟直播页同一个坑：/api/iptv/stream 没 .m3u8 后缀，必须显式声明 HLS
+        if (!pvDirect) b.setMimeType(MimeTypes.APPLICATION_M3U8)
+        runCatching { p.stop() }
+        p.setMediaItem(b.build())
+        p.prepare()
+        p.playWhenReady = true
+        ui.removeCallbacks(pvWatchdog)
+        ui.postDelayed(pvWatchdog, 20000)
+    }
+
     private companion object {
         const val ROT_MS = 6000L   // hero 轮换间隔
         const val HERO_MAX = 6     // 最多轮换几条
+        const val SIDE_MAX = 4     // 右侧推荐列几张
     }
 }

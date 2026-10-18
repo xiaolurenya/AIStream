@@ -43,19 +43,20 @@
 
     <LinearLayout
         android:id="@+id/chPanel"
-        android:layout_width="360dp"
+        android:layout_width="480dp"
         android:layout_height="match_parent"
         android:background="#F211151F"
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingTop="24dp"
         android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
         android:visibility="gone">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingBottom="12dp"
+            android:paddingBottom="10dp"
             android:text="频道"
             android:textColor="@color/fg"
             android:textSize="18sp"
@@ -64,9 +65,38 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvCh"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:clipToPadding="false"
             android:overScrollMode="never" />
+
+        <!-- 底部节目单：正在播的是哪个台播什么、接下来播什么 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="#33FFFFFF" />
+
+        <TextView
+            android:id="@+id/tvEpgNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#FFD9A441"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvEpgNext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/fg_dim"
+            android:textSize="13sp" />
 
     </LinearLayout>
 

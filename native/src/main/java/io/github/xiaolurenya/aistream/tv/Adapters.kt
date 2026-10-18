@@ -179,15 +179,21 @@ fun noAnim(rv: RecyclerView) {
 class ChipAdapter(
     private val items: List<String>,
     private val picked: () -> Int,
-    private val onClick: (Int) -> Unit
+    private val onClick: (Int) -> Unit,
+    // 横向线路/解析器列表里 chip 别占满整行（全宽 chip 很难看），选集网格保持等分
+    private val wrap: Boolean = false
 ) : RecyclerView.Adapter<ChipAdapter.H>() {
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val tv: TextView = v.findViewById(R.id.tv)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
-        H(LayoutInflater.from(parent.context).inflate(R.layout.item_ep, parent, false))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H {
+        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_ep, parent, false)
+        if (wrap) (v.layoutParams as? ViewGroup.MarginLayoutParams)?.width =
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        return H(v)
+    }
 
     override fun getItemCount() = items.size
 

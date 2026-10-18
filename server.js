@@ -748,8 +748,9 @@ async function epgNow(epgUrl) {
     const cur = list.find(x => x.s <= nowTs && x.st > nowTs);
     if (!cur) continue;
     const nx = list.find(x => x.s >= cur.st);
-    /* v32：ce=本档结束时间戳，ns=下档开始时间戳（前台显示「20:00 接下来」） */
-    now[cid] = { t: cur.t, ce: cur.st, next: nx ? nx.t : '', ns: nx ? nx.s : 0 };
+    /* v32：ce=本档结束时间戳，ns=下档开始时间戳（前台显示「20:00 接下来」）；
+       v74：cs=本档开始时间戳（APP 选台列表按 (now-cs)/(ce-cs) 画播放进度条） */
+    now[cid] = { t: cur.t, cs: cur.s, ce: cur.st, next: nx ? nx.t : '', ns: nx ? nx.s : 0 };
   }
   EPG_CACHE.set(epgUrl, { t: Date.now(), now, chName });
   return now;

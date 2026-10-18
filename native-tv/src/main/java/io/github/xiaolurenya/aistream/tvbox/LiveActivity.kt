@@ -46,6 +46,8 @@ class LiveActivity : AppCompatActivity() {
     private lateinit var tvErr: TextView
     private lateinit var chPanel: View
     private lateinit var rvCh: RecyclerView
+    private lateinit var tvEpgNow: TextView
+    private lateinit var tvEpgNext: TextView
     private val ui = Handler(Looper.getMainLooper())
 
     // 看门狗：有些源握手成功后就挂在那儿不动，既不报错也不出画面，到点就自己往上抬一档
@@ -68,6 +70,8 @@ class LiveActivity : AppCompatActivity() {
         tvErr = findViewById(R.id.tvErr)
         chPanel = findViewById(R.id.chPanel)
         rvCh = findViewById(R.id.rvCh)
+        tvEpgNow = findViewById(R.id.tvEpgNow)
+        tvEpgNext = findViewById(R.id.tvEpgNext)
 
         // 只带 UA：直播清单会被改写成第三方源直链，把站点 token 塞进 Authorization 头
         // 会一路带给那些 CDN（不安全，有的源还因此拒播）。站点鉴权走 URL 上的 ?token=
@@ -177,6 +181,7 @@ class LiveActivity : AppCompatActivity() {
 
     private fun openPanel() {
         chPanel.visibility = View.VISIBLE
+        paintPanelEpg()
         // 把当前正在播的台滚到可见位置，别让用户进去还得从头翻
         if (idx >= 0) rvCh.scrollToPosition(idx)
         // 容器拿不到焦点，把焦点递给列表里的第一行，确认键才是「选台」
@@ -185,6 +190,22 @@ class LiveActivity : AppCompatActivity() {
             if (first != null) first.requestFocus() else rvCh.requestFocus()
         }
     }
+
+    // 面板底部的节目单：跟着当前播放的台走
+    private fun paintPanelEpg() {
+        val e = PlayCache.iptvEpg[curCid]
+        if (e?.t.isNullOrBlank()) {
+            tvEpgNow.text = "节目单暂无信息"
+            tvEpgNext.text = ""
+            return
+        }
+        tvEpgNow.text = "正在播：" + e!!.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else "")
+        tvEpgNext.text = if (e.next.isNullOrBlank()) ""
+        else "接下来 " + (if (e.ns > 0) hhmm(e.ns) + " " else "") + e.next
+    }
+
+    private fun hhmm(ts: Long): String =
+        java.text.SimpleDateFormat("HH:mm", java.util.Locale.CHINA).format(java.util.Date(ts))
 
     private fun closePanel() {
         chPanel.visibility = View.GONE
@@ -255,6 +276,7 @@ class LiveActivity : AppCompatActivity() {
             (if (stage >= 1) "（代理）" else "")
         tvErr.visibility = View.GONE
         pb.visibility = View.VISIBLE
+        if (chPanel.visibility == View.VISIBLE) paintPanelEpg()
 
         val url = if (stage >= 1) Api.iptvStreamPx(curCid) else Api.iptvStream(curCid)
 

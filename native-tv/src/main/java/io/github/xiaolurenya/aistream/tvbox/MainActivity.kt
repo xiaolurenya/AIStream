@@ -58,7 +58,8 @@ class MainActivity : AppCompatActivity() {
         switch(0)
     }
 
-    private fun switch(pos: Int) {
+    // 首页功能卡（收藏/历史）也跳这里，所以不能是 private
+    fun switch(pos: Int) {
         if (pos == cur) return
         cur = pos
         nav.forEachIndexed { i, tv ->

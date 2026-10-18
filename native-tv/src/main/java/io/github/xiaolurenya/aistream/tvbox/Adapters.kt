@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -126,15 +127,21 @@ class ColumnAdapter(
 class ChipAdapter(
     private val items: List<String>,
     private val picked: () -> Int,
-    private val onClick: (Int) -> Unit
+    private val onClick: (Int) -> Unit,
+    // 横向线路/解析器列表里 chip 别占满整行（全宽 chip 很难看），选集网格保持等分
+    private val wrap: Boolean = false
 ) : RecyclerView.Adapter<ChipAdapter.H>() {
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val tv: TextView = v.findViewById(R.id.tv)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
-        H(LayoutInflater.from(parent.context).inflate(R.layout.item_ep, parent, false))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H {
+        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_ep, parent, false)
+        if (wrap) (v.layoutParams as? ViewGroup.MarginLayoutParams)?.width =
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        return H(v)
+    }
 
     override fun getItemCount() = items.size
 
@@ -154,7 +161,7 @@ class ChipAdapter(
     fun refresh() = notifyDataSetChanged()
 }
 
-// ---------- 直播频道列表 ----------
+// ---------- 直播频道列表（图4 样式：编号 + 台标 + 正在播节目 + 播放进度条） ----------
 class ChannelAdapter(
     private val items: List<Api.IptvCh>,
     private val epg: Map<String, Api.EpgNow> = emptyMap(),
@@ -163,9 +170,12 @@ class ChannelAdapter(
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val row: View = v.findViewById(R.id.row)
+        val num: TextView = v.findViewById(R.id.tvNum)
+        val logo: ImageView = v.findViewById(R.id.imgLogo)
         val name: TextView = v.findViewById(R.id.tvName)
         val group: TextView = v.findViewById(R.id.tvGroup)
         val epg: TextView = v.findViewById(R.id.tvEpg)
+        val pb: ProgressBar = v.findViewById(R.id.pbEpg)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
@@ -175,22 +185,31 @@ class ChannelAdapter(
 
     override fun onBindViewHolder(h: H, i: Int) {
         val c = items[i]
+        // 图4 的三位编号
+        h.num.text = "%03d".format(i + 1)
         h.name.text = c.name.orEmpty()
         h.group.text = c.group.orEmpty()
 
-        // 节目单：正在播 + 几点结束 + 接下来播什么（后台没配 EPG 就不显示这行）
+        // 台标：服务端给的是相对路径（自带 token），跟手机版一样拼域名
+        val lu = c.logo.orEmpty()
+        if (lu.isBlank()) h.logo.setImageDrawable(null)
+        else h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu)
+
+        // 节目单：正在播 + 几点结束（后台没配 EPG 就不显示这两行）
         val e = epg[c.cid]
         if (e == null || e.t.isNullOrBlank()) {
             h.epg.visibility = View.GONE
+            h.pb.visibility = View.GONE
         } else {
             h.epg.visibility = View.VISIBLE
-            h.epg.text = buildString {
-                append("▶ ").append(e.t)
-                if (e.ce > 0) append("（至 ").append(hhmm(e.ce)).append("）")
-                if (!e.next.isNullOrBlank()) {
-                    append("  ·  接下来 ").append(e.next)
-                    if (e.ns > 0) append(" ").append(hhmm(e.ns))
-                }
+            h.epg.text = "▶ " + e.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else "")
+            // 播放进度：按本档节目的开始/结束时间戳算，不在区间内就不画
+            val now = System.currentTimeMillis()
+            if (e.cs > 0 && e.ce > e.cs && now >= e.cs && now <= e.ce) {
+                h.pb.visibility = View.VISIBLE
+                h.pb.progress = (((now - e.cs) * 1000L) / (e.ce - e.cs)).toInt().coerceIn(0, 1000)
+            } else {
+                h.pb.visibility = View.GONE
             }
         }
 
