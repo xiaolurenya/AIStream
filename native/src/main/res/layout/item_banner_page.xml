@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 轮播单页：海报当背景铺满压暗，左下角压海报 + 标题 + 信息 -->
+<!-- 轮播单页：海报当背景铺满压暗，左下角压海报 + 标题 + 信息
+     ⚠️ 宽高必须是 match_parent：ViewPager2 硬性要求每一页填满它自己，
+     写固定 dp 会直接抛 IllegalStateException「Pages must fill the whole ViewPager2」。 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="196dp"
+    android:layout_height="match_parent"
     android:background="@color/bg_card">
 
     <ImageView
