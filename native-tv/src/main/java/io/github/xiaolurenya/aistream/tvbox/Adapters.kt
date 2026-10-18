@@ -1,0 +1,213 @@
+package io.github.xiaolurenya.aistream.tvbox
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import coil.load
+
+/* 遥控器焦点反馈。TV 上没有鼠标悬停也没有触摸按下，「现在选中哪一项」全靠这一下
+   放大 + 描边。130ms 够快，连按方向键不会拖影。 */
+fun bindFocus(v: View, onFocus: ((Boolean) -> Unit)? = null) {
+    v.setOnFocusChangeListener { _, has ->
+        v.animate()
+            .scaleX(if (has) 1.06f else 1f)
+            .scaleY(if (has) 1.06f else 1f)
+            .setDuration(130)
+            .start()
+        v.elevation = if (has) 14f else 0f
+        onFocus?.invoke(has)
+    }
+}
+
+// 列表动画压到 120ms：默认 250ms 在遥控器连按时明显拖沓
+fun quickAnim(rv: RecyclerView) {
+    rv.itemAnimator = DefaultItemAnimator().apply {
+        addDuration = 120L
+        removeDuration = 120L
+        moveDuration = 120L
+        changeDuration = 90L
+    }
+}
+
+// 「点一下换个高亮」的 chip 列表要的是立刻生效，任何补间动画都只会让人觉得卡
+fun noAnim(rv: RecyclerView) {
+    rv.itemAnimator = null
+}
+
+// ---------- 海报卡（栏目行 / 网格页共用） ----------
+class PosterAdapter(
+    private val items: MutableList<Api.Card> = mutableListOf(),
+    private val onClick: (Api.Card) -> Unit
+) : RecyclerView.Adapter<PosterAdapter.H>() {
+
+    class H(v: View) : RecyclerView.ViewHolder(v) {
+        val card: View = v.findViewById(R.id.card)
+        val img: ImageView = v.findViewById(R.id.img)
+        val title: TextView = v.findViewById(R.id.tvTitle)
+        val sub: TextView = v.findViewById(R.id.tvSub)
+        val badge: TextView = v.findViewById(R.id.tvBadge)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+        H(LayoutInflater.from(parent.context).inflate(R.layout.item_poster, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(h: H, i: Int) {
+        // 点击回调要拿的是这一项的数据，不是被点的 View
+        val card = items[i]
+        h.title.text = card.title.orEmpty()
+        val sc = card.score.orEmpty().toDoubleOrNull()
+        h.sub.text = if (sc != null && sc > 0) "%.1f".format(sc) else ""
+        val y = card.year.orEmpty()
+        h.badge.text = y
+        h.badge.visibility = if (y.isBlank()) View.GONE else View.VISIBLE
+
+        val u = Api.dimg(card.poster)
+        if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
+
+        bindFocus(h.card) { has ->
+            h.card.setBackgroundResource(if (has) R.drawable.bg_focus else 0)
+        }
+        h.itemView.setOnClickListener { onClick(card) }
+    }
+
+    fun submit(list: List<Api.Card>) {
+        items.clear()
+        items.addAll(list)
+        notifyDataSetChanged()
+    }
+}
+
+// ---------- 首页：一个栏目一行（标题 + 横向海报列表） ----------
+class ColumnAdapter(
+    private val onClick: (Api.Card) -> Unit
+) : RecyclerView.Adapter<ColumnAdapter.H>() {
+
+    private val cols = mutableListOf<Api.Column>()
+    // 所有栏目行共用一个回收池：滑到第三行时能直接拿第一行的 ViewHolder 来用
+    private val pool = RecyclerView.RecycledViewPool()
+
+    class H(v: View) : RecyclerView.ViewHolder(v) {
+        val label: TextView = v.findViewById(R.id.tvLabel)
+        val rv: RecyclerView = v.findViewById(R.id.rvItems)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+        H(LayoutInflater.from(parent.context).inflate(R.layout.item_column, parent, false))
+
+    override fun getItemCount() = cols.size
+
+    override fun onBindViewHolder(h: H, i: Int) {
+        val col = cols[i]
+        h.label.text = col.label.orEmpty()
+        if (h.rv.layoutManager == null) {
+            h.rv.layoutManager = LinearLayoutManager(h.rv.context, LinearLayoutManager.HORIZONTAL, false)
+                .apply { initialPrefetchItemCount = 6 }
+        }
+        h.rv.setRecycledViewPool(pool)
+        h.rv.setItemViewCacheSize(10)
+        h.rv.adapter = PosterAdapter(col.items.orEmpty().toMutableList(), onClick)
+    }
+
+    fun submit(list: List<Api.Column>) {
+        cols.clear()
+        cols.addAll(list)
+        notifyDataSetChanged()
+    }
+}
+
+// ---------- 线路 / 选集（chip 样式） ----------
+class ChipAdapter(
+    private val items: List<String>,
+    private val picked: () -> Int,
+    private val onClick: (Int) -> Unit
+) : RecyclerView.Adapter<ChipAdapter.H>() {
+
+    class H(v: View) : RecyclerView.ViewHolder(v) {
+        val tv: TextView = v.findViewById(R.id.tv)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+        H(LayoutInflater.from(parent.context).inflate(R.layout.item_ep, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(h: H, i: Int) {
+        h.tv.text = items[i]
+        val on = i == picked()
+        // 选中态用实心高亮，焦点态用描边，两者分开画，别让「选中」被焦点盖掉
+        h.tv.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
+        h.tv.setTextColor(h.tv.context.getColor(if (on) R.color.accent_soft else R.color.fg_dim))
+        bindFocus(h.tv) { has ->
+            if (has && i != picked()) h.tv.setBackgroundResource(R.drawable.bg_focus)
+            else if (!has) h.tv.setBackgroundResource(if (i == picked()) R.drawable.bg_chip_on else R.drawable.bg_chip)
+        }
+        h.tv.setOnClickListener { onClick(i) }
+    }
+
+    fun refresh() = notifyDataSetChanged()
+}
+
+// ---------- 直播频道列表 ----------
+class ChannelAdapter(
+    private val items: List<Api.IptvCh>,
+    private val onPick: (Int) -> Unit
+) : RecyclerView.Adapter<ChannelAdapter.H>() {
+
+    class H(v: View) : RecyclerView.ViewHolder(v) {
+        val row: View = v.findViewById(R.id.row)
+        val name: TextView = v.findViewById(R.id.tvName)
+        val group: TextView = v.findViewById(R.id.tvGroup)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+        H(LayoutInflater.from(parent.context).inflate(R.layout.item_channel, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(h: H, i: Int) {
+        val c = items[i]
+        h.name.text = c.name.orEmpty()
+        h.group.text = c.group.orEmpty()
+        bindFocus(h.row) { has ->
+            h.row.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_card)
+        }
+        h.itemView.setOnClickListener { onPick(i) }
+    }
+}
+
+// ---------- 会员兑换列表 ----------
+class RedeemAdapter(
+    private val items: List<Api.RedeemItem>,
+    private val onPick: (Api.RedeemItem) -> Unit
+) : RecyclerView.Adapter<RedeemAdapter.H>() {
+
+    class H(v: View) : RecyclerView.ViewHolder(v) {
+        val card: View = v.findViewById(R.id.card)
+        val title: TextView = v.findViewById(R.id.tvTitle)
+        val desc: TextView = v.findViewById(R.id.tvDesc)
+        val cost: TextView = v.findViewById(R.id.tvCost)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+        H(LayoutInflater.from(parent.context).inflate(R.layout.item_redeem, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(h: H, i: Int) {
+        val d = items[i]
+        h.title.text = d.title.orEmpty()
+        h.desc.text = d.desc.orEmpty()
+        h.cost.text = if (d.soldOut) "已兑完" else (d.cost.orEmpty() + " 积分")
+        bindFocus(h.card) { has ->
+            h.card.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_card)
+        }
+        h.itemView.setOnClickListener { onPick(d) }
+    }
+}

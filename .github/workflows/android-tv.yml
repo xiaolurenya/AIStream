@@ -1,0 +1,83 @@
+name: Android TV APK (Native)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'native-tv/**'
+      - '.github/workflows/android-tv.yml'
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # 发 Release 时要把 APK 挂上去
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      # 和手机版同一把钥匙：TV 版以后升级也能直接覆盖安装
+      - name: Restore signing keystore
+        env:
+          KS_B64: ${{ secrets.AISTREAM_KS_BASE64 }}
+          KS_PATH: ${{ github.workspace }}/aistream-sign.jks
+        run: |
+          if [ -n "$KS_B64" ]; then
+            printf '%s' "$KS_B64" | base64 -d > "$KS_PATH"
+            echo "AISTREAM_KEYSTORE=$KS_PATH" >> "$GITHUB_ENV"
+            echo "已还原签名密钥库"
+          else
+            echo "没有配置签名密钥库，本次用 debug 签名（覆盖安装会失败）"
+          fi
+
+      - name: Build APK
+        env:
+          AISTREAM_KS_PW: ${{ secrets.AISTREAM_KS_PW }}
+          AISTREAM_KEY_ALIAS: ${{ secrets.AISTREAM_KEY_ALIAS }}
+          AISTREAM_KEY_PW: ${{ secrets.AISTREAM_KEY_PW }}
+        run: |
+          if [ -n "$AISTREAM_KEYSTORE" ]; then
+            gradle -p native-tv assembleRelease --no-daemon
+            mv native-tv/build/outputs/apk/release/*.apk AIStream-TV.apk
+          else
+            gradle -p native-tv assembleDebug --no-daemon
+            mv native-tv/build/outputs/apk/debug/*.apk AIStream-TV.apk
+          fi
+
+      - name: Show signing fingerprint
+        env:
+          AISTREAM_KS_PW: ${{ secrets.AISTREAM_KS_PW }}
+          AISTREAM_KEY_ALIAS: ${{ secrets.AISTREAM_KEY_ALIAS }}
+        run: |
+          if [ -z "$AISTREAM_KEYSTORE" ]; then
+            echo "本次是 debug 签名，跳过指纹校验"; exit 0
+          fi
+          for A in "$ANDROID_HOME"/build-tools/*/apksigner; do
+            [ -x "$A" ] && "$A" verify --print-certs AIStream-TV.apk && break
+          done || true
+
+      - name: Upload APK (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AIStream-TV-APK
+          path: AIStream-TV.apk
+
+      # 只在「发 Release」时把 APK 挂上去，和手机版共用同一个 Release
+      - name: Attach APK to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AIStream-TV.apk

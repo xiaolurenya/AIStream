@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 遥控器选中态：加一圈高亮描边 + 抬亮底色，10 米外也看得清选中的是哪张 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/bg_card_hi" />
+    <stroke android:width="3dp" android:color="@color/accent" />
+    <corners android:radius="12dp" />
+</shape>

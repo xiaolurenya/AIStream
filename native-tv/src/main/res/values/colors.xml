@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF0A0D15</color>
+    <color name="bg_rail">#FF11151F</color>
+    <color name="bg_card">#FF182031</color>
+    <color name="bg_card_hi">#FF222C42</color>
+    <color name="fg">#FFEDF1F8</color>
+    <color name="fg_dim">#FF94A1B8</color>
+    <color name="accent">#FF4C8DFF</color>
+    <color name="accent_soft">#FF8FB6FF</color>
+    <color name="gold">#FFFFC857</color>
+</resources>

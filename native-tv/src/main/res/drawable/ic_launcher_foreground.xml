@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自适应图标前景：播放三角。108dp 画布，安全区是中心 66dp，图形收在 36~72 之内不会被裁 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#7ecbff"
+        android:pathData="M44,36 L44,72 L74,54 Z" />
+    <path
+        android:fillColor="#2f6fed"
+        android:fillAlpha="0.85"
+        android:pathData="M62,46.5 L62,61.5 L74,54 Z" />
+</vector>

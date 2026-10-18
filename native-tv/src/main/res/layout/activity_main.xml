@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TV 主界面：左边一条导航轨 + 右边内容区。
+     遥控器左右键在「导航轨 ↔ 内容」之间跳，上下键在各自内部移动。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:id="@+id/rail"
+        android:layout_width="210dp"
+        android:layout_height="match_parent"
+        android:background="@color/bg_rail"
+        android:orientation="vertical"
+        android:paddingTop="26dp"
+        android:paddingBottom="26dp">
+
+        <TextView
+            android:id="@+id/tvBrand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="22dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="18dp"
+            android:text="@string/app_name"
+            android:textColor="@color/accent_soft"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!-- 导航项由代码塞进来（顺序写死在 MainActivity.NAV 里，改一处就行） -->
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/content"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+</LinearLayout>

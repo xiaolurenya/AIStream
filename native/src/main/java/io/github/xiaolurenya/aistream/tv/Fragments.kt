@@ -34,6 +34,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var dots: LinearLayout
     private val ui = Handler(Looper.getMainLooper())
     private var cur = 0
+    // 所有栏目行共用的 ViewHolder 回收池
+    private val sharedPool = RecyclerView.RecycledViewPool()
 
     /* 轮播自动翻页。只在页面可见时跑，退后台就停，别在后台白耗电。
        翻页这一步整体包在 runCatching 里：轮播只是锦上添花，
@@ -59,11 +61,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         dots = v.findViewById(R.id.bannerDots)
 
         rv.layoutManager = LinearLayoutManager(requireContext())
-        adapter = ColumnAdapter { c -> DetailActivity.open(requireContext(), c) }
+        quickAnim(rv)
+        adapter = ColumnAdapter({ c -> DetailActivity.open(requireContext(), c) }, sharedPool)
         rv.adapter = adapter
 
         // 海报栏直接挂在页面顶部，不塞进 RecyclerView，省掉嵌套滑动的麻烦
         bannerPager.adapter = BannerPageAdapter { c -> DetailActivity.open(requireContext(), c) }
+        // 相邻两页先渲染好，滑到下一张不会先空一下
+        bannerPager.offscreenPageLimit = 2
+        // 翻页时整页轻微缩放+淡入：比默认的硬切看着顺，也不拖时间
+        bannerPager.setPageTransformer { page, pos ->
+            val k = 1f - kotlin.math.abs(pos) * 0.12f
+            page.alpha = 0.65f + 0.35f * k
+            page.scaleX = k
+            page.scaleY = k
+        }
         bannerPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(p: Int) { cur = p; paintDots() }
         })
@@ -173,6 +185,7 @@ abstract class GridFragment : Fragment(R.layout.fragment_grid) {
         val rv = v.findViewById<RecyclerView>(R.id.recycler)
         val et = v.findViewById<EditText>(R.id.etSearch)
         rv.layoutManager = GridLayoutManager(requireContext(), 3)
+        quickAnim(rv)
         adapter = PosterAdapter(
             mutableListOf(),
             { c -> DetailActivity.open(requireContext(), c) },

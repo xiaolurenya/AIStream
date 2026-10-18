@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.AIStreamTV" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/fg</item>
+        <item name="android:textColorSecondary">@color/fg_dim</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:colorControlActivated">@color/accent</item>
+    </style>
+
+    <style name="AIStream.TextTitle">
+        <item name="android:textColor">@color/fg</item>
+        <item name="android:singleLine">true</item>
+    </style>
+
+    <style name="AIStream.TextSub">
+        <item name="android:textColor">@color/fg_dim</item>
+        <item name="android:singleLine">true</item>
+    </style>
+
+    <!-- 遥控器焦点项：TV 上「当前选中哪一项」必须一眼看得见 -->
+    <style name="AIStream.FocusItem">
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+</resources>

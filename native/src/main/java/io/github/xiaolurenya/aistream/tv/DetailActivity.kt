@@ -74,8 +74,16 @@ class DetailActivity : AppCompatActivity() {
         rvLines.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvParse.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         rvEps.layoutManager = GridLayoutManager(this, 4)
+        // 线路/选集/解析器都是「点一下换高亮」，关掉补间动画才是跟手
+        noAnim(rvLines)
+        noAnim(rvParse)
+        noAnim(rvEps)
 
         btnFav.setOnClickListener { toggleFav() }
+
+        // 先给个加载中的占位：片源是并发拉的，别让用户在空白页上猜是不是卡了
+        tvPlot.text = "正在加载片源…"
+        labEps.text = "选集加载中…"
 
         load()
     }
@@ -105,13 +113,28 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun load() {
-        lifecycleScope.launch {
-            // 先试上游：站点配了上游时，那二十几条线路是解析时动态挑的，
-            // 采集站聚合根本拿不到（表现就是「只有 360zy」）。没配上游/检索不到就安静降级。
-            if (loadUp()) return@launch
-            loadCollect()
-        }
+        // ⚡ 两路并发：采集站聚合快（站方接口直连），先回先渲染，线路/简介/选集立刻能看；
+        // 上游（官方优先那二十几条线路）服务端要逐条体检，动辄十几秒，
+        // 之前串行等它，用户就盯着空详情页干等。现在上游到了再升级切换，快的绝不等慢的。
+        lifecycleScope.launch { runCatching { loadUp() } }
+        lifecycleScope.launch { runCatching { loadCollect() } }
     }
+
+    // 模式裁决：谁先到谁先上；采集只能「占位」，上游可以「升级」覆盖；
+    // 用户已经点进播放器就不再切换，避免数据模式中途跳变
+    private val modeLock = Any()
+    private var modeReady = false
+    private var userStarted = false
+
+    private fun claimMode(up: Boolean): Boolean = synchronized(modeLock) {
+        if (userStarted) return false
+        if (!up && modeReady) return false
+        modeReady = true
+        true
+    }
+
+    // 用户一旦动手选了线路/解析器/开播，数据模式就锁死，后面谁回来都不再覆盖
+    private fun markUser() { synchronized(modeLock) { userStarted = true } }
 
     // 去掉「第X季 / Season N」再去检索：上游按裸片名归档，带着季名经常搜不到（网页端同款处理）
     private fun bareTitle(): String =
@@ -136,6 +159,8 @@ class DetailActivity : AppCompatActivity() {
             .filter { Api.epToken(it).isNotBlank() }
         if (eps.isEmpty()) return@withContext false
 
+        // 采集模式先到了的话（快），这里属于「升级」，覆盖成上游模式
+        if (!claimMode(true)) return@withContext false
         PlayCache.clearUp()
         PlayCache.lines = emptyList()
         PlayCache.isUp = true
@@ -169,22 +194,31 @@ class DetailActivity : AppCompatActivity() {
 
     private fun loadCollect() {
         lifecycleScope.launch {
-            // 这条路只走采集站聚合，先把上游模式的残留清干净
-            PlayCache.clearUp()
             val resp = fetchAll()
 
             if (resp == null) {
-                Toast.makeText(this@DetailActivity, "取片源失败，检查站点连通性", Toast.LENGTH_SHORT).show()
+                // 上游已经把页面铺好了就别报失败——采集这条路本来就只是兜底
+                if (claimMode(false)) {
+                    Toast.makeText(this@DetailActivity, "取片源失败，检查站点连通性", Toast.LENGTH_SHORT).show()
+                }
                 return@launch
             }
 
             val results = resp.results.orEmpty()
             if (results.isEmpty()) {
+                if (!claimMode(false)) return@launch
                 labEps.text = "暂无片源"
                 tvPlot.text = "没有采集站返回这部片子的播放地址。\n\n" +
                     "常见于：站方关掉了搜索接口、片名对不上、或者后台还没配采集站。"
                 return@launch
             }
+
+            // 采集只当「占位」：上游（官方线路）先回来了就让它上，采集不再覆盖；
+            // 上游还没回来就先拿采集的把线路/简介/选集铺出来，别让用户干等
+            if (!claimMode(false)) return@launch
+
+            // 确认走采集模式，把上游模式的残留清干净
+            PlayCache.clearUp()
 
             parses = resp.parseList.orEmpty()
             PlayCache.parseList = parses
@@ -245,6 +279,7 @@ class DetailActivity : AppCompatActivity() {
             tag + it.station + " · " + it.from + " (" + it.eps.size + ")"
         }
         rvLines.adapter = ChipAdapter(names, { lineIdx }) { i ->
+            markUser()
             lineIdx = i
             epIdx = 0
             rvLines.adapter?.notifyDataSetChanged()
@@ -266,6 +301,7 @@ class DetailActivity : AppCompatActivity() {
         })
         // picked 必须实时读 PlayCache：点完换线只 notifyDataSetChanged，本地算好的值会过期
         rvLines.adapter = ChipAdapter(names, { if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1 }) { i ->
+            markUser()
             PlayCache.upSkip = if (i == 0) 0 else i - 1
             epIdx = 0
             rvLines.adapter?.notifyDataSetChanged()
@@ -290,6 +326,7 @@ class DetailActivity : AppCompatActivity() {
         rvParse.visibility = View.VISIBLE
         val names = parses.map { it.name ?: "解析器" }
         rvParse.adapter = ChipAdapter(names, { parseIdx }) { i ->
+            markUser()
             parseIdx = i
             PlayCache.parseIndex = i
             rvParse.adapter?.notifyDataSetChanged()
@@ -308,6 +345,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun startPlayer() {
+        markUser()
         if (PlayCache.isUp) {
             if (PlayCache.upEps.isEmpty()) {
                 Toast.makeText(this, "没有可用分集", Toast.LENGTH_SHORT).show()

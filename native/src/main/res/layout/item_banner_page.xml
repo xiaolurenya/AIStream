@@ -11,7 +11,7 @@
         android:id="@+id/bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.55"
+        android:alpha="0.62"
         android:contentDescription="@string/app_name"
         android:scaleType="centerCrop" />
 

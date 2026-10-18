@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 横向渐变：把海报左边压暗，标题压在上面才不会糊成一团 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:endColor="#00000000"
+        android:startColor="#F20A0D15" />
+</shape>

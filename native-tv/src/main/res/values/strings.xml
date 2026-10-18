@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AIStream TV</string>
+    <string name="play_now">立即播放</string>
+    <string name="label_line">播放线路</string>
+    <string name="label_parser">解析线路</string>
+    <string name="label_episodes">选集</string>
+    <string name="detail_plot">剧情简介</string>
+    <string name="nav_home">首页</string>
+    <string name="nav_search">搜索</string>
+    <string name="nav_live">直播</string>
+    <string name="nav_fav">收藏</string>
+    <string name="nav_me">我的</string>
+</resources>

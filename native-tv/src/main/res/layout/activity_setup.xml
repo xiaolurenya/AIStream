@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 第一屏：填站点地址 + 账号密码。TV 上全用遥控器上下键走，输入框弹软键盘输入 -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="60dp"
+        android:paddingTop="30dp"
+        android:paddingEnd="60dp"
+        android:paddingBottom="30dp">
+
+        <TextView
+            android:id="@+id/tvVer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/accent_soft"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="填上你自己的站点地址和账号，就能在电视上看片了"
+            android:textColor="@color/fg_dim"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/chipHttp"
+                style="@style/AIStream.FocusItem"
+                android:layout_width="wrap_content"
+                android:layout_height="46dp"
+                android:background="@drawable/bg_chip_on"
+                android:gravity="center"
+                android:paddingStart="26dp"
+                android:paddingEnd="26dp"
+                android:text="http"
+                android:textColor="@color/accent_soft"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/chipHttps"
+                style="@style/AIStream.FocusItem"
+                android:layout_width="wrap_content"
+                android:layout_height="46dp"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:paddingStart="26dp"
+                android:paddingEnd="26dp"
+                android:text="https"
+                android:textColor="@color/fg_dim"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/etHost"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_chip"
+            android:hint="域名或 IP（可整条地址粘进来）"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:singleLine="true"
+            android:textColor="@color/fg"
+            android:textColorHint="@color/fg_dim"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/etPort"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_chip"
+            android:hint="端口"
+            android:inputType="number"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:singleLine="true"
+            android:textColor="@color/fg"
+            android:textColorHint="@color/fg_dim"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/etUser"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_chip"
+            android:hint="用户名"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:singleLine="true"
+            android:textColor="@color/fg"
+            android:textColorHint="@color/fg_dim"
+            android:textSize="16sp" />
+
+        <EditText
+            android:id="@+id/etPass"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_chip"
+            android:hint="密码"
+            android:inputType="textPassword"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:singleLine="true"
+            android:textColor="@color/fg"
+            android:textColorHint="@color/fg_dim"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvErr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:textColor="@color/gold"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnGo"
+                style="@style/AIStream.FocusItem"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_btn"
+                android:gravity="center"
+                android:paddingStart="40dp"
+                android:paddingEnd="40dp"
+                android:text="进 入"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvClear"
+                style="@style/AIStream.FocusItem"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:layout_marginStart="14dp"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:text="清除已存配置"
+                android:textColor="@color/fg_dim"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/pb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</ScrollView>

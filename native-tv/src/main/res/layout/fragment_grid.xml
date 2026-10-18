@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 搜索 / 收藏 / 历史：一个海报网格 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical"
+    android:paddingTop="20dp">
+
+    <EditText
+        android:id="@+id/etSearch"
+        style="@style/AIStream.FocusItem"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginStart="36dp"
+        android:layout_marginEnd="36dp"
+        android:background="@drawable/bg_chip"
+        android:hint="输入片名搜索"
+        android:imeOptions="actionSearch"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:singleLine="true"
+        android:textColor="@color/fg"
+        android:textColorHint="@color/fg_dim"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="30dp"
+        android:paddingEnd="30dp"
+        android:paddingBottom="30dp" />
+
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="40dp"
+        android:textColor="@color/fg_dim"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+</LinearLayout>

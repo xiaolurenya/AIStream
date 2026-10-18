@@ -10,7 +10,12 @@
 
 | 版本 | 下载 | 一句话 |
 |---|---|---|
-| **原生客户端** | [**⬇ AIStream-Native.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Native.apk) | Kotlin + ExoPlayer 全原生，界面原生绘制、视频原生硬解 |
+| **手机 / 平板** | [**⬇ AIStream-Native.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Native.apk) | Kotlin + ExoPlayer 全原生，界面原生绘制、视频原生硬解 |
+| **电视 / 盒子（TV 版）** | [**⬇ AIStream-TV.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-TV.apk) | 遥控器专属界面：上下左右 + 音量键 + 确认键全程操控 |
+
+两个包用同一把钥匙签名，**装哪个都不会互相打架**。
+TV 版针对遥控器重做：左侧导航轨 + 顶部大海报 + 一行行栏目，播放页保留全屏按钮，
+直播（IPTV）、个人中心、会员兑换都在；不做投屏、画中画和旋转。
 
 **Android 7.0+**、**不内置任何服务器地址**，装好打开填你自己的站点地址 + 端口 + 账号密码就能进。
 · [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
@@ -327,7 +332,8 @@ docker compose up -d          # compose 里的 image 名对得上，直接起
 │   ├── gate.html/.js      # 登录门禁
 │   ├── style.css / mobile.js
 │   └── vendor/            # artplayer.js + hls.min.js（自托管，页面不连任何 CDN）
-├── native/                # Android 原生客户端（Kotlin + ExoPlayer，Actions 出 AIStream-Native.apk）
+├── native/                # Android 手机客户端（Kotlin + ExoPlayer，Actions 出 AIStream-Native.apk）
+├── native-tv/             # Android TV 客户端（遥控器操控，Actions 出 AIStream-TV.apk）
 ├── Dockerfile
 ├── docker-compose.yml
 └── data/                  # 运行期生成，已在 .gitignore（挂载出来做持久化）
