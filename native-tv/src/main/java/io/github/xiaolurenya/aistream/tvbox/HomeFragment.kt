@@ -33,6 +33,8 @@ import kotlinx.coroutines.withContext
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var adapter: ColumnAdapter
+    private lateinit var rvTabs: RecyclerView
+    private lateinit var rv: RecyclerView
     private lateinit var hero: View
     private lateinit var heroBg: ImageView
     private lateinit var heroText: View
@@ -47,6 +49,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val ui = Handler(Looper.getMainLooper())
     private var picks = listOf<Api.Card>()
     private var cur = 0
+    private var tabIdx = 0          // 顶部分类栏当前选中（0 = 首页）
+    private var cols = listOf<Api.Column>()
 
     // 直播预览小窗
     private var pvPlayer: ExoPlayer? = null
@@ -93,12 +97,29 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         liveInfo = v.findViewById(R.id.liveInfo)
         tvLiveName = v.findViewById(R.id.tvLiveName)
         tvLiveEpg = v.findViewById(R.id.tvLiveEpg)
-        val rv = v.findViewById<RecyclerView>(R.id.recycler)
-
+        rv = v.findViewById(R.id.recycler)
         rv.layoutManager = LinearLayoutManager(requireContext())
         quickAnim(rv)
         adapter = ColumnAdapter { c -> openDetail(c) }
         rv.adapter = adapter
+
+        // 顶部分类标签栏（图1 样式）：点了滚到对应栏目行
+        rvTabs = v.findViewById(R.id.rvTabs)
+        rvTabs.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        noAnim(rvTabs)
+
+        // 栏目行往上滚的时候，顶部分类栏高亮跟着走（滑到哪行亮哪个）
+        rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                val first = lm.findFirstCompletelyVisibleItemPosition()
+                if (first < 0) return
+                if (first in cols.indices && first + 1 != tabIdx) {
+                    tabIdx = first + 1
+                    rvTabs.adapter?.notifyDataSetChanged()
+                }
+            }
+        })
 
         val btnPlay = v.findViewById<TextView>(R.id.btnPlay)
         bindFocus(btnPlay) { has -> btnPlay.alpha = if (has) 1f else 0.92f }
@@ -174,7 +195,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }
             // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
             val keep = cols.filter { !it.items.isNullOrEmpty() }
+            cols = keep
             adapter.submit(keep)
+            paintTabs()
 
             picks = pickBanner(keep)
             if (picks.isEmpty()) {
@@ -207,6 +230,21 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                 PlayCache.iptvEpg = r?.now.orEmpty()
             }
             iptvLoaded = true
+            // 设置里开了「首页直接播直播」：频道一到就播，不等焦点
+            if (Prefs.heroLive && PlayCache.iptv.isNotEmpty() && !previewOn) startPreview()
+        }
+    }
+
+    /* 顶部分类栏：「首页」+ 各栏目名。点栏目滚到那一行，点首页回顶。 */
+    private fun paintTabs() {
+        val names = listOf("首页") + cols.map { it.label.orEmpty().ifBlank { "栏目" } }
+        rvTabs.adapter = ChipAdapter(names, { tabIdx }, wrap = true) { i ->
+            tabIdx = i
+            if (i == 0) rv.smoothScrollToPosition(0)
+            else {
+                val pos = (i - 1).coerceIn(0, (cols.size - 1).coerceAtLeast(0))
+                rv.smoothScrollToPosition(pos)
+            }
         }
     }
 

@@ -72,8 +72,13 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var rvEps: RecyclerView
     private lateinit var btnFull: TextView
     private lateinit var btnSpeed: TextView
+    private lateinit var btnAuto: TextView
     private lateinit var tvSkip: TextView
     private val ui = Handler(Looper.getMainLooper())
+
+    // 选集面板 10 秒无操作自动隐藏（图3 参考）；连播默认开
+    private var autoNext = true
+    private val epAutoHide = Runnable { epPanel.visibility = View.GONE }
 
     // 跳过片头/片尾胶囊当前的动作：0=无/会员引导 1=跳过片头 2=下一集
     private var skipAct = 0
@@ -137,7 +142,7 @@ class PlayerActivity : AppCompatActivity() {
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_READY) { pb.visibility = View.GONE; resuming = false }
-                if (state == Player.STATE_ENDED) nextEp()
+                if (state == Player.STATE_ENDED && autoNext) nextEp()
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
@@ -173,12 +178,23 @@ class PlayerActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnLine).setOnClickListener { nextLine() }
         findViewById<View>(R.id.btnEps).setOnClickListener { toggleEps() }
         btnFull.setOnClickListener { toggleFull() }
+        findViewById<View>(R.id.btnPrev).setOnClickListener { prevEp() }
+        findViewById<View>(R.id.btnNext).setOnClickListener { nextEp() }
+        findViewById<View>(R.id.btnRefresh).setOnClickListener { play(lineIdx, epIdx) }
+        findViewById<View>(R.id.btnSkipIntro).setOnClickListener { skipIntroNow() }
+        btnAuto = findViewById(R.id.btnAuto)
+        btnAuto.setOnClickListener {
+            autoNext = !autoNext
+            btnAuto.text = if (autoNext) "连播 开" else "连播 关"
+            toast(if (autoNext) "连播已开：播完自动下一集" else "连播已关")
+        }
         btnSpeed.setOnClickListener {
             speedIdx = (speedIdx + 1) % speeds.size
             player.playbackParameters = PlaybackParameters(speeds[speedIdx])
             btnSpeed.text = "%.2f".format(speeds[speedIdx]).trimEnd('0').trimEnd('.') + "x"
         }
-        for (id in intArrayOf(R.id.btnFull, R.id.btnLine, R.id.btnEps, R.id.btnSpeed)) {
+        for (id in intArrayOf(R.id.btnFull, R.id.btnLine, R.id.btnEps, R.id.btnSpeed,
+            R.id.btnPrev, R.id.btnNext, R.id.btnRefresh, R.id.btnSkipIntro, R.id.btnAuto)) {
             val b = findViewById<View>(id)
             bindFocus(b) { has -> b.alpha = if (has) 1f else 0.85f }
         }
@@ -202,6 +218,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        ui.removeCallbacks(epAutoHide)
         if (playerReady) runCatching { player.release() }
         playerReady = false
         super.onDestroy()
@@ -210,6 +227,8 @@ class PlayerActivity : AppCompatActivity() {
     // ---------- 遥控器按键 ----------
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (ev.action == KeyEvent.ACTION_DOWN) {
+            // 选集面板开着：有操作就把 10 秒自动隐藏重新计时，别用户正挑着就给关了
+            if (epPanel.visibility == View.VISIBLE) armEpAutoHide()
             // 焦点已经在播放器控制条/选集面板/底部按钮/跳过胶囊里时，一切交给它们，别抢
             // （否则焦点在「跳过片头」上按确认键会被这里当成播放/暂停，胶囊就点不动了）
             if (focusInPlayer() || focusInPanel() || focusIn(barBtns) || currentFocus === tvSkip) {
@@ -284,6 +303,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun toggleEps() {
         if (epPanel.visibility == View.VISIBLE) {
+            ui.removeCallbacks(epAutoHide)
             epPanel.visibility = View.GONE
             return
         }
@@ -297,11 +317,18 @@ class PlayerActivity : AppCompatActivity() {
             play(lineIdx, epIdx)
         }
         epPanel.visibility = View.VISIBLE
+        armEpAutoHide()
         // 面板本身是个容器拿不到焦点，得把焦点递给第一张卡，否则确认键会被页面当成「播放/暂停」
         rvEps.post {
             val first = rvEps.getChildAt(0)
             if (first != null) first.requestFocus() else rvEps.requestFocus()
         }
+    }
+
+    // 选集面板 10 秒自动隐藏；面板开着时每次按遥控器都重新计时（有操作就别关）
+    private fun armEpAutoHide() {
+        ui.removeCallbacks(epAutoHide)
+        ui.postDelayed(epAutoHide, EP_AUTO_HIDE_MS)
     }
 
     // ---------- 取权限 ----------
@@ -494,6 +521,27 @@ class PlayerActivity : AppCompatActivity() {
         play(nx, if (epIdx < PlayCache.lines[nx].eps.size) epIdx else 0)
     }
 
+    private fun prevEp() {
+        if (epIdx > 0) {
+            upAutoSw = 0
+            play(lineIdx, epIdx - 1)
+        } else {
+            toast("已经是第一集了")
+        }
+    }
+
+    // 「跳片头」按钮：立刻跳到 100 秒（跟胶囊、自动跳一个落点）
+    private fun skipIntroNow() {
+        if (!canIntro) {
+            toast("跳片头为会员特权，可在「我的 → 会员兑换」用积分兑换")
+            return
+        }
+        introDone = true
+        runCatching { player.seekTo((SKIP_INTRO_TO * 1000).toLong()) }
+        tvSkip.visibility = View.GONE
+        toast("已跳过片头")
+    }
+
     private fun nextEp() {
         val total = if (PlayCache.isUp) PlayCache.upEps.size
         else PlayCache.lines.getOrNull(lineIdx)?.eps?.size ?: 0
@@ -621,6 +669,7 @@ class PlayerActivity : AppCompatActivity() {
         // 跟网页端同一组数值：20 秒后、100 秒前算片头，直接跳到第 100 秒
         const val SKIP_INTRO_AT = 20.0
         const val SKIP_INTRO_TO = 100.0
+        const val EP_AUTO_HIDE_MS = 10000L
 
         private val RX_M3U8 = Regex("""(https?:)?//[^"'\s<>]+?\.m3u8[^"'\s<>]*""")
         private val RX_MP4 = Regex("""(https?:)?//[^"'\s<>]+?\.(mp4|flv)(\?[^"'\s<>]*)?""")

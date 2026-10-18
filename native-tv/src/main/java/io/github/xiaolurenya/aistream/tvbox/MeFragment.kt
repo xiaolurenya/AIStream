@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -29,9 +30,18 @@ class MeFragment : Fragment(R.layout.fragment_me) {
         val btnCheckin = v.findViewById<TextView>(R.id.btnCheckin)
         val btnRedeem = v.findViewById<TextView>(R.id.btnRedeem)
         val btnSwitch = v.findViewById<TextView>(R.id.btnSwitch)
+        val btnHero = v.findViewById<TextView>(R.id.btnHero)
         bindFocus(btnCheckin) { has -> btnCheckin.alpha = if (has) 1f else 0.9f }
         bindFocus(btnRedeem) { has -> btnRedeem.alpha = if (has) 1f else 0.9f }
         bindFocus(btnSwitch) { has -> btnSwitch.alpha = if (has) 1f else 0.9f }
+        bindFocus(btnHero) { has -> btnHero.alpha = if (has) 1f else 0.9f }
+
+        btnHero.text = heroText()
+        btnHero.setOnClickListener {
+            Prefs.heroLive = !Prefs.heroLive
+            btnHero.text = heroText()
+            toast(if (Prefs.heroLive) "首页打开就播直播了" else "首页打开显示海报了")
+        }
 
         btnCheckin.setOnClickListener { doCheckin() }
         btnRedeem.setOnClickListener { startActivity(Intent(requireContext(), RedeemActivity::class.java)) }
@@ -63,6 +73,12 @@ class MeFragment : Fragment(R.layout.fragment_me) {
             btnCheckinText(r.checkin?.today == true)
         }
     }
+
+    private fun heroText(): String =
+        if (Prefs.heroLive) "首页打开时：直播" else "首页打开时：海报"
+
+    private fun toast(s: String) =
+        Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show()
 
     private fun btnCheckinText(done: Boolean) {
         val b = view?.findViewById<TextView>(R.id.btnCheckin) ?: return

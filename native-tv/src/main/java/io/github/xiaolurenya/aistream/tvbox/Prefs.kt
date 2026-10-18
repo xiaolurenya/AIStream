@@ -49,6 +49,11 @@ object Prefs {
         get() = sp.getString("siteName", "") ?: ""
         set(v) { sp.edit().putString("siteName", v).apply() }
 
+    // 首页中间区域打开时的样子：true = 直接播 IPTV 直播小窗，false = 显示大海报（默认）
+    var heroLive: Boolean
+        get() = sp.getBoolean("hero_live", false)
+        set(v) { sp.edit().putBoolean("hero_live", v).apply() }
+
     val configured: Boolean
         get() = base.isNotBlank() && token.isNotBlank()
 

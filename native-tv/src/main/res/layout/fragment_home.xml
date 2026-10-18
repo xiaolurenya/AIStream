@@ -1,28 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 首页（图3 参考样式）：中间大海报 hero + 右边推荐列，下面按栏目一行行排。
-     功能卡已上提到 MainActivity 左侧导航轨常驻（不再放这里）。
-     hero 支持直播预览小窗：导航轨「电视直播」卡聚焦就播当前台，确认键进全屏。 -->
+<!-- 首页（图1 参考样式）：顶部分类标签栏 + 中间大海报 hero + 右边推荐列，下面按栏目一行行排。
+     hero 背景跟页面同色通铺（不再垫 bg_card）—— 海报上下颜色连成一片，没有色差断层。
+     hero 支持直播预览小窗：导航轨「电视直播」卡聚焦/设置开了就直接播。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
     android:orientation="vertical">
 
+    <!-- 顶部分类标签栏：首页 + 服务器配的各栏目，点了滚到对应那一行 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTabs"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingStart="@dimen/page_pad"
+        android:paddingEnd="@dimen/page_pad" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/hero_height"
         android:orientation="horizontal"
         android:paddingStart="@dimen/page_pad"
-        android:paddingTop="@dimen/page_pad_top"
         android:paddingEnd="@dimen/page_pad">
 
-        <!-- 中：大海报 hero（可切直播预览小窗） -->
+        <!-- 中：大海报 hero（可切直播预览小窗），背景跟页面同色 -->
         <FrameLayout
             android:id="@+id/hero"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/bg_card">
+            android:layout_weight="1">
 
             <ImageView
                 android:id="@+id/heroBg"
@@ -170,6 +178,6 @@
         android:clipToPadding="false"
         android:overScrollMode="never"
         android:paddingTop="10dp"
-        android:paddingBottom="@dimen/page_pad" />
+        android:paddingBottom="24dp" />
 
 </LinearLayout>
