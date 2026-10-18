@@ -382,8 +382,10 @@ class LiveActivity : AppCompatActivity() {
         runCatching { player.stop() }
         player.setMediaItem(b.build())
         player.prepare()
-        // 直播小窗静音开关同样作用于全屏直播页：0 = 静音
-        player.volume = if (Prefs.iptvMute) 0f else 1f
+        /* 全屏直播永远有声：MeFragment 那个「直播小窗静音」开关只管首页的直播小窗
+           （Prefs.iptvMute 只有 HomeFragment 的小窗播放器读）。
+           以前这里跟着读这个开关 → 小窗静音后进全屏也没声音，用户点名要修 */
+        player.volume = 1f
         player.playWhenReady = true
 
         ui.removeCallbacks(watchdog)

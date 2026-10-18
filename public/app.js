@@ -463,17 +463,39 @@ async function loadRec() {
       if (hj && typeof hj.stations === 'number') stations = hj.stations;
       hasUp = !!(hj && hj.hasUpstream);
       ensureClear();
-      for (const col of (hj.columns || [])) {
-        /* v1.1：采集站大量片子 vod_pic 为空（或图床防盗链拿不到），以前「没海报就丢掉」，
-           结果只装采集站的用户首页一片空白。有片名就渲染，没海报由卡片里的 .ph 占位垫底 */
+      /* v74：一条栏目把服务端给的条目全部渲染（服务端已按整行数给够），
+         底部挂「显示更多」——按栏目序号向 /api/home/more 翻页，拉到的直接接在同一个网格里。
+         v1.1 口径不变：没海报但有片名的条目照样渲染，由卡片里的 .ph 占位垫底 */
+      (hj.columns || []).forEach((col, ci) => {
         const items = (col.items || []).filter(x => x && (x.title || x.name));
-        if (!items.length) continue;
+        if (!items.length) return;
         const sec = document.createElement('section'); sec.className = 'col';
         sec.innerHTML = `<h2>${esc(col.label || '精选推荐')}</h2><div class="results"></div>`;
         const grid = sec.querySelector('.results');
-        for (const it of items.slice(0, 20)) { grid.appendChild(homeCard(it)); REC_POOL.push(it); }
+        for (const it of items) { grid.appendChild(homeCard(it)); REC_POOL.push(it); }
+        const srvIdx = typeof col.idx === 'number' ? col.idx : ci;
+        let pg = 1, busy = false;
+        const more = document.createElement('button');
+        more.className = 'hist-more';
+        more.textContent = '显示更多';
+        more.onclick = async () => {
+          if (busy) return; busy = true;
+          more.textContent = '加载中…';
+          try {
+            const j2 = await api('/api/home/more?idx=' + srvIdx + '&page=' + (pg + 1));
+            const add = (j2.items || []).filter(x => x && (x.title || x.name));
+            if (!add.length) { more.textContent = '已加载全部'; more.disabled = true; }
+            else {
+              pg++;
+              for (const it of add) { grid.appendChild(homeCard(it)); REC_POOL.push(it); }
+              more.textContent = '显示更多';
+            }
+          } catch (e) { more.textContent = '加载失败，点此重试'; }
+          busy = false;
+        };
+        sec.appendChild(more);
         c.appendChild(sec); rendered = true;
-      }
+      });
     } catch (e) {}
     if (!rendered) {
       /* 空壳没接上游时 /api/up/feed 必然 401/500，别再白打一次（省 1 次请求也省日志噪音） */

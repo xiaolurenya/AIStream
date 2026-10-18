@@ -1897,8 +1897,9 @@ function mapItem(x, mediaFn) {
   };
 }
 
-async function buildHome() {
-  /* 并发拉取全部栏目（多栏目自由组合：TMDB 榜单 + 采集站最新） */
+/* v74：首页栏目配置收成独立函数 —— 栏目「显示更多」翻页（/api/home/more）要用同一套
+   栏目配置，抽出来避免两处各写一份以后改不同步 */
+function homeColsCfg() {
   /* v72：后台加了采集站却没去「首页栏目管理」里配栏目 → 首页一片空白，
      看着像采集站没生效。这里把「还没配置成栏目」的采集站自动补成栏目，
      加了站就能直接在首页看到内容（要改顺序/改名再去栏目管理里调）。 */
@@ -1921,37 +1922,66 @@ async function buildHome() {
       colsCfg = colsCfg.concat(miss.map(s => ({ type: 'collect', key: 'collect', stationId: s.id, label: s.name })));
     }
   }
-  const cols = (await Promise.all(colsCfg.map(async col => {
-    try {
-      if (col.type === 'collect') {
-        const st = (config.collectList || []).find(c => c.id === col.stationId);
-        if (!st) return { label: col.label || '采集', items: [] };
-        const list = await collectList(st, 1);
-        return { label: col.label || st.name, items: list.map(v => ({
-          id: v.id, title: v.name, media: 'collect', poster: v.poster || '', year: v.year, score: 0, station: st.id
-        })) };
+  return colsCfg;
+}
+
+/* v74：单栏条数 20 → 28 —— PC 一行 7 张，20 张最后一行缺 1 个（用户点名「右下角还缺一个」）；
+   28 = 7 的 4 倍也恰好是手机 2 列的整倍数，两种网格都能排满。仍不够的由「显示更多」翻页补。 */
+const HOME_PAGE_SIZE = 28;
+
+/* 单个栏目取一页数据（page 从 1 起），buildHome 和 /api/home/more 共用 */
+async function homeColItems(col, page) {
+  try {
+    if (col.type === 'collect') {
+      const st = (config.collectList || []).find(c => c.id === col.stationId);
+      if (!st) return [];
+      let list = await collectList(st, page);
+      /* 第一页若是整页（采集站普遍 20 条/页），顺手把第 2 页接上凑满一屏；
+         第 2 页失败不影响第一页照常展示 */
+      if (page === 1 && list.length >= 20) {
+        const l2 = await collectList(st, 2).catch(() => []);
+        list = list.concat(l2);
       }
-      if (col.type === 'douban') {
-        /* v73：内置豆瓣栏目 —— 前端 homeCard 点击后按片名去采集站聚合播放 */
-        try {
-          const list = await doubanList(col.kind || 'series', 1, 20);
-          return { label: col.label || '热门推荐', items: list.map(x => ({
-            id: x.id, title: x.title, media: col.kind === 'movie' ? 'movie' : 'tv',
-            poster: x.poster_url, year: x.year, score: x.score
-          })) };
-        } catch (e) { return { label: col.label || '热门推荐', items: [] }; }
-      }
-      const def = COLS[col.key];
-      if (!def) return null;
-      /* 栏目缓存 2h；失败自动重试 3 次（TMDB 偶发限流/超时自愈） */
-      let d = null, lastErr = null;
-      for (let i = 0; i < 3 && !d; i++) {
-        try { d = await tmdbFetch(def.path, Object.assign({ page: 1 }, def.params || {}), 7200000); }
-        catch (e) { lastErr = e; await new Promise(r => setTimeout(r, 600 * (i + 1))); }
-      }
-      if (!d) { console.error('[home] 栏目拉取失败', col.key, lastErr && lastErr.message); return { label: col.label || '栏目', items: [] }; }
-      return { label: col.label || def.label, items: (d.results || []).slice(0, 20).map(x => mapItem(x, def.media)) };
-    } catch (e) { return { label: col.label || '栏目', items: [] }; }
+      return list.slice(0, HOME_PAGE_SIZE).map(v => ({
+        id: v.id, title: v.name, media: 'collect', poster: v.poster || '', year: v.year, score: 0, station: st.id
+      }));
+    }
+    if (col.type === 'douban') {
+      /* v73：内置豆瓣栏目 —— 前端 homeCard 点击后按片名去采集站聚合播放 */
+      const list = await doubanList(col.kind || 'series', page, HOME_PAGE_SIZE);
+      return list.map(x => ({
+        id: x.id, title: x.title, media: col.kind === 'movie' ? 'movie' : 'tv',
+        poster: x.poster_url, year: x.year, score: x.score
+      }));
+    }
+    const def = COLS[col.key];
+    if (!def) return null;
+    /* 栏目缓存 2h；失败自动重试 3 次（TMDB 偶发限流/超时自愈） */
+    let d = null, lastErr = null;
+    for (let i = 0; i < 3 && !d; i++) {
+      try { d = await tmdbFetch(def.path, Object.assign({ page: page || 1 }, def.params || {}), 7200000); }
+      catch (e) { lastErr = e; await new Promise(r => setTimeout(r, 600 * (i + 1))); }
+    }
+    if (!d) { console.error('[home] 栏目拉取失败', col.key, lastErr && lastErr.message); return []; }
+    return (d.results || []).slice(0, HOME_PAGE_SIZE).map(x => mapItem(x, def.media));
+  } catch (e) { return []; }
+}
+
+async function buildHome() {
+  /* 并发拉取全部栏目（多栏目自由组合：TMDB 榜单 + 采集站最新 + 内置豆瓣） */
+  const colsCfg = homeColsCfg();
+  const cols = (await Promise.all(colsCfg.map(async (col, ci) => {
+    const items = await homeColItems(col, 1);
+    if (items === null) return null;
+    let label = col.label;
+    if (!label) {
+      if (col.type === 'collect') { const st = (config.collectList || []).find(s => s.id === col.stationId); label = (st && st.name) || '采集'; }
+      else if (col.type === 'douban') label = '热门推荐';
+      else { const def = COLS[col.key]; label = (def && def.label) || '栏目'; }
+    }
+    /* idx = 栏目在配置里的序号：前端「显示更多」按它翻页。
+       下面 filter(Boolean) 会丢列导致循环下标移位，所以必须随数据带下去 */
+    return { idx: ci, label, items };
   }))).filter(Boolean);
   return cols;
 }
@@ -2881,6 +2911,18 @@ function rewriteM3u(txt, baseUrl, token, useProxy) {
         stations: (config.collectList || []).length,
         hasUpstream: !!String(((config.upstream || {}).base) || '')
       });
+    }
+
+    /* v74：首页栏目「显示更多」——按栏目序号翻下一页，条目 shape 与 /api/home 一致。
+       page 从 2 起（第 1 页首页已经带了）；拉空说明没更多了，前端据此置灰按钮 */
+    if (p === '/api/home/more' && method === 'GET') {
+      if (!viewAllowed(user, 'rec')) return sendJSON(res, 200, { items: [] });
+      const ci = Number(u.searchParams.get('idx')) | 0;
+      const pg = Number(u.searchParams.get('page')) | 0;
+      const cfg = homeColsCfg()[ci];
+      if (!cfg || pg < 2) return sendJSON(res, 200, { items: [] });
+      const items = await homeColItems(cfg, pg);
+      return sendJSON(res, 200, { items: items || [] });
     }
 
     /* TMDB 代理 */

@@ -101,7 +101,9 @@ header{
 .err{color:#ff6b8a;font-size:12px;min-height:16px;margin-bottom:8px}
 
 /* 搜索结果 */
-.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-top:18px}
+/* v74：行距 26 / 列距 16 —— 卡片自带一行文字，行距只给 16 会挤成一坨，
+   拉开行距让每一行海报各自成带（列距不动，别又宽得离谱） */
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:26px 16px;margin-top:18px}
 .empty{color:var(--muted);text-align:center;padding:60px 0;font-size:14px}
 
 /* ===== 播放页（霓虹科技风 · 精装修）===== */
@@ -937,7 +939,7 @@ html.is-mobile .snav{align-items:center}
 html.is-mobile .u-card{display:none}
 html.is-mobile .u-card{flex:0 0 220px;margin:0 8px 0 0}
 html.is-mobile .wrap{padding:0 12px 32px}
-html.is-mobile .results{grid-template-columns:repeat(2,1fr);gap:10px}
+html.is-mobile .results{grid-template-columns:repeat(2,1fr);gap:16px 10px}
 html.is-mobile .col h2{font-size:15px}
 /* v65 手机端：hero 大字后台配置的内联 font-size 会盖掉 clamp（实测 48px 断两行），
    用 !important 收紧手机端字号；颜色仍按后台设置，只管字号 */
