@@ -44,7 +44,11 @@ class SetupActivity : AppCompatActivity() {
         pb = findViewById(R.id.pb)
         tvClear = findViewById(R.id.tvClear)
 
-        findViewById<TextView>(R.id.tvVer).text = "AIStream TV v" + BuildConfig.VERSION_NAME
+        findViewById<TextView>(R.id.tvVer).text = "v" + BuildConfig.VERSION_NAME
+
+        // 焦点反馈（大哥点名「选中没有动画都不知道选哪里」）：之前整页只给了 focusable
+        // 却没调 bindFocus，遥控器上下移动既没放大也没描边。现在全部统一：放大 + 白描边 + 轻提示音
+        listOf(chipHttp, chipHttps, etHost, etPort, etUser, etPass, btnGo, tvClear).forEach { bindFocus(it) }
 
         chipHttp.setOnClickListener { setProto("http") }
         chipHttps.setOnClickListener { setProto("https") }
@@ -70,9 +74,13 @@ class SetupActivity : AppCompatActivity() {
             if (hadCrash) {
                 Crash.reset(this)
                 showErr("上次启动就崩了，已停在配置页。点「进入」重试，或复制上面的报错发我")
+                btnGo.requestFocus()
                 return
             }
             verifyAndEnter()
+        } else {
+            // 新配置：焦点落在第一格（地址），遥控器开机直接往下填就行
+            etHost.requestFocus()
         }
     }
 
@@ -113,10 +121,16 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun showErr(s: String?) {
-        if (s.isNullOrBlank()) tvErr.visibility = View.GONE
-        else {
+        if (s.isNullOrBlank()) {
+            tvErr.visibility = View.GONE
+        } else {
             tvErr.text = s
-            tvErr.visibility = View.VISIBLE
+            if (tvErr.visibility != View.VISIBLE) {
+                // 错误条淡入：突然蹦出来容易吓一跳，150ms 渐显顺眼
+                tvErr.alpha = 0f
+                tvErr.visibility = View.VISIBLE
+                tvErr.animate().alpha(1f).setDuration(150).start()
+            }
         }
     }
 
