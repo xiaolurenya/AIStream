@@ -133,20 +133,15 @@ class DetailActivity : AppCompatActivity() {
         noAnim(rvEps)
 
         val btnPlay = findViewById<TextView>(R.id.btnPlay)
-        // 焦点换底：主按钮蓝底白框、收藏按钮描边框（之前只调 alpha，蓝底按钮选中时边框「不对」）
-        bindFocus(btnPlay) { has ->
-            btnPlay.setBackgroundResource(if (has) R.drawable.bg_btn_focus else R.drawable.bg_btn)
-        }
-        bindFocus(btnFav) { has ->
-            btnFav.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_chip)
-        }
+        // 焦点 = 白描边浮层（bindFocus 统一出），按钮保持原底色不再换——
+        // 换底描边圆角跟按钮对不齐，看起来「边框不对」（大哥图3）
+        bindFocus(btnPlay)
+        bindFocus(btnFav)
         btnPlay.setOnClickListener { startPlayer() }
         btnFav.setOnClickListener { toggleFav() }
 
-        // 遮罩上的「立即播放」：不等了，手里有什么就用什么直接开（焦点同样换白框底）
-        bindFocus(btnLoadPlay) { has ->
-            btnLoadPlay.setBackgroundResource(if (has) R.drawable.bg_btn_focus else R.drawable.bg_btn)
-        }
+        // 遮罩上的「立即播放」：不等了，手里有什么就用什么直接开
+        bindFocus(btnLoadPlay)
         btnLoadPlay.setOnClickListener {
             settle(true)
             startPlayer()

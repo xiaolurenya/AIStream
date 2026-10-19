@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 手机横屏档（默认）：TV 版也常被装在手机/投影上，尺寸按小屏比例缩 -->
 <resources>
-    <dimen name="rail_width">150dp</dimen>
+    <dimen name="rail_width">134dp</dimen>
     <dimen name="rail_pad_top">16dp</dimen>
     <dimen name="brand_size">17sp</dimen>
     <dimen name="brand_pad_start">16dp</dimen>
@@ -12,18 +12,18 @@
     <dimen name="page_pad">12dp</dimen>
     <dimen name="page_pad_top">8dp</dimen>
 
-    <dimen name="hero_height">285dp</dimen>
+    <dimen name="hero_height">305dp</dimen>
     <dimen name="hero_title">22sp</dimen>
     <dimen name="hero_meta">13sp</dimen>
     <dimen name="hero_btn_h">40dp</dimen>
     <dimen name="hero_btn_text">14sp</dimen>
-    <dimen name="side_col">122dp</dimen>
-    <dimen name="side_rv">160dp</dimen>
+    <dimen name="side_col">112dp</dimen>
+    <dimen name="side_rv">136dp</dimen>
     <dimen name="side_card_text">14sp</dimen>
     <dimen name="side_sub_text">12sp</dimen>
 
-    <dimen name="poster_w">112dp</dimen>
-    <dimen name="poster_h">160dp</dimen>
+    <dimen name="poster_w">102dp</dimen>
+    <dimen name="poster_h">144dp</dimen>
     <dimen name="poster_title">12sp</dimen>
 
     <dimen name="chpanel_w">330dp</dimen>

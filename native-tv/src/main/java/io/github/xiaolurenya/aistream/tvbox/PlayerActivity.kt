@@ -203,7 +203,7 @@ class PlayerActivity : AppCompatActivity() {
                 else -> toast("跳过片头/片尾为会员特权，可在「我的 → 会员兑换」用积分兑换")
             }
         }
-        bindFocus(tvSkip) { has -> tvSkip.alpha = if (has) 1f else 0.9f }
+        bindFocus(tvSkip)
 
         findViewById<View>(R.id.btnLine).setOnClickListener { nextLine() }
         findViewById<View>(R.id.btnEps).setOnClickListener { toggleEps() }
@@ -216,7 +216,7 @@ class PlayerActivity : AppCompatActivity() {
         tvPageInfo = findViewById(R.id.tvPageInfo)
         for (id in intArrayOf(R.id.btnPrevPage, R.id.btnNextPage)) {
             val b = findViewById<View>(id)
-            bindFocus(b) { has -> b.alpha = if (has) 1f else 0.85f }
+            bindFocus(b)
         }
         btnAuto.setOnClickListener {
             autoNext = !autoNext
@@ -231,7 +231,7 @@ class PlayerActivity : AppCompatActivity() {
         for (id in intArrayOf(R.id.btnFull, R.id.btnLine, R.id.btnEps, R.id.btnSpeed,
             R.id.btnPrev, R.id.btnNext, R.id.btnRefresh, R.id.btnSkipIntro, R.id.btnAuto)) {
             val b = findViewById<View>(id)
-            bindFocus(b) { has -> b.alpha = if (has) 1f else 0.85f }
+            bindFocus(b)
         }
 
         play(lineIdx, epIdx)

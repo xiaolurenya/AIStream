@@ -6,12 +6,12 @@
     android:id="@+id/card"
     android:layout_width="@dimen/poster_w"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:orientation="vertical" android:clipChildren="false">
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/poster_h"
-        android:background="@drawable/bg_card">
+        android:background="@drawable/bg_card" android:clipChildren="false">
 
         <ImageView
             android:id="@+id/img"
@@ -42,7 +42,7 @@
             android:paddingStart="7dp"
             android:paddingTop="16dp"
             android:paddingEnd="7dp"
-            android:paddingBottom="5dp">
+            android:paddingBottom="5dp" android:clipChildren="false">
 
             <TextView
                 android:id="@+id/tvTitle"

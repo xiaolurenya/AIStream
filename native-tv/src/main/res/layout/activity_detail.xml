@@ -3,7 +3,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg">
+    android:background="@color/bg" android:clipChildren="false">
 
     <!-- 海报背景：播放前的选集区也透出本片海报（磨砂），不再是一块死蓝底 -->
     <ImageView
@@ -29,17 +29,17 @@
         android:paddingStart="36dp"
         android:paddingTop="24dp"
         android:paddingEnd="36dp"
-        android:paddingBottom="32dp">
+        android:paddingBottom="32dp" android:clipChildren="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal" android:clipChildren="false">
 
             <FrameLayout
                 android:layout_width="200dp"
                 android:layout_height="290dp"
-                android:background="@drawable/bg_card">
+                android:background="@drawable/bg_card" android:clipChildren="false">
 
                 <ImageView
                     android:id="@+id/imgPoster"
@@ -183,7 +183,7 @@
         android:background="@color/bg"
         android:gravity="center"
         android:orientation="vertical"
-        android:visibility="gone">
+        android:visibility="gone" android:clipChildren="false">
 
         <TextView
             android:layout_width="wrap_content"

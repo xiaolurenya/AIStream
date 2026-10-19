@@ -3,7 +3,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:background="@android:color/black" android:clipChildren="false">
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
@@ -51,7 +51,7 @@
         android:paddingTop="24dp"
         android:paddingEnd="16dp"
         android:paddingBottom="16dp"
-        android:visibility="gone">
+        android:visibility="gone" android:clipChildren="false">
 
         <!-- 面板标题行：触摸用户点 × 关闭（遥控器按返回/左键也能关） -->
         <LinearLayout
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingBottom="10dp">
+            android:paddingBottom="10dp" android:clipChildren="false">
 
             <TextView
                 android:layout_width="0dp"
@@ -105,7 +105,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:scrollbars="none">
+            android:scrollbars="none" android:clipChildren="false">
 
             <LinearLayout
                 android:id="@+id/llCats"
@@ -113,7 +113,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:paddingTop="4dp"
-                android:paddingBottom="4dp" />
+                android:paddingBottom="4dp"  android:clipChildren="false" />
 
         </HorizontalScrollView>
 

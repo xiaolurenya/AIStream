@@ -135,7 +135,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         })
 
         val btnPlay = v.findViewById<TextView>(R.id.btnPlay)
-        bindFocus(btnPlay) { has -> btnPlay.alpha = if (has) 1f else 0.92f }
+        bindFocus(btnPlay)
         btnPlay.setOnClickListener {
             picks.getOrNull(cur)?.let { openDetail(it) }
         }
@@ -165,9 +165,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             h.badge.visibility = View.GONE
             val u = Api.dimg(c.poster)
             if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
-            bindFocus(h.card) { has ->
-                h.card.setBackgroundResource(if (has) R.drawable.bg_focus else 0)
-            }
+            bindFocus(h.card)
             h.itemView.setOnClickListener { openDetail(c) }
         }
         fun submit(list: List<Api.Card>) {
@@ -395,11 +393,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         // 遥控器也要能选中小窗、按 OK 放大进全屏（之前小窗拿不到焦点，遥控器点不中）
         heroPv.isFocusable = true
         heroPv.isFocusableInTouchMode = true
-        bindFocus(heroPv) { has ->
-            heroPv.foreground =
-                if (has) androidx.core.content.ContextCompat.getDrawable(heroPv.context, R.drawable.bg_focus)
-                else null
-        }
+        bindFocus(heroPv)
         heroPv.setOnKeyListener { _, k, ev ->
             if (ev.action == android.view.KeyEvent.ACTION_DOWN &&
                 (k == android.view.KeyEvent.KEYCODE_DPAD_CENTER || k == android.view.KeyEvent.KEYCODE_ENTER)

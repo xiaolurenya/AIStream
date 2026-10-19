@@ -32,11 +32,11 @@ class MeFragment : Fragment(R.layout.fragment_me) {
         val btnSwitch = v.findViewById<TextView>(R.id.btnSwitch)
         val btnHero = v.findViewById<TextView>(R.id.btnHero)
         val btnMute = v.findViewById<TextView>(R.id.btnMute)
-        bindFocus(btnCheckin) { has -> btnCheckin.alpha = if (has) 1f else 0.9f }
-        bindFocus(btnRedeem) { has -> btnRedeem.alpha = if (has) 1f else 0.9f }
-        bindFocus(btnSwitch) { has -> btnSwitch.alpha = if (has) 1f else 0.9f }
-        bindFocus(btnHero) { has -> btnHero.alpha = if (has) 1f else 0.9f }
-        bindFocus(btnMute) { has -> btnMute.alpha = if (has) 1f else 0.9f }
+        bindFocus(btnCheckin)
+        bindFocus(btnRedeem)
+        bindFocus(btnSwitch)
+        bindFocus(btnHero)
+        bindFocus(btnMute)
 
         btnHero.text = heroText()
         btnHero.setOnClickListener {

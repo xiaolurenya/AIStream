@@ -29,15 +29,23 @@ fun focusBeep() {
     }
 }
 
+/* 遥控器焦点反馈（参考奈飞）：放大 + 一圈白色描边浮层 + 轻提示音。
+   v1.4.2 关键改动：焦点标识从「换背景」改成 View.foreground 画描边——
+   换背景有三个毛病：① 海报卡的背景被海报图整个盖住，选中了也看不出（大哥图2）；
+   ② 彩色导航卡换底后圆角丢失，看着像方块（大哥图5）；③ 按钮换底后描边生硬（大哥图3）。
+   描边浮在内容上面谁都看得见，原来的形状/选中色全部保留。 */
 fun bindFocus(v: View, onFocus: ((Boolean) -> Unit)? = null) {
     v.setOnFocusChangeListener { _, has ->
         if (has) focusBeep()
         v.animate()
-            .scaleX(if (has) 1.08f else 1f)
-            .scaleY(if (has) 1.08f else 1f)
+            .scaleX(if (has) 1.06f else 1f)
+            .scaleY(if (has) 1.06f else 1f)
             .setDuration(150)
             .start()
         v.elevation = if (has) 14f else 0f
+        v.foreground = if (has)
+            androidx.core.content.ContextCompat.getDrawable(v.context, R.drawable.bg_focus_ring)
+        else null
         onFocus?.invoke(has)
     }
 }
@@ -113,9 +121,7 @@ class PosterAdapter(
 
     override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
         if (h is MoreH) {
-            bindFocus(h.tv) { has ->
-                h.tv.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_chip)
-            }
+            bindFocus(h.tv)
             h.tv.setOnClickListener { onMore?.invoke() }
             return
         }
@@ -135,9 +141,8 @@ class PosterAdapter(
         val u = Api.dimg(card.poster)
         if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
 
-        bindFocus(h.card) { has ->
-            h.card.setBackgroundResource(if (has) R.drawable.bg_focus else 0)
-        }
+        // 焦点 = 白描边浮层（bindFocus 统一出），背景不再换——换了也被海报图盖住看不见
+        bindFocus(h.card)
         h.itemView.setOnClickListener { onClick(card) }
     }
 
@@ -263,19 +268,11 @@ class ChipAdapter(
     override fun onBindViewHolder(h: H, i: Int) {
         h.tv.text = items[i]
         val on = i == picked()
-        // 选中 = 实心蓝底白字；未选中 = 亮字（不再灰蒙蒙）。
-        // 焦点 = 描边（选中态焦点换蓝底白框，别把「选中」盖掉）
+        // 选中 = 实心蓝底白字；未选中 = 亮字。焦点只出白描边（不再换底色，
+        // 「选中」和「正在聚焦」是两件事：选中色保留，聚焦加一圈白边）
         h.tv.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
         h.tv.setTextColor(if (on) android.graphics.Color.WHITE else h.tv.context.getColor(R.color.fg))
-        bindFocus(h.tv) { has ->
-            if (has) {
-                h.tv.setBackgroundResource(if (on) R.drawable.bg_btn_focus else R.drawable.bg_focus)
-                h.tv.setTextColor(android.graphics.Color.WHITE)
-            } else {
-                h.tv.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
-                h.tv.setTextColor(if (on) android.graphics.Color.WHITE else h.tv.context.getColor(R.color.fg))
-            }
-        }
+        bindFocus(h.tv)
         h.tv.setOnClickListener { onClick(i) }
     }
 
@@ -334,9 +331,7 @@ class ChannelAdapter(
             }
         }
 
-        bindFocus(h.row) { has ->
-            h.row.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_card)
-        }
+        bindFocus(h.row)
         h.itemView.setOnClickListener { onPick(i) }
     }
 
@@ -367,9 +362,7 @@ class RedeemAdapter(
         h.title.text = d.title.orEmpty()
         h.desc.text = d.desc.orEmpty()
         h.cost.text = if (d.soldOut) "已兑完" else (d.cost.orEmpty() + " 积分")
-        bindFocus(h.card) { has ->
-            h.card.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_card)
-        }
+        bindFocus(h.card)
         h.itemView.setOnClickListener { onPick(d) }
     }
 }

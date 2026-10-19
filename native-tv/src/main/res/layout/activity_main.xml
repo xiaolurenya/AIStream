@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    android:orientation="vertical">
+    android:orientation="vertical" android:clipChildren="false">
 
     <!-- 顶部品牌栏：logo 常驻，搜索和「我的」走这里进（图3 参考样式） -->
     <LinearLayout
@@ -16,7 +16,7 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="@dimen/page_pad"
-        android:paddingEnd="@dimen/page_pad">
+        android:paddingEnd="@dimen/page_pad" android:clipChildren="false">
 
         <TextView
             android:id="@+id/tvBrand"
@@ -69,7 +69,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="horizontal">
+        android:orientation="horizontal" android:clipChildren="false">
 
         <!-- 左侧功能卡导航轨：彩色卡（含签到/兑换）由代码按 RAIL 顺序塞进来，
              整体居中、与首页右侧推荐栏同高，不再用底部小 chip -->
@@ -81,13 +81,13 @@
             android:orientation="vertical"
             android:paddingStart="12dp"
             android:paddingTop="16dp"
-            android:paddingEnd="12dp" />
+            android:paddingEnd="12dp"  android:clipChildren="false" />
 
         <FrameLayout
             android:id="@+id/content"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1" />
+            android:layout_weight="1"  android:clipChildren="false" />
 
     </LinearLayout>
 

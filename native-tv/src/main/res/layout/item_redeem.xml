@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_card"
     android:orientation="vertical"
-    android:padding="18dp">
+    android:padding="18dp" android:clipChildren="false">
 
     <TextView
         android:id="@+id/tvTitle"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 大电视档（1080p 及以上）：保持原 TV 尺寸 -->
 <resources>
-    <dimen name="rail_width">210dp</dimen>
+    <dimen name="rail_width">172dp</dimen>
     <dimen name="rail_pad_top">26dp</dimen>
     <dimen name="brand_size">20sp</dimen>
     <dimen name="brand_pad_start">22dp</dimen>
@@ -12,18 +12,18 @@
     <dimen name="page_pad">24dp</dimen>
     <dimen name="page_pad_top">16dp</dimen>
 
-    <dimen name="hero_height">470dp</dimen>
+    <dimen name="hero_height">500dp</dimen>
     <dimen name="hero_title">30sp</dimen>
     <dimen name="hero_meta">15sp</dimen>
     <dimen name="hero_btn_h">48dp</dimen>
     <dimen name="hero_btn_text">17sp</dimen>
-    <dimen name="side_col">176dp</dimen>
-    <dimen name="side_rv">205dp</dimen>
+    <dimen name="side_col">150dp</dimen>
+    <dimen name="side_rv">168dp</dimen>
     <dimen name="side_card_text">16sp</dimen>
     <dimen name="side_sub_text">14sp</dimen>
 
-    <dimen name="poster_w">150dp</dimen>
-    <dimen name="poster_h">216dp</dimen>
+    <dimen name="poster_w">126dp</dimen>
+    <dimen name="poster_h">182dp</dimen>
     <dimen name="poster_title">14sp</dimen>
 
     <dimen name="chpanel_w">480dp</dimen>

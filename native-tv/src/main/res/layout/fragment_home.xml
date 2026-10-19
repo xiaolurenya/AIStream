@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    android:orientation="vertical">
+    android:orientation="vertical" android:clipChildren="false">
 
     <!-- 顶部分类标签栏：首页 + 服务器配的各栏目，点了滚到对应那一行（60dp 容下加大的 chip） -->
     <androidx.recyclerview.widget.RecyclerView
@@ -23,14 +23,14 @@
         android:layout_height="@dimen/hero_height"
         android:orientation="horizontal"
         android:paddingStart="@dimen/page_pad"
-        android:paddingEnd="@dimen/page_pad">
+        android:paddingEnd="@dimen/page_pad" android:clipChildren="false">
 
         <!-- 中：大海报 hero（可切直播预览小窗），背景跟页面同色 -->
         <FrameLayout
             android:id="@+id/hero"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1" android:clipChildren="false">
 
             <ImageView
                 android:id="@+id/heroBg"
@@ -59,7 +59,7 @@
                 android:orientation="vertical"
                 android:paddingStart="@dimen/page_pad"
                 android:paddingBottom="20dp"
-                android:visibility="gone">
+                android:visibility="gone" android:clipChildren="false">
 
                 <TextView
                     android:id="@+id/tvLiveName"
@@ -159,7 +159,7 @@
                 android:layout_marginBottom="32dp"
                 android:gravity="center_vertical|end"
                 android:orientation="horizontal"
-                android:paddingEnd="@dimen/page_pad" />
+                android:paddingEnd="@dimen/page_pad"  android:clipChildren="false" />
 
         </FrameLayout>
 

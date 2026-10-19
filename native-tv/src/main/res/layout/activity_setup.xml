@@ -12,7 +12,7 @@
         android:paddingStart="60dp"
         android:paddingTop="30dp"
         android:paddingEnd="60dp"
-        android:paddingBottom="30dp">
+        android:paddingBottom="30dp" android:clipChildren="false">
 
         <TextView
             android:id="@+id/tvVer"
@@ -34,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal" android:clipChildren="false">
 
             <TextView
                 android:id="@+id/chipHttp"
@@ -140,7 +140,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal" android:clipChildren="false">
 
             <TextView
                 android:id="@+id/btnGo"

@@ -4,7 +4,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:background="@android:color/black" android:clipChildren="false">
 
     <!-- 播放器底色：当前影视剧的海报 + 压暗。加载中/暂停时露出，跟正在放的片子走 -->
     <ImageView
@@ -31,7 +31,7 @@
         android:orientation="vertical"
         android:paddingStart="36dp"
         android:paddingTop="22dp"
-        android:paddingEnd="36dp">
+        android:paddingEnd="36dp" android:clipChildren="false">
 
         <TextView
             android:id="@+id/tvTitle"
@@ -73,13 +73,13 @@
         android:layout_marginBottom="86dp"
         android:clipToPadding="false"
         android:overScrollMode="never"
-        android:scrollbars="none">
+        android:scrollbars="none" android:clipChildren="false">
 
         <LinearLayout
             android:id="@+id/barBtns"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal" android:clipChildren="false">
 
             <TextView
                 android:id="@+id/btnPrev"
@@ -251,7 +251,7 @@
         android:layout_width="380dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        android:visibility="gone">
+        android:visibility="gone" android:clipChildren="false">
 
         <!-- 海报背景（模糊）：铺满面板，磨砂感主要靠它 -->
         <ImageView
@@ -274,7 +274,7 @@
             android:orientation="vertical"
             android:paddingStart="18dp"
             android:paddingTop="24dp"
-            android:paddingEnd="18dp">
+            android:paddingEnd="18dp" android:clipChildren="false">
 
             <!-- 选集面板标题行 + 翻页（上百集一页放不下，◀ ▶ 翻） -->
             <LinearLayout
@@ -282,7 +282,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingBottom="12dp">
+                android:paddingBottom="12dp" android:clipChildren="false">
 
                 <TextView
                     android:layout_width="0dp"

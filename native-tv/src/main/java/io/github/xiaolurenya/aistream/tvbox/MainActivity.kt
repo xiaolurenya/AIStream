@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
                 isFocusableInTouchMode = true
                 setPadding(pad, (10 * dm).toInt(), pad, (10 * dm).toInt())
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, (76 * dm).toInt()
+                    ViewGroup.LayoutParams.MATCH_PARENT, (64 * dm).toInt()
                 ).apply { topMargin = (topMarginDp * dm).toInt() }
                 addView(TextView(this@MainActivity).apply {
                     text = icon + "  " + title

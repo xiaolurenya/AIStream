@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 平板 / 小电视档 -->
 <resources>
-    <dimen name="rail_width">180dp</dimen>
+    <dimen name="rail_width">152dp</dimen>
     <dimen name="rail_pad_top">22dp</dimen>
     <dimen name="brand_size">19sp</dimen>
     <dimen name="brand_pad_start">20dp</dimen>
@@ -12,18 +12,18 @@
     <dimen name="page_pad">18dp</dimen>
     <dimen name="page_pad_top">12dp</dimen>
 
-    <dimen name="hero_height">390dp</dimen>
+    <dimen name="hero_height">420dp</dimen>
     <dimen name="hero_title">26sp</dimen>
     <dimen name="hero_meta">14sp</dimen>
     <dimen name="hero_btn_h">44dp</dimen>
     <dimen name="hero_btn_text">16sp</dimen>
-    <dimen name="side_col">150dp</dimen>
-    <dimen name="side_rv">185dp</dimen>
+    <dimen name="side_col">132dp</dimen>
+    <dimen name="side_rv">152dp</dimen>
     <dimen name="side_card_text">17sp</dimen>
     <dimen name="side_sub_text">13sp</dimen>
 
-    <dimen name="poster_w">132dp</dimen>
-    <dimen name="poster_h">190dp</dimen>
+    <dimen name="poster_w">112dp</dimen>
+    <dimen name="poster_h">162dp</dimen>
     <dimen name="poster_title">15sp</dimen>
 
     <dimen name="chpanel_w">420dp</dimen>

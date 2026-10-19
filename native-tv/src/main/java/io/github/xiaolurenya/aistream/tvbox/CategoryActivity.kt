@@ -52,8 +52,9 @@ class CategoryActivity : AppCompatActivity() {
         quickAnim(rv)
         val items = col.items.orEmpty().toMutableList()
 
-        // 「显示更多」：网格末尾一张按钮卡，点了拉下一页；拉空自动收起。
-        // 滑到接近底部也会预拉一次（遥控器往下挪时无缝衔接）
+        // 「显示更多」：网格末尾一张按钮卡，点了拉下一页，拉空自动收起。
+        // v1.4.3 之前还有「滑到接近底部自动预拉」，结果按钮永远被新数据往下推，
+        // 大哥翻到底也见不着「显示更多」（图1）——现在只认按钮，翻到末尾一定在
         var page = 1
         var loading = false
         var done = false
@@ -61,13 +62,25 @@ class CategoryActivity : AppCompatActivity() {
             if (loading || done) return
             val ad = rv.adapter as? PosterAdapter ?: return
             loading = true
+            val from = ad.itemCount - 1 // 新页第一张的下标（append 前最后一位是「显示更多」卡，它会让位到新页尾）
             lifecycleScope.launch {
                 val more = withContext(Dispatchers.IO) {
                     runCatching { Api.homeMore(col.idx, page + 1) }.getOrDefault(emptyList())
                 }
                 withContext(Dispatchers.Main) {
                     if (more.isEmpty()) { done = true; ad.setHasMore(false) }
-                    else { page++; ad.append(more) }
+                    else {
+                        page++
+                        ad.append(more)
+                        // 焦点送到新增区第一张，遥控器接着往下挪不用回头找
+                        val lm = rv.layoutManager as? GridLayoutManager
+                        rv.post {
+                            (lm ?: return@post).scrollToPosition(from)
+                            rv.postDelayed({
+                                rv.findViewHolderForAdapterPosition(from)?.itemView?.requestFocus()
+                            }, 120)
+                        }
+                    }
                     loading = false
                 }
             }
@@ -76,14 +89,6 @@ class CategoryActivity : AppCompatActivity() {
             // 选一张海报：进详情页（从那里直接播），跟首页/收藏/历史挑海报一个入口
             DetailActivity.open(this, c)
         }, { loadNext() })
-
-        rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                val lm = rv.layoutManager as? GridLayoutManager ?: return
-                val ad = rv.adapter as? PosterAdapter ?: return
-                if (lm.findLastVisibleItemPosition() >= ad.itemCount - lm.spanCount * 2) loadNext()
-            }
-        })
 
         // 焦点先进第一行第一张，确认键直接进详情，不用先手动找
         rv.post { rv.getChildAt(0)?.requestFocus() }
