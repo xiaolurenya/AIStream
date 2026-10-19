@@ -39,7 +39,9 @@ abstract class GridFragment : Fragment(R.layout.fragment_grid) {
             SpacesItemDecoration((12 * resources.displayMetrics.density).toInt(), (16 * resources.displayMetrics.density).toInt())
         )
         quickAnim(rv)
-        adapter = PosterAdapter(mutableListOf()) { c -> DetailActivity.open(requireContext(), c) }
+        // 注意：onClick 必须显式放在第 2 个位置参数，不能写成尾随 lambda——
+        // 尾随 lambda 会绑定到最后一个参数 onMore(() -> Unit)，导致 onClick 缺参编译失败
+        adapter = PosterAdapter(mutableListOf(), { c -> DetailActivity.open(requireContext(), c) })
         rv.adapter = adapter
 
         if (withSearch) {
