@@ -102,7 +102,18 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         rv = v.findViewById(R.id.recycler)
         rv.layoutManager = LinearLayoutManager(requireContext())
         quickAnim(rv)
-        adapter = ColumnAdapter { c -> openDetail(c) }
+        adapter = ColumnAdapter(
+            onClick = { c -> openDetail(c) },
+            loadMore = { serverIdx, page, onResult ->
+                // 每行横向滑到末尾拉下一页；结果回主线程交给 adapter 追加
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val more = withContext(Dispatchers.IO) {
+                        runCatching { Api.homeMore(serverIdx, page) }.getOrDefault(emptyList())
+                    }
+                    withContext(Dispatchers.Main) { onResult(more) }
+                }
+            }
+        )
         rv.adapter = adapter
 
         // 顶部分类标签栏（图1 样式）：点了滚到对应栏目行
@@ -253,7 +264,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             if (i == 0) rv.smoothScrollToPosition(0)
             else {
                 val idx = (i - 1).coerceIn(0, (homeCols.size - 1).coerceAtLeast(0))
-                CategoryActivity.open(requireContext(), idx)
+                // 传服务端栏目序号给分类页翻页（首页过滤过空栏目，客户端下标已错位）
+                val serverIdx = homeCols.getOrNull(idx)?.idx ?: idx
+                CategoryActivity.open(requireContext(), serverIdx)
             }
         }
     }

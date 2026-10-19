@@ -54,7 +54,9 @@ object Api {
         val station: String? = null
     )
 
-    data class Column(val label: String? = null, val items: List<Card>? = null)
+    // idx = 服务端栏目配置序号（buildHome 随数据带下来）。首页过滤过空栏目会导致
+    // 客户端下标与服务端错位，TV 翻页必须用它而非下标。
+    data class Column(val idx: Int = 0, val label: String? = null, val items: List<Card>? = null)
 
     data class Home(
         val columns: List<Column>? = null,
@@ -265,6 +267,14 @@ object Api {
 
     // ---------- 业务接口 ----------
     fun home(): Home? = get("/api/home")
+
+    /* 首页栏目「显示更多」：按服务端配置序号翻下一页（page 从 2 起），
+       返回该栏下一页卡片，shape 与 /api/home 一致。空列表代表没更多了。 */
+    data class HomeMore(val items: List<Card>? = null)
+    fun homeMore(idx: Int, page: Int): List<Card> {
+        if (page < 2) return emptyList()
+        return get<HomeMore>("/api/home/more?idx=$idx&page=$page")?.items.orEmpty()
+    }
 
     fun search(q: String): SearchResp? = get("/api/search?q=" + enc(q))
 

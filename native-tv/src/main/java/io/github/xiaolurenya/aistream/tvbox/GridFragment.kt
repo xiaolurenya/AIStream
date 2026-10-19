@@ -34,6 +34,8 @@ abstract class GridFragment : Fragment(R.layout.fragment_grid) {
 
         // 列数按 poster_w 现算：固定列数在大屏上每格空一大截，排出来间隔大得离谱
         rv.layoutManager = GridLayoutManager(requireContext(), posterSpanCount(requireContext()))
+        // 网格行间距：海报卡自带左右内边距撑开横向间隙，这里补纵向间隙，行不再贴在一起
+        rv.addItemDecoration(SpacesItemDecoration(0, (16 * resources.displayMetrics.density).toInt()))
         quickAnim(rv)
         adapter = PosterAdapter(mutableListOf()) { c -> DetailActivity.open(requireContext(), c) }
         rv.adapter = adapter

@@ -1,5 +1,6 @@
 package io.github.xiaolurenya.aistream.tvbox
 
+import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -96,24 +97,71 @@ class PosterAdapter(
         items.addAll(list)
         notifyDataSetChanged()
     }
+
+    // 「显示更多」翻页：追加下一页，只刷新新增区间（整表 notify 会让焦点跳回第一行）
+    fun append(list: List<Api.Card>) {
+        val from = items.size
+        items.addAll(list)
+        notifyItemRangeInserted(from, list.size)
+    }
+}
+
+/* 网格行/列间距：海报卡本身只靠 item_poster 的左右内边距撑开横向间隙，
+   纵向完全没有间隙（网格行贴在一起，是「每行之间没间隔」的根因）。
+   这里统一补纵向（h 可传 0 只补纵向），让网格排出来不挤、焦点放大也不压邻居。 */
+class SpacesItemDecoration(private val h: Int, private val v: Int) : RecyclerView.ItemDecoration() {
+    override fun getItemOffsets(out: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+        out.left = h / 2
+        out.right = h / 2
+        out.top = v / 2
+        out.bottom = v / 2
+    }
 }
 
 // ---------- 首页：一个栏目一行（标题 + 横向海报列表） ----------
+/* loadMore：每行横向滑到末尾自动拉下一页（服务端按栏目配置序号翻页）。
+   回调由 Fragment 用生命周期协程跑网络，结果回主线程交给 adapter.append，
+   适配器本身不持有协程作用域。 */
 class ColumnAdapter(
-    private val onClick: (Api.Card) -> Unit
+    private val onClick: (Api.Card) -> Unit,
+    private val loadMore: (serverIdx: Int, page: Int, onResult: (List<Api.Card>) -> Unit) -> Unit
 ) : RecyclerView.Adapter<ColumnAdapter.H>() {
 
     private val cols = mutableListOf<Api.Column>()
     // 所有栏目行共用一个回收池：滑到第三行时能直接拿第一行的 ViewHolder 来用
     private val pool = RecyclerView.RecycledViewPool()
+    // 每行翻页状态（下标与 cols 对齐）：page=已拉到的页；loading=拉取中；done=没更多了
+    private val st = mutableListOf<RowState>()
+
+    private data class RowState(var page: Int = 1, var loading: Boolean = false, var done: Boolean = false)
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val label: TextView = v.findViewById(R.id.tvLabel)
         val rv: RecyclerView = v.findViewById(R.id.rvItems)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
-        H(LayoutInflater.from(parent.context).inflate(R.layout.item_column, parent, false))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H {
+        val h = H(LayoutInflater.from(parent.context).inflate(R.layout.item_column, parent, false))
+        // 横向「显示更多」：滑到最后几张就拉下一页（每行独立翻页，互不干扰）
+        h.rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                val pos = h.bindingAdapterPosition
+                if (pos < 0 || pos >= st.size) return
+                val row = st[pos]
+                val ad = rv.adapter as? PosterAdapter ?: return
+                val lm = rv.layoutManager as? LinearLayoutManager ?: return
+                if (!row.loading && !row.done && lm.findLastVisibleItemPosition() >= ad.itemCount - 6) {
+                    row.loading = true
+                    loadMore(cols[pos].idx, row.page + 1) { more ->
+                        if (more.isEmpty()) row.done = true
+                        else { row.page++; ad.append(more) }
+                        row.loading = false
+                    }
+                }
+            }
+        })
+        return h
+    }
 
     override fun getItemCount() = cols.size
 
@@ -132,6 +180,8 @@ class ColumnAdapter(
     fun submit(list: List<Api.Column>) {
         cols.clear()
         cols.addAll(list)
+        st.clear()
+        list.forEach { st.add(RowState()) }
         notifyDataSetChanged()
     }
 }
