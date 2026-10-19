@@ -93,6 +93,7 @@
                 android:layout_height="36dp"
                 android:background="@drawable/bg_search"
                 android:gravity="center"
+                android:nextFocusDown="@id/etSearch"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
                 android:text="✕ 关闭"
@@ -101,7 +102,8 @@
 
         </LinearLayout>
 
-        <!-- 搜索频道名（别人家的直播面板有这玩意，确实好用） -->
+        <!-- 搜索频道名（别人家的直播面板有这玩意，确实好用）。
+             UP 明确指到关闭按钮：不然焦点搜索会被标题文字块/左侧分组列搅混，关闭按钮选不到 -->
         <EditText
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
@@ -112,6 +114,8 @@
             android:hint="搜索频道名…"
             android:imeOptions="actionSearch"
             android:inputType="text"
+            android:nextFocusUp="@id/btnClosePanel"
+            android:nextFocusDown="@id/rvCh"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:singleLine="true"
@@ -127,10 +131,15 @@
             android:layout_marginTop="12dp"
             android:orientation="horizontal" android:clipChildren="false">
 
+            <!-- ⚠️ ScrollView 默认自己可聚焦且没有任何视觉反馈，D-pad 上下导航时它会在旁边
+                 「隐形截胡」，焦点到不了关闭按钮/分组列（大哥说的「关闭按钮选不到」元凶之一）。
+                 禁掉它自己的焦点，真正的焦点目标是里面的分组 TextView。 -->
             <ScrollView
                 android:id="@+id/scCats"
                 android:layout_width="@dimen/chcat_w"
                 android:layout_height="match_parent"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
                 android:scrollbars="none"
                 android:overScrollMode="never">
 
@@ -174,7 +183,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:maxLines="1"
+            android:maxLines="2"
             android:textColor="#FFD9A441"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -185,7 +194,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
             android:ellipsize="end"
-            android:maxLines="1"
+            android:maxLines="2"
             android:textColor="@color/fg_dim"
             android:textSize="13sp" />
 

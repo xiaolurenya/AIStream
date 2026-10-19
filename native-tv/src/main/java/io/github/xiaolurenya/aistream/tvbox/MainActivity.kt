@@ -190,8 +190,15 @@ class MainActivity : AppCompatActivity() {
             .commitAllowingStateLoss()
     }
 
-    // 退到首页再按返回键才退出，别一不小心就把 APP 关了
+    // 退到首页再按返回键才退出，别一不小心就把 APP 关了。
+    // 首页直播预览小窗开着时，第一下返回先收小窗（焦点给「首页」卡——
+    // 不能给「电视直播」卡，它一聚焦又会把小窗弹回来），再按才退出
     override fun onBackPressed() {
+        if (cur == RAIL_HOME && home()?.previewShowing() == true) {
+            home()?.onLiveFocus(false)
+            nav.getOrNull(RAIL_HOME)?.requestFocus()
+            return
+        }
         if (cur != RAIL_HOME) {
             switch(RAIL_HOME)
             nav.getOrNull(RAIL_HOME)?.requestFocus()

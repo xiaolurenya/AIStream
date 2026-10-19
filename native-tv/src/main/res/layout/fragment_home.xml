@@ -3,6 +3,7 @@
      hero 背景跟页面同色通铺（不再垫 bg_card）—— 海报上下颜色连成一片，没有色差断层。
      hero 支持直播预览小窗：导航轨「电视直播」卡聚焦/设置开了就直接播。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
@@ -45,11 +46,15 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_scrim_left" />
 
-            <!-- 直播预览小窗：盖在海报上，只有预览时可见 -->
+            <!-- 直播预览小窗：盖在海报上，只有预览时可见。
+                 ⚠️ 必须用 TextureView（默认 SurfaceView 在一批盒子/投影上 surface 位置
+                 不跟着布局走：预览一开画面「钉」在原地，下面的栏目行从它上面滚过去，
+                 叠成图2 那个鬼样子；TextureView 是普通 View，跟布局/缩放/滚动走） -->
             <androidx.media3.ui.PlayerView
                 android:id="@+id/heroPv"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                app:surface_type="texture_view"
                 android:visibility="gone" />
 
             <LinearLayout
@@ -80,7 +85,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:ellipsize="end"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:textColor="#FFD5D9E4"
                     android:textSize="14sp" />
 

@@ -301,11 +301,25 @@ class ChipAdapter(
 
 // ---------- 直播频道列表（图4 样式：编号 + 台标 + 正在播节目 + 播放进度条） ----------
 class ChannelAdapter(
-    private val items: List<Api.IptvCh>,
+    items: List<Api.IptvCh>,
     private val epg: Map<String, Api.EpgNow> = emptyMap(),
-    private val curCid: String = "",
+    curCid: String = "",
     private val onPick: (Int) -> Unit
 ) : RecyclerView.Adapter<ChannelAdapter.H>() {
+
+    private val rows = items.toMutableList()
+    var curCid: String = curCid
+        private set
+
+    /* 复用同一个 adapter 刷新列表：选台面板的搜索框每敲一个字就 new 一个 adapter
+       全量重建（+ item 动画），遥控器/输入法敲字能明显感觉到卡 —— 现在只换数据。 */
+    fun submit(list: List<Api.IptvCh>, nowCid: String) {
+        val changed = list != rows || nowCid != curCid
+        rows.clear()
+        rows.addAll(list)
+        curCid = nowCid
+        if (changed) notifyDataSetChanged()
+    }
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val row: View = v.findViewById(R.id.row)
@@ -318,10 +332,10 @@ class ChannelAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
         H(LayoutInflater.from(parent.context).inflate(R.layout.item_channel, parent, false))
 
-    override fun getItemCount() = items.size
+    override fun getItemCount() = rows.size
 
     override fun onBindViewHolder(h: H, i: Int) {
-        val c = items[i]
+        val c = rows[i]
         // 图4 的三位编号
         h.num.text = "%03d".format(i + 1)
         h.name.text = c.name.orEmpty()

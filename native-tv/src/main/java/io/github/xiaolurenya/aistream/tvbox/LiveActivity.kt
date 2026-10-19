@@ -56,6 +56,7 @@ class LiveActivity : AppCompatActivity() {
     // 频道单：分类筛选（分组从直播源自带数据来）+ 台名搜索
     private lateinit var etSearch: EditText
     private lateinit var llCats: LinearLayout
+    private lateinit var chAdapter: ChannelAdapter   // 复用同一个 adapter，搜索时只换数据不重建
     private var cats = listOf<Pair<String, Int>>()   // (分组名, 频道数)，后台什么列表就是什么列表，默认选中第一组
     private var selCat = 0
     private var query = ""
@@ -83,6 +84,7 @@ class LiveActivity : AppCompatActivity() {
         chPanel = findViewById(R.id.chPanel)
         rvCh = findViewById(R.id.rvCh)
         btnClosePanel = findViewById(R.id.btnClosePanel)
+        bindFocus(btnClosePanel)   // 关闭按钮要有放大描边反馈，遥控器才知道选没选中
         btnClosePanel.setOnClickListener { closePanel() }
         tvEpgNow = findViewById(R.id.tvEpgNow)
         tvEpgNext = findViewById(R.id.tvEpgNext)
@@ -131,7 +133,10 @@ class LiveActivity : AppCompatActivity() {
         }
 
         rvCh.layoutManager = LinearLayoutManager(this)
-        quickAnim(rvCh)
+        // 选台列表要的是遥控器一按立刻换高亮：任何 item 动画都是拖沓
+        noAnim(rvCh)
+        chAdapter = ChannelAdapter(emptyList(), PlayCache.iptvEpg) { pos -> pickShown(pos) }
+        rvCh.adapter = chAdapter
         etSearch = findViewById(R.id.etSearch)
         bindFocus(etSearch)
         llCats = findViewById(R.id.llCats)
@@ -247,19 +252,23 @@ class LiveActivity : AppCompatActivity() {
         if (query.isNotBlank()) list = list.filter { it.name.orEmpty().contains(query, ignoreCase = true) }
         shown = list
         val curCid = PlayCache.iptv.getOrNull(PlayCache.iptvIndex)?.cid.orEmpty()
-        rvCh.adapter = ChannelAdapter(list, PlayCache.iptvEpg, curCid) { pos ->
-            // 拿 cid 映射回全量索引，筛选状态下选台不会错位
-            val cid = shown.getOrNull(pos)?.cid.orEmpty()
-            val gi = all.indexOfFirst { it.cid == cid }
-            if (gi < 0) return@ChannelAdapter
-            idx = gi
-            PlayCache.iptvIndex = gi
-            stage = 0
-            autoSw = 0
-            closePanel()
-            play()
-        }
+        // 只换数据不重建 adapter：搜索每敲一个字都全量重建的话，遥控器上敲字能卡出残影
+        chAdapter.submit(list, curCid)
         // 不再抢焦点：点完分组焦点留在分组列，大哥自己决定继续换组还是右键进频道列表
+    }
+
+    // 频道列表里按确认：拿 cid 映射回全量索引，筛选状态下选台不会错位
+    private fun pickShown(pos: Int) {
+        val all = PlayCache.iptv
+        val cid = shown.getOrNull(pos)?.cid.orEmpty()
+        val gi = all.indexOfFirst { it.cid == cid }
+        if (gi < 0) return
+        idx = gi
+        PlayCache.iptvIndex = gi
+        stage = 0
+        autoSw = 0
+        closePanel()
+        play()
     }
 
     private fun openPanel() {
@@ -267,8 +276,10 @@ class LiveActivity : AppCompatActivity() {
         tvTitle.visibility = View.GONE      // 面板盖住左半边，藏掉顶部台名，免得透出来跟面板叠字
         paintCats()
         paintPanelEpg()
-        // 把当前正在播的台滚到可见位置，别让用户进去还得从头翻
-        if (idx >= 0) rvCh.scrollToPosition(idx)
+        // 把当前正在播的台滚到可见位置，别让用户进去还得从头翻。
+        // 注意要用「筛选后列表里的位置」：直接拿全量 idx 在筛选状态下会滚错行
+        val pos = shown.indexOfFirst { it.cid == curCid }
+        rvCh.scrollToPosition(if (pos >= 0) pos else 0)
         // 容器拿不到焦点，把焦点递给列表里的第一行，确认键才是「选台」
         rvCh.post {
             val first = rvCh.getChildAt(0)

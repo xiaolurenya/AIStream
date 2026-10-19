@@ -94,12 +94,13 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    // 右侧推荐列轮播：池子比窗口大才需要转；用户在侧栏聚焦浏览时跳过这一拍
+    // 右侧推荐列轮播：池子比窗口大才需要转；用户在侧栏聚焦浏览时跳过这一拍。
+    // 预览小窗开着时也跳过：弱性能盒子/投影上视频解码 + 换图解码同时跑，遥控器都卡（大哥图2）
     private val rotSide = object : Runnable {
         override fun run() {
             runCatching {
                 val n = resources.getInteger(R.integer.side_max)
-                if (sidePool.size > n && rvSide?.hasFocus() != true) {
+                if (sidePool.size > n && !previewOn && rvSide?.hasFocus() != true) {
                     sideOff = (sideOff + 1) % sidePool.size
                     sideAdapter.submit(sideWindow(n))
                 }
@@ -391,6 +392,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         if (has) schedulePreview() else stopPreview()
     }
 
+    // 预览小窗是否开着（MainActivity 按返回键时判断：开着先收小窗，别直接退应用）
+    fun previewShowing() = previewOn
+
     // ---------- 直播预览小窗 ----------
     private fun schedulePreview() {
         // 防抖：遥控器连着滑过别的卡，500ms 后还停在直播卡上才开播
@@ -477,9 +481,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             .build().also {
                 pvPlayer = it
                 heroPv.player = it
-                // 小窗预览不要控制条（会挡住画面），比例 FIT 不拉伸
+                // 小窗预览不要控制条（会挡住画面）。
+                // 比例用 ZOOM 等比铺满容器：投影/电视上 hero 容器普遍比 16:9 宽，
+                // 之前 FIT 会在左右留两条黑边/暗底（大哥图1「左右还有很多没显示画面」），
+                // 铺满只等比裁掉上下一点点，画面永远填满整个小窗。
                 heroPv.useController = false
-                heroPv.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                heroPv.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 it.addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(state: Int) {
                         if (state == Player.STATE_READY) ui.removeCallbacks(pvWatchdog)
