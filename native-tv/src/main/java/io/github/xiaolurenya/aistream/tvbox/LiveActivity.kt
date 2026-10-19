@@ -133,6 +133,7 @@ class LiveActivity : AppCompatActivity() {
         rvCh.layoutManager = LinearLayoutManager(this)
         quickAnim(rvCh)
         etSearch = findViewById(R.id.etSearch)
+        bindFocus(etSearch)
         llCats = findViewById(R.id.llCats)
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {
@@ -169,12 +170,18 @@ class LiveActivity : AppCompatActivity() {
     // ---------- 遥控器 ----------
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (ev.action == KeyEvent.ACTION_DOWN) {
-            // 焦点在频道单里时，上下键归列表，只有左右/返回键归页面
-            if (chPanel.visibility == View.VISIBLE && focusInPanel()) {
-                when (ev.keyCode) {
-                    KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_BACK -> { closePanel(); return true }
-                    KeyEvent.KEYCODE_MENU -> { closePanel(); return true }
+            // 面板开着：返回键永远先收面板（无论焦点在哪，避免误退出直播）
+            if (chPanel.visibility == View.VISIBLE) {
+                if (ev.keyCode == KeyEvent.KEYCODE_BACK) { closePanel(); return true }
+                // 焦点在频道列表 / 关闭按钮时，左右键收面板
+                if (focusInList()) {
+                    when (ev.keyCode) {
+                        KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_LEFT,
+                        KeyEvent.KEYCODE_MENU -> { closePanel(); return true }
+                    }
                 }
+                // 焦点在搜索框 / 分类条：左右 / 确认键交回系统，正常导航
+                // （搜索框才能被选中、分类条才能左右切换，不会再被面板逻辑吞掉）
                 return super.dispatchKeyEvent(ev)
             }
             when (ev.keyCode) {
@@ -192,10 +199,11 @@ class LiveActivity : AppCompatActivity() {
         return super.dispatchKeyEvent(ev)
     }
 
-    private fun focusInPanel(): Boolean {
+    // 焦点（或其任一祖先）是不是落在频道列表 / 关闭按钮里：只有这两种情况左右键才收面板
+    private fun focusInList(): Boolean {
         var n: View? = currentFocus ?: return false
         while (n != null) {
-            if (n === chPanel) return true
+            if (n === rvCh || n.id == R.id.btnClosePanel) return true
             n = n.parent as? View
         }
         return false
@@ -273,6 +281,7 @@ class LiveActivity : AppCompatActivity() {
 
     private fun openPanel() {
         chPanel.visibility = View.VISIBLE
+        tvTitle.visibility = View.GONE      // 面板盖住左半边，藏掉顶部台名，免得透出来跟面板叠字
         paintCats()
         paintPanelEpg()
         // 把当前正在播的台滚到可见位置，别让用户进去还得从头翻
@@ -302,6 +311,7 @@ class LiveActivity : AppCompatActivity() {
 
     private fun closePanel() {
         chPanel.visibility = View.GONE
+        tvTitle.visibility = View.VISIBLE   // 面板收起，台名恢复显示
         playerView.requestFocus()
     }
 

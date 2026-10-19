@@ -14,7 +14,10 @@
         android:paddingBottom="8dp"
         android:textColor="@color/fg"
         android:textSize="19sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:clickable="true" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvItems"

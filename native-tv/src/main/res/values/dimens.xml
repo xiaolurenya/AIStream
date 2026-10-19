@@ -22,11 +22,11 @@
     <dimen name="side_card_text">13sp</dimen>
     <dimen name="side_sub_text">12sp</dimen>
 
-    <dimen name="poster_w">102dp</dimen>
-    <dimen name="poster_h">144dp</dimen>
-    <dimen name="poster_title">12sp</dimen>
+    <dimen name="poster_w">96dp</dimen>
+    <dimen name="poster_h">136dp</dimen>
+    <dimen name="poster_title">11sp</dimen>
 
-    <dimen name="chpanel_w">300dp</dimen>
+    <dimen name="chpanel_w">264dp</dimen>
     <dimen name="live_title">17sp</dimen>
     <dimen name="ch_num_w">36dp</dimen>
     <dimen name="ch_logo_w">40dp</dimen>

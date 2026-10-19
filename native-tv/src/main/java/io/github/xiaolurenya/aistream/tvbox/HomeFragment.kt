@@ -139,7 +139,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
                     }
                     withContext(Dispatchers.Main) { onResult(more) }
                 }
-            }
+            },
+            // 栏目标题被选中：弹出该栏目满屏海报墙（对应顶部分类标签同一个入口）
+            onOpenCol = { serverIdx -> CategoryActivity.open(requireContext(), serverIdx) }
         )
         rv.adapter = adapter
 

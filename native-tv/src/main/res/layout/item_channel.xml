@@ -5,7 +5,7 @@
     android:id="@+id/row"
     style="@style/AIStream.FocusItem"
     android:layout_width="match_parent"
-    android:layout_height="64dp"
+    android:layout_height="58dp"
     android:layout_marginBottom="3dp"
     android:background="@drawable/bg_card"
     android:gravity="center_vertical"
@@ -17,9 +17,9 @@
 
     <!-- 三位编号：半透明圆角小方块，金色字更醒目 -->
     <FrameLayout
-        android:layout_width="40dp"
-        android:layout_height="36dp"
-        android:layout_marginEnd="12dp"
+        android:layout_width="36dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="10dp"
         android:background="@drawable/bg_num"
         android:clipChildren="false">
 
@@ -29,7 +29,7 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:textColor="@color/gold"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
     </FrameLayout>

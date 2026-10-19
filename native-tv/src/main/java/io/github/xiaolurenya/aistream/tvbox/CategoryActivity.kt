@@ -58,11 +58,48 @@ class CategoryActivity : AppCompatActivity() {
         var page = 1
         var loading = false
         var done = false
+        // 预取的一页：进页面就先拉下一页存着，点「显示更多」基本秒出（网络没回来才现拉）
+        var prefetched: List<Api.Card>? = null
+        var prefetchedPage = 0
+        fun prefetchNext() {
+            val target = page + 1
+            lifecycleScope.launch {
+                val more = withContext(Dispatchers.IO) {
+                    runCatching { Api.homeMore(col.idx, target) }.getOrDefault(emptyList())
+                }
+                if (more.isNotEmpty()) { prefetchedPage = target; prefetched = more }
+            }
+        }
+        // 进页面先预取下一页，等用户点「显示更多」时多半已经躺在内存里了
+        prefetchNext()
+
+        // 焦点送到新增区第一张，遥控器接着往下挪不用回头找
+        fun focusNew(from: Int) {
+            val lm = rv.layoutManager as? GridLayoutManager
+            rv.post {
+                (lm ?: return@post).scrollToPosition(from)
+                rv.postDelayed({
+                    rv.findViewHolderForAdapterPosition(from)?.itemView?.requestFocus()
+                }, 80)
+            }
+        }
         fun loadNext() {
             if (loading || done) return
             val ad = rv.adapter as? PosterAdapter ?: return
             loading = true
             val from = ad.itemCount - 1 // 新页第一张的下标（append 前最后一位是「显示更多」卡，它会让位到新页尾）
+            // 预取到位就直接用缓存页（秒出），然后接着预取下下页
+            val cached = if (prefetched != null && prefetchedPage == page + 1) prefetched else null
+            if (cached != null) {
+                prefetched = null
+                prefetchedPage = 0
+                page++
+                ad.append(cached)
+                focusNew(from)
+                loading = false
+                prefetchNext()
+                return
+            }
             lifecycleScope.launch {
                 val more = withContext(Dispatchers.IO) {
                     runCatching { Api.homeMore(col.idx, page + 1) }.getOrDefault(emptyList())
@@ -72,14 +109,7 @@ class CategoryActivity : AppCompatActivity() {
                     else {
                         page++
                         ad.append(more)
-                        // 焦点送到新增区第一张，遥控器接着往下挪不用回头找
-                        val lm = rv.layoutManager as? GridLayoutManager
-                        rv.post {
-                            (lm ?: return@post).scrollToPosition(from)
-                            rv.postDelayed({
-                                rv.findViewHolderForAdapterPosition(from)?.itemView?.requestFocus()
-                            }, 120)
-                        }
+                        focusNew(from)
                     }
                     loading = false
                 }
@@ -92,6 +122,9 @@ class CategoryActivity : AppCompatActivity() {
 
         // 焦点先进第一行第一张，确认键直接进详情，不用先手动找
         rv.post { rv.getChildAt(0)?.requestFocus() }
+
+        // 去掉进/出页面动画：之前「显示更多」弹出满屏要等动画，显得迟钝；直接切，跟首页选台一个节奏
+        overridePendingTransition(0, 0)
     }
 
     override fun onResume() {

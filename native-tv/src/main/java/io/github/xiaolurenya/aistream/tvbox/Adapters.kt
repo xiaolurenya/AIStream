@@ -177,7 +177,9 @@ class SpacesItemDecoration(private val h: Int, private val v: Int) : RecyclerVie
    适配器本身不持有协程作用域。 */
 class ColumnAdapter(
     private val onClick: (Api.Card) -> Unit,
-    private val loadMore: (serverIdx: Int, page: Int, onResult: (List<Api.Card>) -> Unit) -> Unit
+    private val loadMore: (serverIdx: Int, page: Int, onResult: (List<Api.Card>) -> Unit) -> Unit,
+    // 栏目标题被遥控器选中 / 点击：弹出该栏目的满屏海报墙（对应顶部分类标签的入口）
+    private val onOpenCol: (serverIdx: Int) -> Unit = {}
 ) : RecyclerView.Adapter<ColumnAdapter.H>() {
 
     private val cols = mutableListOf<Api.Column>()
@@ -221,6 +223,9 @@ class ColumnAdapter(
     override fun onBindViewHolder(h: H, i: Int) {
         val col = cols[i]
         h.label.text = col.label.orEmpty()
+        // 栏目标题：可聚焦 + 白描边，确认键 / 点击弹满屏海报墙（按下返回自动归位）
+        h.label.setOnClickListener { onOpenCol(col.idx) }
+        bindFocus(h.label)
         if (h.rv.layoutManager == null) {
             h.rv.layoutManager = LinearLayoutManager(h.rv.context, LinearLayoutManager.HORIZONTAL, false)
                 .apply { initialPrefetchItemCount = 6 }

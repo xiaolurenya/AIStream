@@ -45,7 +45,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private val speeds = floatArrayOf(0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
     private var speedIdx = 1
-    private var filled = false        // true = 铺满全屏，false = 原始比例适应
+    private var filled = true         // true = 等比裁切铺满全屏（默认），false = 原始比例适应
 
     private var lineIdx = 0
     private var epIdx = 0
@@ -123,6 +123,7 @@ class PlayerActivity : AppCompatActivity() {
         epPanel = findViewById(R.id.epPanel)
         rvEps = findViewById(R.id.rvEps)
         btnFull = findViewById(R.id.btnFull)
+        btnFull.text = "适应"            // 默认铺满，按钮给出「切换回原始比例」的动作
         btnSpeed = findViewById(R.id.btnSpeed)
 
         if (PlayCache.lines.isEmpty() && !PlayCache.isUp) {
@@ -155,6 +156,8 @@ class PlayerActivity : AppCompatActivity() {
         playerView.controllerShowTimeoutMs = 6000
         playerView.setShowNextButton(false)
         playerView.setShowPreviousButton(false)
+        // 默认铺满全屏（等比裁切，画面盖满整屏，不再露出背后的海报底图）
+        playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
         playerView.setControllerVisibilityListener(
             PlayerView.ControllerVisibilityListener { v ->
                 val show = v == View.VISIBLE
@@ -333,7 +336,9 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun toggleFull() {
         filled = !filled
-        playerView.resizeMode = if (filled) AspectRatioFrameLayout.RESIZE_MODE_FILL
+        // 铺满 = 等比裁切盖满整屏（ZOOM）；适应 = 原始比例留黑边（FIT）。
+        // 之前用 FILL 会把画面拉变形，换成 ZOOM 等比裁切，上下不再露海报底图
+        playerView.resizeMode = if (filled) AspectRatioFrameLayout.RESIZE_MODE_ZOOM
         else AspectRatioFrameLayout.RESIZE_MODE_FIT
         btnFull.text = if (filled) "适应" else "全屏"
     }
