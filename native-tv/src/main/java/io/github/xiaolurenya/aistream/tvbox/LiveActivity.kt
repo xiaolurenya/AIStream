@@ -56,7 +56,7 @@ class LiveActivity : AppCompatActivity() {
     // 频道单：分类筛选（分组从直播源自带数据来）+ 台名搜索
     private lateinit var etSearch: EditText
     private lateinit var llCats: LinearLayout
-    private var cats = listOf<Pair<String, Int>>()   // (分组名, 频道数)，第 0 项固定「全部」
+    private var cats = listOf<Pair<String, Int>>()   // (分组名, 频道数)，后台什么列表就是什么列表，默认选中第一组
     private var selCat = 0
     private var query = ""
     private var shown: List<Api.IptvCh> = emptyList()
@@ -170,18 +170,12 @@ class LiveActivity : AppCompatActivity() {
     // ---------- 遥控器 ----------
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (ev.action == KeyEvent.ACTION_DOWN) {
-            // 面板开着：返回键永远先收面板（无论焦点在哪，避免误退出直播）
+            // 面板开着：返回 / 菜单键收面板；其余按键全部交回系统，
+            // 让焦点在「搜索框 ↔ 分组列 ↔ 频道列表」之间正常走（参照样式的两栏导航）
             if (chPanel.visibility == View.VISIBLE) {
-                if (ev.keyCode == KeyEvent.KEYCODE_BACK) { closePanel(); return true }
-                // 焦点在频道列表 / 关闭按钮时，左右键收面板
-                if (focusInList()) {
-                    when (ev.keyCode) {
-                        KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_LEFT,
-                        KeyEvent.KEYCODE_MENU -> { closePanel(); return true }
-                    }
+                when (ev.keyCode) {
+                    KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_MENU -> { closePanel(); return true }
                 }
-                // 焦点在搜索框 / 分类条：左右 / 确认键交回系统，正常导航
-                // （搜索框才能被选中、分类条才能左右切换，不会再被面板逻辑吞掉）
                 return super.dispatchKeyEvent(ev)
             }
             when (ev.keyCode) {
@@ -199,19 +193,9 @@ class LiveActivity : AppCompatActivity() {
         return super.dispatchKeyEvent(ev)
     }
 
-    // 焦点（或其任一祖先）是不是落在频道列表 / 关闭按钮里：只有这两种情况左右键才收面板
-    private fun focusInList(): Boolean {
-        var n: View? = currentFocus ?: return false
-        while (n != null) {
-            if (n === rvCh || n.id == R.id.btnClosePanel) return true
-            n = n.parent as? View
-        }
-        return false
-    }
-
-    // ---------- 分类筛选 + 搜索 ----------
-    /* 分组排序跟手机版一个口径：管理员后台配置的 groupOrder 优先（随 /api/iptv 一起下发，
-       自动获取，改后台即生效），没配到的分组按频道出现顺序补在后面。 */
+    // ---------- 分组筛选（竖列） + 搜索 ----------
+    /* 参照样式：左边一列分组（后台 groupOrder 优先，没配到的按出现顺序补后面），
+       不再放「全部」——后台是什么列表就是什么列表，进来默认选中第一组。 */
     private fun buildCats() {
         val all = PlayCache.iptv
         val counts = LinkedHashMap<String, Int>()
@@ -225,7 +209,7 @@ class LiveActivity : AppCompatActivity() {
             ordered[g] = n
         }
         ordered.putAll(counts)
-        cats = listOf(Pair("全部", all.size)) + ordered.map { Pair(it.key, it.value) }
+        cats = ordered.map { Pair(it.key, it.value) }
         selCat = 0
         paintCats()
         applyFilter()
@@ -235,19 +219,21 @@ class LiveActivity : AppCompatActivity() {
         if (cats.isEmpty()) return
         llCats.removeAllViews()
         val dm = resources.displayMetrics.density
-        cats.forEachIndexed { i, (name, cnt) ->
+        cats.forEachIndexed { i, (name, _) ->
             val tv = TextView(this)
-            tv.text = "$name $cnt"
-            tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+            tv.text = name
+            tv.gravity = android.view.Gravity.CENTER
+            tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
             tv.setTextColor(getColor(if (i == selCat) R.color.fg else R.color.fg_dim))
             tv.setBackgroundResource(if (i == selCat) R.drawable.bg_cat_on else R.drawable.bg_cat)
             tv.isFocusable = true
             tv.isFocusableInTouchMode = true
-            tv.setPadding((18 * dm).toInt(), (7 * dm).toInt(), (18 * dm).toInt(), (7 * dm).toInt())
+            tv.setPadding(0, (11 * dm).toInt(), 0, (11 * dm).toInt())
             tv.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { marginEnd = (8 * dm).toInt() }
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (8 * dm).toInt() }
             tv.setOnClickListener { selCat = i; paintCats(); applyFilter() }
+            bindFocus(tv)
             llCats.addView(tv)
         }
     }
@@ -255,8 +241,9 @@ class LiveActivity : AppCompatActivity() {
     private fun applyFilter() {
         val all = PlayCache.iptv
         if (all.isEmpty()) return
-        var list = if (selCat <= 0 || selCat >= cats.size) all
-        else all.filter { it.group.orEmpty().ifBlank { "其他" } == cats[selCat].first }
+        var list = if (selCat in cats.indices)
+            all.filter { it.group.orEmpty().ifBlank { "其他" } == cats[selCat].first }
+        else all
         if (query.isNotBlank()) list = list.filter { it.name.orEmpty().contains(query, ignoreCase = true) }
         shown = list
         val curCid = PlayCache.iptv.getOrNull(PlayCache.iptvIndex)?.cid.orEmpty()
@@ -272,11 +259,7 @@ class LiveActivity : AppCompatActivity() {
             closePanel()
             play()
         }
-        // 筛完把焦点递给第一行，确认键直接选台
-        rvCh.post {
-            val first = rvCh.getChildAt(0)
-            if (first != null) first.requestFocus() else rvCh.requestFocus()
-        }
+        // 不再抢焦点：点完分组焦点留在分组列，大哥自己决定继续换组还是右键进频道列表
     }
 
     private fun openPanel() {

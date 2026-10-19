@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 网格 layoutAnimation：海报一批批浮上来（只在进页面时跑一次，翻页追加不重放） -->
+<layoutAnimation xmlns:android="http://schemas.android.com/apk/res/android"
+    android:animation="@anim/slide_fade_in"
+    android:delay="12%"
+    android:animationOrder="normal" />

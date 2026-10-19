@@ -54,13 +54,13 @@
         android:paddingBottom="18dp"
         android:visibility="gone" android:clipChildren="false">
 
-        <!-- 面板标题行：触摸用户点 × 关闭（遥控器按返回/左键也能关） -->
+        <!-- 面板标题行：触摸用户点 × 关闭（遥控器按返回也能关） -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingBottom="14dp" android:clipChildren="false">
+            android:paddingBottom="12dp" android:clipChildren="false">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -80,7 +80,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="上下键选台 · 左右键收起"
+                    android:text="上下选台 · 左右换分组 · 返回键收起"
                     android:textColor="@color/fg_dim"
                     android:textSize="12sp" />
 
@@ -119,31 +119,47 @@
             android:textColorHint="@color/fg_dim"
             android:textSize="14sp" />
 
-        <!-- 分类筛选条：全部 7135 ｜ 央视频 73 ｜ IPTV 470 …（分组从直播源自动来） -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:scrollbars="none" android:clipChildren="false">
-
-            <LinearLayout
-                android:id="@+id/llCats"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"  android:clipChildren="false" />
-
-        </HorizontalScrollView>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvCh"
+        <!-- 参照样式两栏：左边分组竖列（后台是什么列表就是什么列表），右边频道列表 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="6dp"
-            android:clipToPadding="false"
-            android:overScrollMode="never" />
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal" android:clipChildren="false">
+
+            <ScrollView
+                android:id="@+id/scCats"
+                android:layout_width="@dimen/chcat_w"
+                android:layout_height="match_parent"
+                android:scrollbars="none"
+                android:overScrollMode="never">
+
+                <LinearLayout
+                    android:id="@+id/llCats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp" android:clipChildren="false" />
+
+            </ScrollView>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="12dp"
+                android:background="#33FFFFFF" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCh"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:overScrollMode="never" />
+
+        </LinearLayout>
 
         <!-- 底部节目单：正在播的是哪个台播什么、接下来播什么 -->
         <View

@@ -90,6 +90,11 @@ class PosterAdapter(
         val title: TextView = v.findViewById(R.id.tvTitle)
         val sub: TextView = v.findViewById(R.id.tvSub)
         val badge: TextView = v.findViewById(R.id.tvBadge)
+
+        init {
+            // 海报圆角：按背景 bg_card 的圆角轮廓裁切（XML 里的 clipToOutline 只有 API31+ 认，这里兜底）
+            img.clipToOutline = true
+        }
     }
 
     class MoreH(v: View) : RecyclerView.ViewHolder(v) {
@@ -99,6 +104,15 @@ class PosterAdapter(
     // 「显示更多」卡：传了 onMore 就先亮出来，拉到空页再收
     var hasMore: Boolean = onMore != null
         private set
+
+    // 「显示更多」卡文案：拉下一页时切成「加载中…」，让大哥知道点了有反应
+    private var moreLabel: String = "显示更多"
+
+    fun setMoreLabel(s: String) {
+        if (moreLabel == s) return
+        moreLabel = s
+        if (hasMore) notifyItemChanged(items.size)
+    }
 
     fun setHasMore(on: Boolean) {
         if (hasMore == on) return
@@ -122,6 +136,7 @@ class PosterAdapter(
     override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
         if (h is MoreH) {
             bindFocus(h.tv)
+            h.tv.text = moreLabel
             h.tv.setOnClickListener { onMore?.invoke() }
             return
         }
@@ -297,9 +312,7 @@ class ChannelAdapter(
         val num: TextView = v.findViewById(R.id.tvNum)
         val logo: ImageView = v.findViewById(R.id.imgLogo)
         val name: TextView = v.findViewById(R.id.tvName)
-        val group: TextView = v.findViewById(R.id.tvGroup)
         val epg: TextView = v.findViewById(R.id.tvEpg)
-        val pb: ProgressBar = v.findViewById(R.id.pbEpg)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
@@ -312,29 +325,19 @@ class ChannelAdapter(
         // 图4 的三位编号
         h.num.text = "%03d".format(i + 1)
         h.name.text = c.name.orEmpty()
-        h.group.text = c.group.orEmpty()
 
         // 台标：服务端给的是相对路径（自带 token），跟手机版一样拼域名
         val lu = c.logo.orEmpty()
         if (lu.isBlank()) h.logo.setImageDrawable(null)
         else h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu)
 
-        // 节目单：正在播 + 几点结束（后台没配 EPG 就不显示这两行）
+        // 节目单：正在播 + 几点结束（后台没配 EPG 就只显示台名，行更清爽）
         val e = epg[c.cid]
         if (e == null || e.t.isNullOrBlank()) {
             h.epg.visibility = View.GONE
-            h.pb.visibility = View.GONE
         } else {
             h.epg.visibility = View.VISIBLE
             h.epg.text = "▶ " + e.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else "")
-            // 播放进度：按本档节目的开始/结束时间戳算，不在区间内就不画
-            val now = System.currentTimeMillis()
-            if (e.cs > 0 && e.ce > e.cs && now >= e.cs && now <= e.ce) {
-                h.pb.visibility = View.VISIBLE
-                h.pb.progress = (((now - e.cs) * 1000L) / (e.ce - e.cs)).toInt().coerceIn(0, 1000)
-            } else {
-                h.pb.visibility = View.GONE
-            }
         }
 
         // 正在播放的这一行：品牌蓝高亮，一眼定位当前台

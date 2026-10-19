@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 选台行：三位编号（圆角小方块）+ 台标 + 台名/正在播节目 + 播放进度条。
-     比原来的扁平行更高更透气，编号用金色方块更跳，整体靠近奈飞/苹果 TV 那股舒服劲儿。 -->
+<!-- 选台行：三位编号（圆角小方块）+ 台标 + 台名/正在播节目。
+     参照样式只留三样：编号 / 台标 / 台名（+节目小字），行距放宽不再拥挤 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/row"
     style="@style/AIStream.FocusItem"
     android:layout_width="match_parent"
-    android:layout_height="58dp"
-    android:layout_marginBottom="3dp"
+    android:layout_height="62dp"
+    android:layout_marginBottom="6dp"
     android:background="@drawable/bg_card"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingStart="12dp"
-    android:paddingTop="9dp"
+    android:paddingTop="8dp"
     android:paddingEnd="12dp"
-    android:paddingBottom="9dp" android:clipChildren="false">
+    android:paddingBottom="8dp" android:clipChildren="false">
 
     <!-- 三位编号：半透明圆角小方块，金色字更醒目 -->
     <FrameLayout
@@ -37,7 +37,7 @@
     <FrameLayout
         android:layout_width="@dimen/ch_logo_w"
         android:layout_height="@dimen/ch_logo_h"
-        android:layout_marginEnd="12dp" android:clipChildren="false">
+        android:layout_marginEnd="10dp" android:clipChildren="false">
 
         <ImageView
             android:id="@+id/imgLogo"
@@ -61,7 +61,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textSize="16sp" />
+            android:textSize="15sp" />
 
         <TextView
             android:id="@+id/tvEpg"
@@ -73,27 +73,6 @@
             android:textColor="@color/fg_dim"
             android:textSize="12sp"
             android:visibility="gone" />
-
-        <!-- 节目播放进度条：按 EPG 的 cs/ce 算 -->
-        <ProgressBar
-            android:id="@+id/pbEpg"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_marginTop="5dp"
-            android:max="1000"
-            android:progressDrawable="@drawable/pb_epg"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/tvGroup"
-            style="@style/AIStream.TextSub"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textSize="11sp" />
 
     </LinearLayout>
 

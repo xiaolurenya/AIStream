@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -49,7 +50,8 @@ class CategoryActivity : AppCompatActivity() {
         // 网格间距统一走装饰（横 12 / 纵 16，横竖接近，不再一宽一窄）
         val dm = resources.displayMetrics.density
         rv.addItemDecoration(SpacesItemDecoration((12 * dm).toInt(), (16 * dm).toInt()))
-        quickAnim(rv)
+        // 翻页要的是「瞬间出」：任何插入动画都只会让大哥觉得卡（图2 二次点击卡顿）
+        noAnim(rv)
         val items = col.items.orEmpty().toMutableList()
 
         // 「显示更多」：网格末尾一张按钮卡，点了拉下一页，拉空自动收起。
@@ -58,20 +60,23 @@ class CategoryActivity : AppCompatActivity() {
         var page = 1
         var loading = false
         var done = false
-        // 预取的一页：进页面就先拉下一页存着，点「显示更多」基本秒出（网络没回来才现拉）
-        var prefetched: List<Api.Card>? = null
-        var prefetchedPage = 0
-        fun prefetchNext() {
+        // 预取缓存：进页面就先拉下一页存着；预取中不重复发同一条请求（图2 二次点击慢的根因）
+        val pageCache = HashMap<Int, List<Api.Card>>()
+        var prefetching = 0
+        fun prefetch() {
             val target = page + 1
+            if (done || pageCache.containsKey(target) || prefetching == target) return
+            prefetching = target
             lifecycleScope.launch {
                 val more = withContext(Dispatchers.IO) {
                     runCatching { Api.homeMore(col.idx, target) }.getOrDefault(emptyList())
                 }
-                if (more.isNotEmpty()) { prefetchedPage = target; prefetched = more }
+                if (more.isNotEmpty()) pageCache[target] = more
+                prefetching = 0
             }
         }
         // 进页面先预取下一页，等用户点「显示更多」时多半已经躺在内存里了
-        prefetchNext()
+        prefetch()
 
         // 焦点送到新增区第一张，遥控器接着往下挪不用回头找
         fun focusNew(from: Int) {
@@ -87,31 +92,28 @@ class CategoryActivity : AppCompatActivity() {
             if (loading || done) return
             val ad = rv.adapter as? PosterAdapter ?: return
             loading = true
+            ad.setMoreLabel("加载中…")
             val from = ad.itemCount - 1 // 新页第一张的下标（append 前最后一位是「显示更多」卡，它会让位到新页尾）
-            // 预取到位就直接用缓存页（秒出），然后接着预取下下页
-            val cached = if (prefetched != null && prefetchedPage == page + 1) prefetched else null
-            if (cached != null) {
-                prefetched = null
-                prefetchedPage = 0
-                page++
-                ad.append(cached)
-                focusNew(from)
-                loading = false
-                prefetchNext()
-                return
-            }
             lifecycleScope.launch {
-                val more = withContext(Dispatchers.IO) {
-                    runCatching { Api.homeMore(col.idx, page + 1) }.getOrDefault(emptyList())
+                val target = page + 1
+                // 预取正在拉这一页就等它落地（最多 5 秒），不再发第二条一样的请求
+                var waited = 0
+                while (prefetching == target && waited < 100) { delay(50); waited++ }
+                val more = pageCache.remove(target) ?: withContext(Dispatchers.IO) {
+                    runCatching { Api.homeMore(col.idx, target) }.getOrDefault(emptyList())
                 }
                 withContext(Dispatchers.Main) {
                     if (more.isEmpty()) { done = true; ad.setHasMore(false) }
                     else {
-                        page++
+                        page = target
                         ad.append(more)
+                        // 焦点送到新增区第一张，遥控器接着往下挪不用回头找
                         focusNew(from)
                     }
+                    ad.setMoreLabel("显示更多")
                     loading = false
+                    // 立刻接着预取下一页，连环点也是秒出
+                    prefetch()
                 }
             }
         }

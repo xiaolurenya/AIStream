@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 平板 / 小电视档 -->
 <resources>
-    <dimen name="rail_width">152dp</dimen>
+    <dimen name="rail_width">146dp</dimen>
     <dimen name="rail_pad_top">22dp</dimen>
     <dimen name="brand_size">19sp</dimen>
     <dimen name="brand_pad_start">20dp</dimen>
@@ -26,7 +26,8 @@
     <dimen name="poster_h">150dp</dimen>
     <dimen name="poster_title">13sp</dimen>
 
-    <dimen name="chpanel_w">300dp</dimen>
+    <dimen name="chpanel_w">330dp</dimen>
+    <dimen name="chcat_w">88dp</dimen>
     <dimen name="live_title">19sp</dimen>
     <dimen name="ch_num_w">38dp</dimen>
     <dimen name="ch_logo_w">44dp</dimen>

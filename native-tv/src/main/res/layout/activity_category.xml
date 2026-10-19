@@ -6,25 +6,40 @@
     android:background="@color/bg"
     android:orientation="vertical"
     android:paddingStart="@dimen/page_pad"
-    android:paddingTop="56dp"
-    android:paddingBottom="24dp"
+    android:paddingTop="44dp"
+    android:paddingBottom="20dp"
     android:paddingEnd="@dimen/page_pad" android:clipChildren="false">
 
-    <TextView
-        android:id="@+id/tvTitle"
+    <!-- 标题行：品牌色竖条 + 栏目名，比光秃秃一行字更有精气神 -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/fg"
-        android:textSize="26sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="5dp"
+            android:layout_height="24dp"
+            android:background="@color/accent" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:textColor="@color/fg"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="10dp"
         android:clipToPadding="false"
-        android:paddingTop="20dp"
+        android:layoutAnimation="@anim/anim_grid"
         android:overScrollMode="never" />
 
 </LinearLayout>
