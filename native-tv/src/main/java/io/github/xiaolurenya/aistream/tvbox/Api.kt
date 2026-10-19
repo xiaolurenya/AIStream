@@ -276,6 +276,12 @@ object Api {
         return get<HomeMore>("/api/home/more?idx=$idx&page=$page")?.items.orEmpty()
     }
 
+    /* 首页本地缓存（秒开用）：上次拉好的首页落盘，下次打开先把缓存画出来再联网刷新。
+       只做序列化，存取由调用方管（cacheDir + base 哈希文件名）。 */
+    fun homeToJson(h: Home): String = gson.toJson(h)
+    fun homeFromJson(s: String): Home? =
+        try { gson.fromJson(s, Home::class.java) } catch (e: Exception) { null }
+
     fun search(q: String): SearchResp? = get("/api/search?q=" + enc(q))
 
     fun playByVid(sid: String, vid: String): PlayResp? =

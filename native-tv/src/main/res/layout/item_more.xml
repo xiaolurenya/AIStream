@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 分类网格末尾的「显示更多」卡：跟海报格同宽，一眼能看到、遥控器能点到 -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tvMore"
+    style="@style/AIStream.FocusItem"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_chip"
+    android:gravity="center"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp"
+    android:text="显示更多"
+    android:textColor="@color/fg"
+    android:textSize="15sp"
+    android:textStyle="bold" />

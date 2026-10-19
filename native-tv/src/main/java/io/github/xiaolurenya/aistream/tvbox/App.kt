@@ -17,22 +17,25 @@ class App : Application(), ImageLoaderFactory {
     }
 
     /* 海报统一走站点图片代理，这里只管缓存：
-       电视上 poster 格子大，解码开销高，磁盘缓存给到 150M，第二次进就是本地命中秒开。
+       电视上 poster 格子大，解码开销高，磁盘缓存给到 200M，第二次进就是本地命中秒开。
+       ignoreCacheHeaders：站点代理/图床常回 no-cache 头，照办的话磁盘缓存等于白设 ——
+       直接无视，一图落地永不重拉（首页栏目刷新也只闪一下）。
        ⚠️ TV 版不做任何模糊处理 —— 大哥要的就是「海报清晰」。 */
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .okHttpClient {
             OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
+                .connectTimeout(8, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)
                 .build()
         }
-        .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.30).build() }
+        .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.35).build() }
         .diskCache {
             DiskCache.Builder()
                 .directory(cacheDir.resolve("coil"))
-                .maxSizeBytes(150L * 1024 * 1024)
+                .maxSizeBytes(200L * 1024 * 1024)
                 .build()
         }
-        .crossfade(160)
+        .respectCacheHeaders(false)
+        .crossfade(90)
         .build()
 }

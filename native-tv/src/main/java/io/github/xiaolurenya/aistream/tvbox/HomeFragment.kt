@@ -205,32 +205,61 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         DetailActivity.open(requireContext(), c)
     }
 
+    /* 首页加载：先吃本地缓存秒开（上次拉好的整页），网络回来再刷新一遍。
+       新安装首次没有缓存走纯网络；下次打开海报栏瞬间就在，不再干等。 */
     private fun load() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val cols = withContext(Dispatchers.IO) {
-                runCatching { Api.home()?.columns.orEmpty() }.getOrDefault(emptyList())
-            }
-            // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
-            val keep = cols.filter { !it.items.isNullOrEmpty() }
-            homeCols = keep
-            // 供顶部分类标签点进来弹该栏目的海报网格复用（不需要再请求一次首页）
-            PlayCache.homeCols = keep
-            adapter.submit(keep)
-            paintTabs()
+            val cached = withContext(Dispatchers.IO) { readHomeCache() }
+            if (cached.isNotEmpty()) renderHome(cached)
 
-            picks = pickBanner(keep)
-            if (picks.isEmpty()) {
-                hero.visibility = View.GONE
-            } else {
-                hero.visibility = View.VISIBLE
-                cur = 0
-                paintHero()
+            val fresh = withContext(Dispatchers.IO) {
+                runCatching { Api.home() }.getOrNull()
             }
-            // 右侧推荐列：第一栏最前面几张（张数按屏幕分档，手机少放两张）
-            sideAdapter.submit(keep.firstOrNull()?.items.orEmpty()
-                .take(resources.getInteger(R.integer.side_max)))
+            val cols = fresh?.columns.orEmpty()
+            if (cols.isNotEmpty()) {
+                renderHome(cols)
+                withContext(Dispatchers.IO) { writeHomeCache(fresh!!) }
+            }
         }
     }
+
+    private fun renderHome(cols: List<Api.Column>) {
+        // 空栏目不占位：配了采集站但没内容时首页不该出现一堆空标题
+        val keep = cols.filter { !it.items.isNullOrEmpty() }
+        homeCols = keep
+        // 供顶部分类标签点进来弹该栏目的海报网格复用（不需要再请求一次首页）
+        PlayCache.homeCols = keep
+        adapter.submit(keep)
+        paintTabs()
+
+        picks = pickBanner(keep)
+        if (picks.isEmpty()) {
+            hero.visibility = View.GONE
+        } else {
+            hero.visibility = View.VISIBLE
+            cur = 0
+            paintHero()
+        }
+        // 右侧推荐列：第一栏最前面几张（张数按屏幕分档，手机少放两张）
+        sideAdapter.submit(keep.firstOrNull()?.items.orEmpty()
+            .take(resources.getInteger(R.integer.side_max)))
+    }
+
+    // 缓存文件按服务器地址区分（换站点不会吃到别人家的首页）
+    private fun homeCacheFile() = java.io.File(
+        requireContext().cacheDir,
+        "home_" + Integer.toHexString(Prefs.base.hashCode()) + ".json"
+    )
+
+    private fun readHomeCache(): List<Api.Column> = try {
+        val f = homeCacheFile()
+        if (!f.exists()) emptyList()
+        else Api.homeFromJson(f.readText())?.columns.orEmpty().filter { !it.items.isNullOrEmpty() }
+    } catch (e: Exception) { emptyList() }
+
+    private fun writeHomeCache(h: Api.Home) = try {
+        homeCacheFile().writeText(Api.homeToJson(h))
+    } catch (e: Exception) { }
 
     /* 频道数据提前拉好：预览小窗和全屏直播页都用 PlayCache.iptv 这一份。
        已加载过就不再拉（30 秒内回来不用重新等）。 */
@@ -362,6 +391,22 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         heroPv.setOnTouchListener { v, ev ->
             if (ev.action == android.view.MotionEvent.ACTION_UP) openLiveFull()
             true
+        }
+        // 遥控器也要能选中小窗、按 OK 放大进全屏（之前小窗拿不到焦点，遥控器点不中）
+        heroPv.isFocusable = true
+        heroPv.isFocusableInTouchMode = true
+        bindFocus(heroPv) { has ->
+            heroPv.foreground =
+                if (has) androidx.core.content.ContextCompat.getDrawable(heroPv.context, R.drawable.bg_focus)
+                else null
+        }
+        heroPv.setOnKeyListener { _, k, ev ->
+            if (ev.action == android.view.KeyEvent.ACTION_DOWN &&
+                (k == android.view.KeyEvent.KEYCODE_DPAD_CENTER || k == android.view.KeyEvent.KEYCODE_ENTER)
+            ) {
+                openLiveFull()
+                true
+            } else false
         }
     }
 

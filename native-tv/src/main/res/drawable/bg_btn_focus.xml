@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 主按钮（立即播放）遥控器焦点态：实心高亮 + 一圈白描边。
+     之前焦点只调 alpha，蓝底按钮选中时边框「不对」就是这个 —— 现在焦点换这版底。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/accent" />
+    <stroke android:width="3dp" android:color="@color/fg" />
+    <corners android:radius="8dp" />
+</shape>

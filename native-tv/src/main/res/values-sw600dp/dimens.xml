@@ -5,7 +5,7 @@
     <dimen name="rail_pad_top">22dp</dimen>
     <dimen name="brand_size">19sp</dimen>
     <dimen name="brand_pad_start">20dp</dimen>
-    <dimen name="nav_text">15sp</dimen>
+    <dimen name="nav_text">17sp</dimen>
     <dimen name="nav_pad">11dp</dimen>
 
     <dimen name="header_h">46dp</dimen>
@@ -19,12 +19,12 @@
     <dimen name="hero_btn_text">16sp</dimen>
     <dimen name="side_col">150dp</dimen>
     <dimen name="side_rv">185dp</dimen>
-    <dimen name="side_card_text">15sp</dimen>
+    <dimen name="side_card_text">17sp</dimen>
     <dimen name="side_sub_text">13sp</dimen>
 
     <dimen name="poster_w">132dp</dimen>
     <dimen name="poster_h">190dp</dimen>
-    <dimen name="poster_title">13sp</dimen>
+    <dimen name="poster_title">15sp</dimen>
 
     <dimen name="chpanel_w">420dp</dimen>
     <dimen name="live_title">19sp</dimen>

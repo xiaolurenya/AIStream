@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- TV 海报卡：标题/评分直接压在海报底部（渐变压暗），卡片间不再留一截文字空档
-     —— 网格页「行间隔大得离谱」的根因就是卡片下方那块文字区，压进海报后间距归零 -->
+     —— 网格页「行间隔大得离谱」的根因就是卡片下方那块文字区，压进海报后间距归零。
+     间距统一交给 SpacesItemDecoration（横竖一致），卡片本身不再带内边距 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/card"
     android:layout_width="@dimen/poster_w"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingStart="6dp"
-    android:paddingEnd="6dp">
+    android:orientation="vertical">
 
     <FrameLayout
         android:layout_width="match_parent"

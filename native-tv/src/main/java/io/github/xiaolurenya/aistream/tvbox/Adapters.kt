@@ -1,6 +1,8 @@
 package io.github.xiaolurenya.aistream.tvbox
 
 import android.graphics.Rect
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,13 +15,27 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 
 /* 遥控器焦点反馈。TV 上没有鼠标悬停也没有触摸按下，「现在选中哪一项」全靠这一下
-   放大 + 描边。130ms 够快，连按方向键不会拖影。 */
+   放大 + 描边。150ms 够快，连按方向键不会拖影。
+   v1.4.0 大哥要求「选择任何栏目带声音」→ 聚焦时来一声很轻的提示音（系统按键音在
+   TV 上常被关掉，所以自己用 ToneGenerator 出声，音量压得很低不吵）。 */
+private var focusTone: ToneGenerator? = null
+
+fun focusBeep() {
+    try {
+        if (focusTone == null) focusTone = ToneGenerator(AudioManager.STREAM_MUSIC, 40)
+        focusTone?.startTone(ToneGenerator.TONE_PROP_BEEP, 70)
+    } catch (e: Exception) {
+        // 个别盒子 ToneGenerator 初始化失败：没声音就不响，别崩
+    }
+}
+
 fun bindFocus(v: View, onFocus: ((Boolean) -> Unit)? = null) {
     v.setOnFocusChangeListener { _, has ->
+        if (has) focusBeep()
         v.animate()
-            .scaleX(if (has) 1.06f else 1f)
-            .scaleY(if (has) 1.06f else 1f)
-            .setDuration(130)
+            .scaleX(if (has) 1.08f else 1f)
+            .scaleY(if (has) 1.08f else 1f)
+            .setDuration(150)
             .start()
         v.elevation = if (has) 14f else 0f
         onFocus?.invoke(has)
@@ -52,10 +68,13 @@ fun posterSpanCount(ctx: android.content.Context): Int {
 }
 
 // ---------- 海报卡（栏目行 / 网格页共用） ----------
+/* onMore 传了就在列表末尾挂一张「显示更多」卡（分类页翻页用），拉空自动收起来；
+   不传跟原来完全一样（首页栏目行 / 搜索 / 收藏 / 历史）。 */
 class PosterAdapter(
     private val items: MutableList<Api.Card> = mutableListOf(),
-    private val onClick: (Api.Card) -> Unit
-) : RecyclerView.Adapter<PosterAdapter.H>() {
+    private val onClick: (Api.Card) -> Unit,
+    private val onMore: (() -> Unit)? = null
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
         val card: View = v.findViewById(R.id.card)
@@ -65,12 +84,42 @@ class PosterAdapter(
         val badge: TextView = v.findViewById(R.id.tvBadge)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
-        H(LayoutInflater.from(parent.context).inflate(R.layout.item_poster, parent, false))
+    class MoreH(v: View) : RecyclerView.ViewHolder(v) {
+        val tv: TextView = v.findViewById(R.id.tvMore)
+    }
 
-    override fun getItemCount() = items.size
+    // 「显示更多」卡：传了 onMore 就先亮出来，拉到空页再收
+    var hasMore: Boolean = onMore != null
+        private set
 
-    override fun onBindViewHolder(h: H, i: Int) {
+    fun setHasMore(on: Boolean) {
+        if (hasMore == on) return
+        val pos = items.size
+        hasMore = on
+        if (on) notifyItemInserted(pos) else notifyItemRemoved(pos)
+    }
+
+    override fun getItemCount() = items.size + if (hasMore) 1 else 0
+
+    override fun getItemViewType(pos: Int): Int =
+        if (hasMore && pos == items.size) 1 else 0
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+        if (viewType == 1) {
+            MoreH(LayoutInflater.from(parent.context).inflate(R.layout.item_more, parent, false))
+        } else {
+            H(LayoutInflater.from(parent.context).inflate(R.layout.item_poster, parent, false))
+        }
+
+    override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
+        if (h is MoreH) {
+            bindFocus(h.tv) { has ->
+                h.tv.setBackgroundResource(if (has) R.drawable.bg_focus else R.drawable.bg_chip)
+            }
+            h.tv.setOnClickListener { onMore?.invoke() }
+            return
+        }
+        h as H
         // 点击回调要拿的是这一项的数据，不是被点的 View
         val card = items[i]
         h.title.text = card.title.orEmpty()
@@ -106,9 +155,8 @@ class PosterAdapter(
     }
 }
 
-/* 网格行/列间距：海报卡本身只靠 item_poster 的左右内边距撑开横向间隙，
-   纵向完全没有间隙（网格行贴在一起，是「每行之间没间隔」的根因）。
-   这里统一补纵向（h 可传 0 只补纵向），让网格排出来不挤、焦点放大也不压邻居。 */
+/* 网格/行间距：海报卡不再自带内边距（那会让横竖间隙不一致，「间距不平均」的根因），
+   全部交给这里统一出：网格 (h=12dp, v=16dp)，首页栏目行只出横向 (12dp, 0)。 */
 class SpacesItemDecoration(private val h: Int, private val v: Int) : RecyclerView.ItemDecoration() {
     override fun getItemOffsets(out: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         out.left = h / 2
@@ -171,6 +219,8 @@ class ColumnAdapter(
         if (h.rv.layoutManager == null) {
             h.rv.layoutManager = LinearLayoutManager(h.rv.context, LinearLayoutManager.HORIZONTAL, false)
                 .apply { initialPrefetchItemCount = 6 }
+            // 卡片间距统一走装饰（横 12dp），和网格页保持一致
+            h.rv.addItemDecoration(SpacesItemDecoration((12 * h.rv.context.resources.displayMetrics.density).toInt(), 0))
         }
         h.rv.setRecycledViewPool(pool)
         h.rv.setItemViewCacheSize(10)
@@ -213,12 +263,18 @@ class ChipAdapter(
     override fun onBindViewHolder(h: H, i: Int) {
         h.tv.text = items[i]
         val on = i == picked()
-        // 选中态用实心高亮，焦点态用描边，两者分开画，别让「选中」被焦点盖掉
+        // 选中 = 实心蓝底白字；未选中 = 亮字（不再灰蒙蒙）。
+        // 焦点 = 描边（选中态焦点换蓝底白框，别把「选中」盖掉）
         h.tv.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
-        h.tv.setTextColor(h.tv.context.getColor(if (on) R.color.accent_soft else R.color.fg_dim))
+        h.tv.setTextColor(if (on) android.graphics.Color.WHITE else h.tv.context.getColor(R.color.fg))
         bindFocus(h.tv) { has ->
-            if (has && i != picked()) h.tv.setBackgroundResource(R.drawable.bg_focus)
-            else if (!has) h.tv.setBackgroundResource(if (i == picked()) R.drawable.bg_chip_on else R.drawable.bg_chip)
+            if (has) {
+                h.tv.setBackgroundResource(if (on) R.drawable.bg_btn_focus else R.drawable.bg_focus)
+                h.tv.setTextColor(android.graphics.Color.WHITE)
+            } else {
+                h.tv.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
+                h.tv.setTextColor(if (on) android.graphics.Color.WHITE else h.tv.context.getColor(R.color.fg))
+            }
         }
         h.tv.setOnClickListener { onClick(i) }
     }

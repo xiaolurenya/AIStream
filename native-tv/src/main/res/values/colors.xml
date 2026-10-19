@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 配色照参考 APP（爱美影 TV）调过：深海军蓝底 + 高饱和彩色卡，整体比原来的近黑底亮眼。
-     取色来源：base.apk 首页截图（bg #061E40 / 紫卡 #6655D3 / 蓝卡 #2979CD / 绿卡 #46914A）。 -->
+<!-- 配色照参考 APP（爱美影 TV）调过：深海军蓝底 + 高饱和彩色卡。
+     v1.4.0 大哥反馈「整体暗、灰蒙蒙」→ 全局提亮一档：底色变宝蓝、文字提白、
+     次要文字从灰蓝提亮两档，卡片和焦点底同步提亮，投影/大屏上不再发灰。 -->
 <resources>
-    <color name="bg">#FF0C1F3F</color>
-    <color name="bg_rail">#FF0A1A35</color>
-    <color name="bg_card">#FF14294D</color>
-    <color name="bg_card_hi">#FF1D3A66</color>
-    <color name="fg">#FFEDF1F8</color>
-    <color name="fg_dim">#FFA8B8D4</color>
-    <color name="accent">#FF4C9DFF</color>
-    <color name="accent_soft">#FF9CC8FF</color>
-    <color name="gold">#FFFFC857</color>
+    <color name="bg">#FF112A5C</color>
+    <color name="bg_rail">#FF0D2148</color>
+    <color name="bg_card">#FF1C3768</color>
+    <color name="bg_card_hi">#FF2A4E8A</color>
+    <color name="fg">#FFFFFFFF</color>
+    <color name="fg_dim">#FFC9D6F0</color>
+    <color name="accent">#FF45A2FF</color>
+    <color name="accent_soft">#FFBADBFF</color>
+    <color name="gold">#FFFFD468</color>
 </resources>

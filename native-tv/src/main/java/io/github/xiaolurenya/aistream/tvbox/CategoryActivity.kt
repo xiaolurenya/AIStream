@@ -46,43 +46,47 @@ class CategoryActivity : AppCompatActivity() {
         val rv = findViewById<RecyclerView>(R.id.recycler)
         // 列数按 poster_w 现算：让每格只比卡片宽 0~2 个间距，排出来是紧凑的海报墙
         rv.layoutManager = GridLayoutManager(this, posterSpanCount(this))
-        // 网格行间距：海报卡自带左右内边距撑开横向间隙，这里补纵向间隙，行不再贴在一起
-        rv.addItemDecoration(SpacesItemDecoration(0, (16 * resources.displayMetrics.density).toInt()))
+        // 网格间距统一走装饰（横 12 / 纵 16，横竖接近，不再一宽一窄）
+        val dm = resources.displayMetrics.density
+        rv.addItemDecoration(SpacesItemDecoration((12 * dm).toInt(), (16 * dm).toInt()))
         quickAnim(rv)
         val items = col.items.orEmpty().toMutableList()
-        rv.adapter = PosterAdapter(items) { c ->
-            // 选一张海报：进详情页（从那里直接播），跟首页/收藏/历史挑海报一个入口
-            DetailActivity.open(this, c)
-        }
 
-        // 焦点先进第一行第一张，确认键直接进详情，不用先手动找
-        rv.post { rv.getChildAt(0)?.requestFocus() }
-
-        // 纵向「显示更多」：滑到接近底部自动拉下一页，拉满后停止（避免重复请求）
+        // 「显示更多」：网格末尾一张按钮卡，点了拉下一页；拉空自动收起。
+        // 滑到接近底部也会预拉一次（遥控器往下挪时无缝衔接）
         var page = 1
         var loading = false
         var done = false
+        fun loadNext() {
+            if (loading || done) return
+            val ad = rv.adapter as? PosterAdapter ?: return
+            loading = true
+            lifecycleScope.launch {
+                val more = withContext(Dispatchers.IO) {
+                    runCatching { Api.homeMore(col.idx, page + 1) }.getOrDefault(emptyList())
+                }
+                withContext(Dispatchers.Main) {
+                    if (more.isEmpty()) { done = true; ad.setHasMore(false) }
+                    else { page++; ad.append(more) }
+                    loading = false
+                }
+            }
+        }
+        rv.adapter = PosterAdapter(items, { c ->
+            // 选一张海报：进详情页（从那里直接播），跟首页/收藏/历史挑海报一个入口
+            DetailActivity.open(this, c)
+        }, { loadNext() })
+
         rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
                 val lm = rv.layoutManager as? GridLayoutManager ?: return
                 val ad = rv.adapter as? PosterAdapter ?: return
-                if (loading || done) return
-                // 还剩不到两行就预拉下一页（D-pad 往下挪时无缝衔接）
-                if (lm.findLastVisibleItemPosition() >= ad.itemCount - lm.spanCount * 2) {
-                    loading = true
-                    lifecycleScope.launch {
-                        val more = withContext(Dispatchers.IO) {
-                            runCatching { Api.homeMore(col.idx, page + 1) }.getOrDefault(emptyList())
-                        }
-                        withContext(Dispatchers.Main) {
-                            if (more.isEmpty()) done = true
-                            else { page++; ad.append(more) }
-                            loading = false
-                        }
-                    }
-                }
+                if (lm.findLastVisibleItemPosition() >= ad.itemCount - lm.spanCount * 2) loadNext()
             }
         })
+
+        // 焦点先进第一行第一张，确认键直接进详情，不用先手动找
+        rv.post { rv.getChildAt(0)?.requestFocus() }
     }
 
     override fun onResume() {

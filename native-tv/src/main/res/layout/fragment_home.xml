@@ -8,11 +8,11 @@
     android:background="@color/bg"
     android:orientation="vertical">
 
-    <!-- 顶部分类标签栏：首页 + 服务器配的各栏目，点了滚到对应那一行 -->
+    <!-- 顶部分类标签栏：首页 + 服务器配的各栏目，点了滚到对应那一行（60dp 容下加大的 chip） -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTabs"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="60dp"
         android:clipToPadding="false"
         android:overScrollMode="never"
         android:paddingStart="@dimen/page_pad"

@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 顶部分类标签 / 选集 / 线路 chip。v1.4.0 大哥反馈「栏目文字小、选中看不清、
+     集数字体颜色不行」→ 字号 13→15sp、未选中就用亮白字（不再灰）、内边距加大。 -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tv"
     style="@style/AIStream.FocusItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="3dp"
+    android:layout_margin="4dp"
     android:background="@drawable/bg_chip"
-    android:paddingStart="12dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="12dp"
-    android:paddingBottom="6dp"
-    android:textColor="@color/fg_dim"
-    android:textSize="13sp" />
+    android:paddingStart="16dp"
+    android:paddingTop="9dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="9dp"
+    android:textColor="@color/fg"
+    android:textSize="15sp" />
