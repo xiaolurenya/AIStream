@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg"
     android:orientation="vertical"
-    android:paddingTop="20dp" android:clipChildren="false">
+    android:paddingTop="28dp" android:clipChildren="false">
 
     <EditText
         android:id="@+id/etSearch"

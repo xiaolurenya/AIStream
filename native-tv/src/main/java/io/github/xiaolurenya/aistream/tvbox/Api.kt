@@ -333,6 +333,9 @@ object Api {
     // ---------- 站点配置：功能开关 + 当前账号的可视权限 ----------
     data class IptvCfg(val enabled: Boolean = false, val allowed: Boolean = false)
 
+    // 广告过滤开关（网页端 player.js 据此决定是否把 m3u8 统一走 /api/m3u8filter 代理）
+    data class AdFilter(val enabled: Boolean = false, val tsProxy: Boolean = false)
+
     data class CfgResp(
         val siteName: String? = null,
         val hasParse: Boolean = false,
@@ -346,6 +349,7 @@ object Api {
         val views: Map<String, Any>? = null,
         val toggles: Map<String, Any>? = null,
         val iptv: IptvCfg? = null,
+        val adFilter: AdFilter? = null,
         /* 后台「公告弹窗」：网页版每次进页面都弹这个（app.js maybeShowAnno），
            APP 之前只靠 SSE 补推，连不上就一条也收不到 —— 启动时拉一次兜底 */
         val announcement: AnnCfg? = null

@@ -17,18 +17,18 @@
     <dimen name="hero_meta">14sp</dimen>
     <dimen name="hero_btn_h">44dp</dimen>
     <dimen name="hero_btn_text">16sp</dimen>
-    <dimen name="side_col">132dp</dimen>
-    <dimen name="side_rv">152dp</dimen>
-    <dimen name="side_card_text">17sp</dimen>
+    <dimen name="side_col">116dp</dimen>
+    <dimen name="side_rv">130dp</dimen>
+    <dimen name="side_card_text">15sp</dimen>
     <dimen name="side_sub_text">13sp</dimen>
 
     <dimen name="poster_w">112dp</dimen>
     <dimen name="poster_h">162dp</dimen>
     <dimen name="poster_title">15sp</dimen>
 
-    <dimen name="chpanel_w">420dp</dimen>
+    <dimen name="chpanel_w">340dp</dimen>
     <dimen name="live_title">19sp</dimen>
-    <dimen name="ch_num_w">42dp</dimen>
-    <dimen name="ch_logo_w">50dp</dimen>
-    <dimen name="ch_logo_h">32dp</dimen>
+    <dimen name="ch_num_w">38dp</dimen>
+    <dimen name="ch_logo_w">44dp</dimen>
+    <dimen name="ch_logo_h">28dp</dimen>
 </resources>

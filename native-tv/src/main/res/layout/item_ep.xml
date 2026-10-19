@@ -8,6 +8,8 @@
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
     android:background="@drawable/bg_chip"
+    android:gravity="center"
+    android:textAlignment="center"
     android:paddingStart="12dp"
     android:paddingTop="6dp"
     android:paddingEnd="12dp"

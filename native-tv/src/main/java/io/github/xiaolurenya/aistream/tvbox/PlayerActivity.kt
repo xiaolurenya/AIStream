@@ -64,6 +64,7 @@ class PlayerActivity : AppCompatActivity() {
     private var outBlocked = false
     private var lastT = 0L
     private var resuming = false
+    private var adFilterOn = false    // 后台「广告过滤」开关：开则 m3u8 走 /api/m3u8filter 代理（跟网页版一致）
 
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
@@ -409,6 +410,9 @@ class PlayerActivity : AppCompatActivity() {
             canIntro = Api.flag(c.views, "skipIntro", true)
             canOutro = Api.flag(c.views, "skipOutro", true)
             autoSkip = Api.flag(c.toggles, "autoSkip", true)
+            /* 广告过滤开关：取不到配置时默认开（代理模式本身兼容「不开过滤」的源站，
+               只会多一次服务端拉清单，换来和网页版一样的「秒播」成功率；显式关才关） */
+            adFilterOn = c?.adFilter?.enabled ?: true
         }
     }
 
@@ -455,12 +459,12 @@ class PlayerActivity : AppCompatActivity() {
             /* 采集线路的 m3u8：让服务端按「广告过滤」页同一套规则检测插播，
                命中就走 /api/m3u8filter 改写过的清单（切片仍是采集站直链，不占上行）。
                官方线路和 mp4 直链不动。 */
-            if (!PlayCache.isUp && Api.isM3u8(finalUrl)) {
+            if (!PlayCache.isUp && Api.isM3u8(finalUrl) && adFilterOn) {
+                // 跟网页版 player.js 同款：广告过滤开着时，m3u8 统一走 /api/m3u8filter
+                // （服务端拉清单 + 改写切片为绝对地址，客户端只直连切片，绕开源站对客户端 IP/UA 的封锁 → 秒播）
+                playUrl = Api.m3u8FilterUrl(finalUrl)
                 val r = withContext(Dispatchers.IO) { runCatching { Api.adPreview(finalUrl) }.getOrNull() }
-                if (r != null && r.blocked > 0) {
-                    blocked = r.blocked
-                    playUrl = Api.m3u8FilterUrl(finalUrl)
-                }
+                if (r != null && r.blocked > 0) blocked = r.blocked
             }
             applyMedia(playUrl)
             if (blocked > 0) showAdBadge(blocked)
@@ -500,7 +504,10 @@ class PlayerActivity : AppCompatActivity() {
             curLabel = r.label.orEmpty()
             if (curLabel.isNotBlank()) tvTitle.text = PlayCache.title + " · " + Api.epName(e, ep) + " · " + curLabel
             if (r.url.isNullOrBlank()) { upFail(r.error ?: "该线路暂不可用"); return@launch }
-            applyMedia(r.url.orEmpty())
+            // 上游 m3u8 同样走服务端代理（跟网页版一致），直连被源站挡时也能播
+            var upUrl = r.url.orEmpty()
+            if (adFilterOn && Api.isM3u8(upUrl)) upUrl = Api.m3u8FilterUrl(upUrl)
+            applyMedia(upUrl)
         }
     }
 
@@ -528,7 +535,12 @@ class PlayerActivity : AppCompatActivity() {
         if (saved.second > 0 && pos > saved.second - 15000) pos = 0
         resuming = pos > 1000
         if (resuming) introDone = true      // 续播的不算片头，别刚进来就跳
-        player.setMediaItem(MediaItem.fromUri(url), if (pos > 1000) pos else 0L)
+        val b = MediaItem.Builder().setUri(url)
+        // /api/m3u8filter 出流没有 .m3u8 后缀，必须显式声明 HLS，否则 ExoPlayer 当普通文件解析失败
+        if (Api.isM3u8(url) || url.contains("/api/m3u8filter")) {
+            b.setMimeType(MimeTypes.APPLICATION_M3U8)
+        }
+        player.setMediaItem(b.build(), if (pos > 1000) pos else 0L)
         player.prepare()
         player.playWhenReady = true
         lastReport = 0L

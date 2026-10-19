@@ -6,7 +6,8 @@
     android:background="@color/bg"
     android:orientation="vertical"
     android:paddingStart="@dimen/page_pad"
-    android:paddingTop="28dp"
+    android:paddingTop="40dp"
+    android:paddingBottom="24dp"
     android:paddingEnd="@dimen/page_pad" android:clipChildren="false">
 
     <TextView
@@ -23,6 +24,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="18dp"
         android:clipToPadding="false"
+        android:paddingTop="16dp"
         android:overScrollMode="never" />
 
 </LinearLayout>
