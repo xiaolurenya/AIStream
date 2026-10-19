@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 选台面板的分类筛选 pill（未选中）：更圆的胶囊，贴住奈飞/苹果 TV 那股味道 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#26FFFFFF" />
+    <corners android:radius="14dp" />
+</shape>

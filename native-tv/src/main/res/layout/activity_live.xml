@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="36dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="56dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:shadowColor="#CC000000"
@@ -45,12 +45,13 @@
         android:id="@+id/chPanel"
         android:layout_width="@dimen/chpanel_w"
         android:layout_height="match_parent"
-        android:background="#F20C1F3F"
+        android:background="@drawable/bg_chpanel"
+        android:foreground="@drawable/bg_shadow_r"
         android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingTop="24dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="16dp"
+        android:paddingStart="18dp"
+        android:paddingTop="28dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="18dp"
         android:visibility="gone" android:clipChildren="false">
 
         <!-- 面板标题行：触摸用户点 × 关闭（遥控器按返回/左键也能关） -->
@@ -59,22 +60,38 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingBottom="10dp" android:clipChildren="false">
+            android:paddingBottom="14dp" android:clipChildren="false">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="频道"
-                android:textColor="@color/fg"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="频道列表"
+                    android:textColor="@color/fg"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="上下键选台 · 左右键收起"
+                    android:textColor="@color/fg_dim"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/btnClosePanel"
+                style="@style/AIStream.FocusItem"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
-                android:background="#33FFFFFF"
+                android:background="@drawable/bg_search"
                 android:gravity="center"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
@@ -88,13 +105,13 @@
         <EditText
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="#26FFFFFF"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_search"
             android:hint="搜索频道名…"
             android:imeOptions="actionSearch"
             android:inputType="text"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:singleLine="true"
             android:textColor="@color/fg"
             android:textColorHint="@color/fg_dim"

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 选台面板背景：深海军蓝竖向渐变 + 右侧圆角，比原来的死板纯色块更有层次 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="90" android:startColor="#E60C1F3F" android:endColor="#D00C1F3F" />
+    <corners android:topRightRadius="18dp" android:bottomRightRadius="18dp" />
+</shape>

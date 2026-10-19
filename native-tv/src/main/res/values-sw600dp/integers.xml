@@ -5,5 +5,5 @@
     <integer name="grid_cols">4</integer>
     <integer name="player_ep_cols">3</integer>
     <integer name="redeem_cols">3</integer>
-    <integer name="side_max">4</integer>
+    <integer name="side_max">5</integer>
 </resources>

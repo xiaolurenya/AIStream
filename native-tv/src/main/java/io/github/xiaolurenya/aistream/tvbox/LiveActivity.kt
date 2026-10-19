@@ -232,7 +232,7 @@ class LiveActivity : AppCompatActivity() {
             tv.text = "$name $cnt"
             tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
             tv.setTextColor(getColor(if (i == selCat) R.color.fg else R.color.fg_dim))
-            tv.setBackgroundResource(if (i == selCat) R.drawable.bg_chip_on else R.drawable.bg_chip)
+            tv.setBackgroundResource(if (i == selCat) R.drawable.bg_cat_on else R.drawable.bg_cat)
             tv.isFocusable = true
             tv.isFocusableInTouchMode = true
             tv.setPadding((18 * dm).toInt(), (7 * dm).toInt(), (18 * dm).toInt(), (7 * dm).toInt())
@@ -251,7 +251,8 @@ class LiveActivity : AppCompatActivity() {
         else all.filter { it.group.orEmpty().ifBlank { "其他" } == cats[selCat].first }
         if (query.isNotBlank()) list = list.filter { it.name.orEmpty().contains(query, ignoreCase = true) }
         shown = list
-        rvCh.adapter = ChannelAdapter(list, PlayCache.iptvEpg) { pos ->
+        val curCid = PlayCache.iptv.getOrNull(PlayCache.iptvIndex)?.cid.orEmpty()
+        rvCh.adapter = ChannelAdapter(list, PlayCache.iptvEpg, curCid) { pos ->
             // 拿 cid 映射回全量索引，筛选状态下选台不会错位
             val cid = shown.getOrNull(pos)?.cid.orEmpty()
             val gi = all.indexOfFirst { it.cid == cid }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 选台面板的分类筛选 pill（选中）：实心品牌蓝 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/accent" />
+    <corners android:radius="14dp" />
+</shape>

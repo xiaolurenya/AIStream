@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 面板右侧 2dp 高光分隔线：让选台面板和视频画面之间有清晰边界（不再糊成一团） -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="right" android:width="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFFFFF" />
+        </shape>
+    </item>
+</layer-list>

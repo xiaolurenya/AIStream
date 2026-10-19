@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 选台列表里「正在播放」的那一行：品牌蓝半透明高亮，一眼看出当前台 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#3345A2FF" />
+    <corners android:radius="10dp" />
+</shape>

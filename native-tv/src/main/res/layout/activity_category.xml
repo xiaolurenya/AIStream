@@ -6,7 +6,7 @@
     android:background="@color/bg"
     android:orientation="vertical"
     android:paddingStart="@dimen/page_pad"
-    android:paddingTop="40dp"
+    android:paddingTop="56dp"
     android:paddingBottom="24dp"
     android:paddingEnd="@dimen/page_pad" android:clipChildren="false">
 
@@ -24,7 +24,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="18dp"
         android:clipToPadding="false"
-        android:paddingTop="16dp"
+        android:paddingTop="20dp"
         android:overScrollMode="never" />
 
 </LinearLayout>

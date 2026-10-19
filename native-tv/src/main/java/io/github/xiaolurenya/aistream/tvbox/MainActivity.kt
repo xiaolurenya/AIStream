@@ -58,9 +58,11 @@ class MainActivity : AppCompatActivity() {
                 setBackgroundResource(bg)
                 isFocusable = true
                 isFocusableInTouchMode = true
-                setPadding(pad, (10 * dm).toInt(), pad, (10 * dm).toInt())
+                // 卡片自身也关裁剪：两行文字 + 焦点白描边在 1.06 放大时不会再被卡片边界切掉（图1 选中显示不全根因）
+                clipChildren = false
+                setPadding(pad, (8 * dm).toInt(), pad, (8 * dm).toInt())
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, (64 * dm).toInt()
+                    ViewGroup.LayoutParams.MATCH_PARENT, (76 * dm).toInt()
                 ).apply { topMargin = (topMarginDp * dm).toInt() }
                 addView(TextView(this@MainActivity).apply {
                     text = icon + "  " + title

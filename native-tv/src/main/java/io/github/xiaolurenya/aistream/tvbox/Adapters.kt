@@ -283,6 +283,7 @@ class ChipAdapter(
 class ChannelAdapter(
     private val items: List<Api.IptvCh>,
     private val epg: Map<String, Api.EpgNow> = emptyMap(),
+    private val curCid: String = "",
     private val onPick: (Int) -> Unit
 ) : RecyclerView.Adapter<ChannelAdapter.H>() {
 
@@ -330,6 +331,9 @@ class ChannelAdapter(
                 h.pb.visibility = View.GONE
             }
         }
+
+        // 正在播放的这一行：品牌蓝高亮，一眼定位当前台
+        h.row.setBackgroundResource(if (c.cid == curCid) R.drawable.bg_row_cur else R.drawable.bg_card)
 
         bindFocus(h.row)
         h.itemView.setOnClickListener { onPick(i) }

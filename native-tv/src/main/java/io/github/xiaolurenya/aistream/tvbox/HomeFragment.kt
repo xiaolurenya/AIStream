@@ -54,6 +54,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private var tabIdx = 0          // 顶部分类栏当前选中（0 = 首页）
     private var homeCols = listOf<Api.Column>()
 
+    // 右侧推荐列轮播（图3 参考：自动轮换最新海报）：取首页第一栏全部卡片做池子，
+    // 定时滚动一个 N 张的窗口；用户在侧栏里聚焦浏览时暂停轮播，不抢焦点
+    private var sidePool = listOf<Api.Card>()
+    private var sideOff = 0
+    private var rvSide: RecyclerView? = null
+
     // 直播预览小窗
     private var pvPlayer: ExoPlayer? = null
     private var previewOn = false
@@ -86,6 +92,27 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             }.onFailure { Log.w("aistream", "hero next: " + it.message) }
             ui.postDelayed(this, ROT_MS)
         }
+    }
+
+    // 右侧推荐列轮播：池子比窗口大才需要转；用户在侧栏聚焦浏览时跳过这一拍
+    private val rotSide = object : Runnable {
+        override fun run() {
+            runCatching {
+                val n = resources.getInteger(R.integer.side_max)
+                if (sidePool.size > n && rvSide?.hasFocus() != true) {
+                    sideOff = (sideOff + 1) % sidePool.size
+                    sideAdapter.submit(sideWindow(n))
+                }
+            }.onFailure { Log.w("aistream", "side rot: " + it.message) }
+            ui.postDelayed(this, SIDE_MS)
+        }
+    }
+
+    // 从 sidePool 里取以 sideOff 起、长度为 n 的循环窗口（不够一圈就绕回来）
+    private fun sideWindow(n: Int): List<Api.Card> {
+        val out = mutableListOf<Api.Card>()
+        for (k in 0 until n) out.add(sidePool[(sideOff + k) % sidePool.size])
+        return out
     }
 
     override fun onViewCreated(v: View, savedInstanceState: Bundle?) {
@@ -141,10 +168,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         // 右侧推荐列：取服务器首页第一栏最前面几张海报
-        val rvSide = v.findViewById<RecyclerView>(R.id.rvSide)
-        rvSide.layoutManager = LinearLayoutManager(requireContext())
-        noAnim(rvSide)
-        rvSide.adapter = sideAdapter
+        rvSide = v.findViewById<RecyclerView>(R.id.rvSide)
+        rvSide!!.layoutManager = LinearLayoutManager(requireContext())
+        noAnim(rvSide!!)
+        rvSide!!.adapter = sideAdapter
 
         load()
         loadIptv()
@@ -177,6 +204,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onResume()
         ui.removeCallbacks(rot)
         ui.postDelayed(rot, ROT_MS)
+        // 右侧推荐列轮播：页面可见才转
+        ui.removeCallbacks(rotSide)
+        ui.postDelayed(rotSide, SIDE_MS)
         // 从详情页/播放器返回：设置开了「首页直接播直播」就恢复小窗
         // （loadIptv 提前 return 那条分支不会触发 startPreview，这里补上）
         if (Prefs.heroLive && PlayCache.iptv.isNotEmpty() && !previewOn) startPreview()
@@ -184,6 +214,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onPause() {
         ui.removeCallbacks(rot)
+        ui.removeCallbacks(rotSide)
         ui.removeCallbacks(startPreviewDebounced)
         stopPreview()
         super.onPause()
@@ -191,6 +222,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onDestroyView() {
         ui.removeCallbacks(rot)
+        ui.removeCallbacks(rotSide)
         ui.removeCallbacks(startPreviewDebounced)
         ui.removeCallbacks(pvWatchdog)
         stopPreview()
@@ -238,9 +270,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             cur = 0
             paintHero()
         }
-        // 右侧推荐列：第一栏最前面几张（张数按屏幕分档，手机少放两张）
-        sideAdapter.submit(keep.firstOrNull()?.items.orEmpty()
-            .take(resources.getInteger(R.integer.side_max)))
+        // 右侧推荐列：用首页第一栏全部卡片做轮播池（窗口张数按屏幕分档），自动轮换最新
+        val sm = resources.getInteger(R.integer.side_max)
+        sidePool = keep.firstOrNull()?.items.orEmpty()
+        sideOff = 0
+        sideAdapter.submit(sideWindow(sm))
     }
 
     // 缓存文件按服务器地址区分（换站点不会吃到别人家的首页）
@@ -472,5 +506,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private companion object {
         const val ROT_MS = 6000L   // hero 轮换间隔
         const val HERO_MAX = 6     // 最多轮换几条
+        const val SIDE_MS = 5000L  // 右侧推荐列轮播间隔
     }
 }
