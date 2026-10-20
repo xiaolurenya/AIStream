@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 选台行：三位编号（圆角小方块）+ 台标 + 台名/正在播节目。
-     v1.4.12：台名/节目名改自定义跑马灯（MarqueeLabel 统一调度，translationX 平移），
-     外面套 FrameLayout 负责裁剪滚动的文字；系统 marquee 已弃用 -->
+     v1.4.14：台名/节目名换 MarqueeTextView 自绘裁剪跑马灯（View 恒在名字区内，
+     自绘 clipRect 裁剪，绝不遮挡编号/台标；每轮自动重量宽适配台标异步加载）。
+     v1.4.12 的「外层 FrameLayout 裁剪壳」方案已废弃删除 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/row"
     style="@style/AIStream.FocusItem"
@@ -57,42 +58,25 @@
         android:layout_weight="1"
         android:orientation="vertical" android:clipChildren="false">
 
-        <!-- 裁剪壳：跑马灯文字在壳内平移，超出部分被壳裁掉。
-             v1.4.13：壳加 id（MarqueeLabel 量可用宽用壳宽，不再用 match_parent 的 tv 宽），
-             TextView 改 wrap_content（自身宽度=文字宽，判定永不依赖布局宽度） -->
-        <FrameLayout
-            android:id="@+id/flNameBox"
+        <!-- v1.4.14：台名/节目名换 MarqueeTextView（自绘裁剪跑马灯）。
+             View 恒 match_parent（=名字区宽）永不出界，onDraw 里 clipRect+translate 自绘，
+             文字滚到哪都被裁在自己边界内 —— 物理上不可能再盖住台标/前面编号（大哥图3/图4 点名）；
+             每轮滚回开头自动重量宽，台标异步加载挤压名字区也不怕行程错 -->
+        <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView
+            android:id="@+id/tvName"
+            style="@style/AIStream.TextTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clipChildren="true">
+            android:textSize="13sp" />
 
-            <TextView
-                android:id="@+id/tvName"
-                style="@style/AIStream.TextTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:textSize="13sp" />
-
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/flEpgBox"
+        <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView
+            android:id="@+id/tvEpg"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:clipChildren="true">
-
-            <TextView
-                android:id="@+id/tvEpg"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:textColor="@color/fg_dim"
-                android:textSize="11sp"
-                android:visibility="gone" />
-
-        </FrameLayout>
+            android:textColor="@color/fg_dim"
+            android:textSize="11sp"
+            android:visibility="gone" />
 
     </LinearLayout>
 

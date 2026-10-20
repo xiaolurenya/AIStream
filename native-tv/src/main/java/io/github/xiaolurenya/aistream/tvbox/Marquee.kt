@@ -1,28 +1,37 @@
 package io.github.xiaolurenya.aistream.tvbox
 
+import android.content.Context
+import android.graphics.Canvas
 import android.os.SystemClock
+import android.util.AttributeSet
 import android.view.Choreographer
-import android.view.View
-import android.widget.TextView
+import android.text.BufferType
+import androidx.appcompat.widget.AppCompatTextView
 
-/* v1.4.13 跑马灯修正。v1.4.12 自绘跑马灯有三个回归（大哥投影点名）：
-   ① 短台名（CCTV1 这种）本不该滚却滚了；
-   ② 面板节目单 / 台名没跑完（行程算短了，末尾露不全）；
-   ③ 单行台名滚过头、把前面的三位编号挡住（行程算大了）。
-   根因：bind() 用 match_parent 的 TextView.tvWidth 当「可用宽」，RecyclerView 回收/快速滚动时
-   这个宽度量不准（时大时小），溢出判定与行程全跟着错。
-   本办法：
-   - TextView 改 wrap_content（自身宽度 = 文字宽，永不依赖布局宽度做判定）；
-   - 可用宽一律取自外层裁剪壳 box 的宽度（布局完成后量，稳定）；
-   - 文字宽用 paint 直量；仅当「文字宽确实 > 可用宽」才注册跑马灯，短文字绝不滚。
-   节奏 = 开头停 1.2s（读全名）→ 匀速滚到文本末尾完整可见（行程 = 文字真实超出宽，一字不少）
-   → 末尾停 0.8s（读结尾）→ 回到开头。全程行内始终有字，不空窗。
-   平移用 translationX，外层 FrameLayout(clipChildren=true) 负责裁剪；续帧用「函数 + 每帧新
-   lambda」，避免 val 存 FrameCallback 自引用被 Kotlin 报 recursive problem / must be initialized。 */
-class MarqueeLabel(private val tv: TextView, private val box: View? = null) {
+/* v1.4.14 跑马灯再修（MarqueeTextView 自绘裁剪）。
+   v1.4.12/13 两版「translationX 平移 + 外壳 clipChildren 裁剪」在真机上仍有回归（大哥投影 4 图点名）：
+   ① 台标是 Coil 异步加载，成功回调把台标容器 GONE→VISIBLE 会把名字区挤宽/挤窄，
+      而跑马灯行程只在 bind 时量一次 → dist 时大时小：大了滚过头（文字左端越出壳，
+      视觉上盖住台标甚至前面的编号方块，图3/图4），小了末尾的字永远露不全（「…后面没显示全」）；
+   ② 每次条目复用 dist 忽大忽小、相位重置，看起来频道在乱跳。
+   这版彻底换思路 —— 不再把 View 平移出边界靠父壳裁剪，而是：
+   - View 恒为 match_parent（= 名字区宽），View 本身永远不会越界去碰编号/台标；
+   - onDraw 里自己 canvas.clipRect(0,0,w,h) + translate(-offset) 自绘文字，
+     文字怎么滚都被裁在 View 自己的边界里，物理上不可能遮挡旁边任何控件；
+   - 每一轮滚回开头时重新量宽（remeasure），台标异步挤宽/挤窄自动适配，dist 永远是准的
+     （Coil 加载回调里也会主动触发一次重测，第一轮就是准的）；
+   - 文字没超宽（CCTV1 这种短名）绝不注册调度，一帧都不动。
+   节奏：开头停 1.2s（读全名）→ 匀速滚到末尾最后一字完整可见（行程 = 真实超宽，一字不少）
+   → 末尾停 0.8s（读结尾）→ 回开头。全程 View 内始终有字、无空窗。
+   续帧仍用「私有函数 + 每帧新 lambda」—— val 存 FrameCallback 在 lambda 里自引用会被
+   Kotlin 拒编译（recursive problem / must be initialized，CI 实锤过）。 */
+class MarqueeTextView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null
+) : AppCompatTextView(context, attrs) {
 
     companion object {
-        private val ALL = ArrayList<MarqueeLabel>()
+        private val ALL = ArrayList<MarqueeTextView>()
         private var ticking = false
         private var lastTs = 0L
         private const val START_HOLD = 1200L   // 开头停：读得清完整台名
@@ -37,19 +46,26 @@ class MarqueeLabel(private val tv: TextView, private val box: View? = null) {
             var alive = 0
             while (it.hasNext()) {
                 val m = it.next()
-                if (!m.tv.isAttachedToWindow || m.dist <= 0f) {
-                    m.tv.translationX = 0f
+                if (!m.isAttachedToWindow || m.dist <= 0f) {
+                    m.offset = 0f
+                    m.invalidate()
                     it.remove()
                     continue
                 }
                 m.phase += dt
                 val p = m.phase
-                m.tv.translationX = when {
+                m.offset = when {
                     p < START_HOLD -> 0f
-                    p < START_HOLD + m.scrollMs -> -m.dist * ((p - START_HOLD) / m.scrollMs)
-                    p < START_HOLD + m.scrollMs + END_HOLD -> -m.dist
-                    else -> { m.phase = 0L; 0f }
+                    p < START_HOLD + m.scrollMs -> m.dist * ((p - START_HOLD) / m.scrollMs)
+                    p < START_HOLD + m.scrollMs + END_HOLD -> m.dist
+                    else -> {
+                        // 一轮滚完回开头：宽度可能变过（台标异步加载挤压名字区），重量一次
+                        m.phase = 0L
+                        m.remeasure()
+                        0f
+                    }
                 }
+                m.invalidate()
                 alive++
             }
             if (alive > 0) Choreographer.getInstance().postFrameCallback { tickFrame() }
@@ -67,35 +83,81 @@ class MarqueeLabel(private val tv: TextView, private val box: View? = null) {
     private var dist = 0f      // 文本超出的像素宽（要滚的全程）
     private var scrollMs = 0f  // 滚完全程需要的毫秒数
     private var phase = 0L     // 当前周期内的毫秒位置
+    private var offset = 0f    // 已滚过的像素（文字向左平移量，自绘用）
 
-    /* 绑定新文本：先复位停掉旧的，等布局完成后量可用宽与文字宽，真溢出才进调度器 */
-    fun bind(text: CharSequence?) {
-        stop()
-        tv.text = text
-        tv.post {
-            if (!tv.isAttachedToWindow) return@post
-            // 可用宽取自裁剪壳宽度（稳定），兜底用 tv 自身宽度
-            val boxW = (box?.width ?: tv.width).toFloat()
-            val avail = boxW - tv.paddingLeft - tv.paddingRight
+    init {
+        // 文字显示全权交给自绘，关掉 TextView 自带的省略/跑马灯行为
+        ellipsize = null
+    }
+
+    /* 绑定文本并（重）量宽。注册了跑马灯后走自绘；没超宽就是普通静态 TextView */
+    fun bindMarquee(text: CharSequence?) {
+        stopMarquee()
+        setText(text)
+        remeasure()
+    }
+
+    fun stopMarquee() {
+        ALL.remove(this)
+        dist = 0f
+        scrollMs = 0f
+        phase = 0L
+        offset = 0f
+        invalidate()
+    }
+
+    /* 量宽：布局完成后按「文字实宽 vs View 可用宽」判定；宽度变了自动修正行程。
+       public —— 台标异步加载挤压名字区时，回调里直接调它让行程立刻跟上 */
+    fun remeasure() {
+        post {
+            if (!isAttachedToWindow) return@post
+            val avail = (width - paddingLeft - paddingRight).toFloat()
             if (avail <= 2f) return@post
-            val tw = tv.paint.measureText(text?.toString().orEmpty())
+            val tw = paint.measureText(text?.toString().orEmpty())
             val over = tw - avail
-            if (over <= 2f) { tv.translationX = 0f; return@post }   // 短文字不滚
+            if (over <= 2f) {
+                // 短文字不滚（CCTV1 这类），复位成普通静态显示
+                ALL.remove(this)
+                dist = 0f
+                scrollMs = 0f
+                phase = 0L
+                offset = 0f
+                invalidate()
+                return@post
+            }
+            if (over != dist) phase = 0L   // 宽变了从头来，别拿旧相位跳变（乱跳的根因之一）
             dist = over
-            scrollMs = over / (SPEED_DP * tv.resources.displayMetrics.density) * 1000f
-            phase = 0L
-            tv.translationX = 0f
+            scrollMs = over / (SPEED_DP * resources.displayMetrics.density) * 1000f
+            offset = 0f
             ALL.remove(this)
             ALL.add(this)
             kick()
         }
     }
 
-    fun stop() {
+    /* 直接 setText 赋值（不走 bindMarquee）= 静态文本，自动停掉跑马灯，
+       避免「节目单暂无信息」这类短文案还挂在调度器里 */
+    override fun setText(text: CharSequence?, type: BufferType) {
         ALL.remove(this)
         dist = 0f
         scrollMs = 0f
         phase = 0L
-        tv.translationX = 0f
+        offset = 0f
+        super.setText(text, type)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        if (dist <= 0f) {
+            super.onDraw(canvas)
+            return
+        }
+        // 自绘：裁在自身边界内再平移，文字永远出不了这个 View，绝不可能盖到编号/台标
+        canvas.save()
+        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+        canvas.translate(-offset, 0f)
+        val fm = paint.fontMetrics
+        val baseline = height / 2f - (fm.ascent + fm.descent) / 2f
+        canvas.drawText(text?.toString().orEmpty(), paddingLeft.toFloat(), baseline, paint)
+        canvas.restore()
     }
 }

@@ -50,11 +50,9 @@ class LiveActivity : AppCompatActivity() {
     private lateinit var chPanel: View
     private lateinit var rvCh: RecyclerView
     private lateinit var btnClosePanel: TextView
-    private lateinit var tvEpgNow: TextView
-    private lateinit var tvEpgNext: TextView
-    // 面板节目单跑马灯控制器（v1.4.12 统一帧调度，见 MarqueeLabel）
-    private lateinit var epgNowMq: MarqueeLabel
-    private lateinit var epgNextMq: MarqueeLabel
+    private lateinit var tvEpgNow: MarqueeTextView
+    private lateinit var tvEpgNext: MarqueeTextView
+    // （v1.4.14 起 MarqueeTextView 自带跑马灯调度，不再需要独立的 MarqueeLabel 控制器）
 
     // 频道单：分类筛选（分组从直播源自带数据来）+ 台名搜索
     private lateinit var etSearch: EditText
@@ -91,9 +89,7 @@ class LiveActivity : AppCompatActivity() {
         btnClosePanel.setOnClickListener { closePanel() }
         tvEpgNow = findViewById(R.id.tvEpgNow)
         tvEpgNext = findViewById(R.id.tvEpgNext)
-        // v1.4.13：把 EPG 各自的裁剪壳一并传进去，量可用宽用壳宽而不是 match_parent 的 tv 宽
-        epgNowMq = MarqueeLabel(tvEpgNow, findViewById(R.id.flEpgNowBox))
-        epgNextMq = MarqueeLabel(tvEpgNext, findViewById(R.id.flEpgNextBox))
+        // v1.4.14：MarqueeTextView 自带跑马灯（自绘裁剪），无需再包控制器
 
         // 只带 UA：直播清单会被改写成第三方源直链，把站点 token 塞进 Authorization 头
         // 会一路带给那些 CDN（不安全，有的源还因此拒播）。站点鉴权走 URL 上的 ?token=
@@ -173,8 +169,8 @@ class LiveActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         ui.removeCallbacks(watchdog)
-        runCatching { epgNowMq.stop() }
-        runCatching { epgNextMq.stop() }
+        runCatching { tvEpgNow.stopMarquee() }
+        runCatching { tvEpgNext.stopMarquee() }
         if (ready) runCatching { player.release() }
         ready = false
         super.onDestroy()
@@ -295,19 +291,20 @@ class LiveActivity : AppCompatActivity() {
         }
     }
 
-    // 面板标题下的节目单：跟着当前播放的台走（v1.4.12 起走 MarqueeLabel 统一调度）
+    // 面板标题下的节目单：跟着当前播放的台走（v1.4.14 起 MarqueeTextView 自带跑马灯）
     private fun paintPanelEpg() {
         val e = PlayCache.iptvEpg[curCid]
         if (e?.t.isNullOrBlank()) {
-            epgNowMq.stop()
-            epgNextMq.stop()
+            // 直接 setText 会自动停跑马灯（MarqueeTextView.setText override）
             tvEpgNow.text = "节目单暂无信息"
             tvEpgNext.text = ""
             return
         }
-        epgNowMq.bind("正在播：" + e!!.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else ""))
-        epgNextMq.bind(if (e.next.isNullOrBlank()) ""
-        else "接下来 " + (if (e.ns > 0) hhmm(e.ns) + " " else "") + e.next)
+        tvEpgNow.bindMarquee("正在播：" + e!!.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else ""))
+        tvEpgNext.bindMarquee(
+            if (e.next.isNullOrBlank()) ""
+            else "接下来 " + (if (e.ns > 0) hhmm(e.ns) + " " else "") + e.next
+        )
     }
 
     private fun hhmm(ts: Long): String =

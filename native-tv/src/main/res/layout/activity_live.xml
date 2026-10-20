@@ -90,42 +90,24 @@
 
         <!-- 节目单（v1.4.10 从面板底部挪上来）：原来钉在最底下，台名后面正在播的节目
              经常被截断看不见；现在紧跟标题，一眼就是「当前台 + 正在播」。
-             v1.4.13：壳加 id（量可用宽用壳宽）；整体下移 6dp（大哥点名再往下一点）；
-             TextView 改 wrap_content，判定不依赖布局宽度 -->
-        <FrameLayout
-            android:id="@+id/flEpgNowBox"
+             v1.4.14：换 MarqueeTextView（自绘裁剪跑马灯，View 恒在面板内、不依赖外壳裁剪），
+             整体下移 6dp 保持大哥要的位置 -->
+        <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView
+            android:id="@+id/tvEpgNow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:clipChildren="true">
+            android:textColor="#FFD9A441"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvEpgNow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:textColor="#FFD9A441"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/flEpgNextBox"
+        <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView
+            android:id="@+id/tvEpgNext"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:clipChildren="true">
-
-            <TextView
-                android:id="@+id/tvEpgNext"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:textColor="@color/fg_dim"
-                android:textSize="12sp" />
-
-        </FrameLayout>
+            android:textColor="@color/fg_dim"
+            android:textSize="12sp" />
 
         <!-- 搜索频道名（别人家的直播面板有这玩意，确实好用）。
              UP 明确指到关闭按钮：不然焦点搜索会被标题文字块/左侧分组列搅混，关闭按钮选不到 -->

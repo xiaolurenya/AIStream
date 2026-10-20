@@ -326,12 +326,9 @@ class ChannelAdapter(
         val num: TextView = v.findViewById(R.id.tvNum)
         val logoBox: View = v.findViewById(R.id.flLogo)
         val logo: ImageView = v.findViewById(R.id.imgLogo)
-        val name: TextView = v.findViewById(R.id.tvName)
-        val epg: TextView = v.findViewById(R.id.tvEpg)
-        // v1.4.13：把各自的裁剪壳（flNameBox / flEpgBox）一并传进去，
-        // MarqueeLabel 量可用宽用壳宽而不是 match_parent 的 tv 宽，短文字不滚、行程准确
-        val nameMq = MarqueeLabel(name, v.findViewById(R.id.flNameBox))
-        val epgMq = MarqueeLabel(epg, v.findViewById(R.id.flEpgBox))
+        // v1.4.14：台名/节目名就是 MarqueeTextView（自绘裁剪跑马灯），直接 bind/stop
+        val name: MarqueeTextView = v.findViewById(R.id.tvName)
+        val epg: MarqueeTextView = v.findViewById(R.id.tvEpg)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
@@ -343,34 +340,54 @@ class ChannelAdapter(
         val c = rows[i]
         // 图4 的三位编号
         h.num.text = "%03d".format(i + 1)
-        // v1.4.12：台名走自定义跑马灯（开头停一下读全名 → 滚到最后一字完整可见 → 停一下回开头）
-        h.nameMq.bind(c.name.orEmpty())
+        // v1.4.14：台名走 MarqueeTextView 自绘跑马灯（开头停一下读全名 → 滚到最后一字完整可见 → 停一下回开头）
+        h.name.bindMarquee(c.name.orEmpty())
 
         // 台标：服务端给的是相对路径（自带 token），跟手机版一样拼域名。
         // v1.4.12：没台标的台、以及台标地址加载失败的台（果果1 那种），台标容器整个 GONE
-        // —— 不再留一截空位，台名真正靠左（大哥图2 点名）
+        // —— 不再留一截空位，台名真正靠左（大哥图2 点名）。
+        // v1.4.14：回调里主动让台名/节目名重测行程 —— 台标容器 VISIBLE/GONE 会把名字区
+        // 挤宽/挤窄，跑马灯行程必须跟着改，否则滚过头盖住台标编号、或末尾露不全（图3/图4 根因）
         val lu = c.logo.orEmpty()
         if (lu.isBlank()) {
             h.logo.setImageDrawable(null)
             h.logoBox.visibility = View.GONE
+            h.name.remeasure()
+            h.epg.remeasure()
         } else {
             h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu) {
                 crossfade(false)
                 listener(
-                    onSuccess = { _, _ -> h.logoBox.visibility = View.VISIBLE },
-                    onError = { _, _ -> h.logoBox.visibility = View.GONE }
+                    onSuccess = { _, _ ->
+                        h.logoBox.visibility = View.VISIBLE
+                        h.name.remeasure()
+                        h.epg.remeasure()
+                    },
+                    onError = { _, _ ->
+                        h.logoBox.visibility = View.GONE
+                        h.name.remeasure()
+                        h.epg.remeasure()
+                    }
                 )
             }
         }
 
-        // 节目单：正在播 + 几点结束（后台没配 EPG 就只显示台名，行更清爽）
+        // 节目单（v1.4.14 按大哥图2 样式改）：一段滚动内容 = 「正在播 xx 几点结束 → 接下来 xx 几点开播」，
+        // 滚完正在播接着滚接下来，和图2 参照样式两段信息一致。
+        // 后台没配 EPG 就只显示台名，行更清爽
         val e = epg[c.cid]
         if (e == null || e.t.isNullOrBlank()) {
             h.epg.visibility = View.GONE
-            h.epgMq.stop()
+            h.epg.stopMarquee()
         } else {
             h.epg.visibility = View.VISIBLE
-            h.epgMq.bind("▶ " + e.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else ""))
+            val sb = StringBuilder("正在播 ").append(e.t)
+            if (e.ce > 0) sb.append(" ").append(hhmm(e.ce)).append(" 结束")
+            if (!e.next.isNullOrBlank()) {
+                sb.append("　接下来 ").append(e.next)
+                if (e.ns > 0) sb.append(" ").append(hhmm(e.ns)).append(" 开播")
+            }
+            h.epg.bindMarquee(sb.toString())
         }
 
         // 正在播放的这一行：品牌蓝高亮，一眼定位当前台
