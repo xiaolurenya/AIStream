@@ -132,6 +132,23 @@
                     android:textColor="@color/fg_dim"
                     android:textSize="14sp" />
 
+                <!-- 取不到片源时的「刷新重试」入口：遥控器选中即可按确认重拉 -->
+                <TextView
+                    android:id="@+id/btnRetry"
+                    style="@style/AIStream.FocusItem"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_btn"
+                    android:gravity="center"
+                    android:paddingStart="28dp"
+                    android:paddingEnd="28dp"
+                    android:text="刷新重试"
+                    android:textColor="@android:color/white"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
             </LinearLayout>
 
         </LinearLayout>

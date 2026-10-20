@@ -64,6 +64,24 @@
         android:textSize="16sp"
         android:visibility="gone" />
 
+    <!-- 起播分辨率浮层：刚出画面时显示 4K/1080P/720P 等，3.5 秒后自动消失 -->
+    <TextView
+        android:id="@+id/tvRes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="52dp"
+        android:layout_marginEnd="36dp"
+        android:background="@drawable/bg_chip_on"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <!-- 底部操作栏（图4 借鉴，只保留我们项目有的功能）：按钮多，横向可滑 -->
     <HorizontalScrollView
         android:layout_width="match_parent"

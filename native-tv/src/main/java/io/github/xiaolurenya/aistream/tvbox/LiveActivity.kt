@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -21,6 +22,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -53,6 +55,7 @@ class LiveActivity : AppCompatActivity() {
     private lateinit var btnClosePanel: TextView
     private lateinit var tvEpgNow: MarqueeTextView
     private lateinit var tvEpgNext: MarqueeTextView
+    private lateinit var tvRes: TextView
     // （v1.4.14 起 MarqueeTextView 自带跑马灯调度，不再需要独立的 MarqueeLabel 控制器）
 
     // 频道单：分类筛选（分组从直播源自带数据来）+ 台名搜索
@@ -100,6 +103,8 @@ class LiveActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_live)
+        // v1.4.19：直播时不息屏，免得放着放着盒子进屏保（大哥点名）
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         idx = PlayCache.iptvIndex
         playerView = findViewById(R.id.playerView)
@@ -113,6 +118,7 @@ class LiveActivity : AppCompatActivity() {
         btnClosePanel.setOnClickListener { closePanel() }
         tvEpgNow = findViewById(R.id.tvEpgNow)
         tvEpgNext = findViewById(R.id.tvEpgNext)
+        tvRes = findViewById(R.id.tvRes)
         // v1.4.14：MarqueeTextView 自带跑马灯（自绘裁剪），无需再包控制器
 
         // 只带 UA：直播清单会被改写成第三方源直链，把站点 token 塞进 Authorization 头
@@ -147,6 +153,13 @@ class LiveActivity : AppCompatActivity() {
             override fun onPlayerError(error: PlaybackException) {
                 ui.removeCallbacks(watchdog)
                 escalate(error.message ?: "源不可用")
+            }
+
+            // v1.4.19：起播刚出画面时把分辨率浮层亮出来（4K/1080P/720P），3.5s 后自动消失
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                val w = videoSize.width
+                val h = videoSize.height
+                if (w > 0 && h > 0) showRes(w, h)
             }
         })
 
@@ -208,15 +221,38 @@ class LiveActivity : AppCompatActivity() {
     }
 
     // ---------- 遥控器 ----------
+    /* v1.4.19：把频道单的方向键导航彻底改成「确定性」——
+       之前面板开着时所有方向键都丢给系统默认焦点搜索，焦点可能在「搜索框 ↔ 分组列 ↔
+       频道列表」之间乱跳，大哥反馈「响应很随机、不知道选到哪」。现在每一项都指名道姓：
+       确认 = 播当前聚焦的台；左 = 进分组列；右 = 回频道列表；上下 = 单列表内移动；
+       返回/菜单 = 收面板。焦点落在搜索框时上下键直接落进频道列表，不卡在输入框。 */
     override fun dispatchKeyEvent(ev: KeyEvent): Boolean {
         if (ev.action == KeyEvent.ACTION_DOWN) {
-            // 面板开着：返回 / 菜单键收面板；其余按键全部交回系统，
-            // 让焦点在「搜索框 ↔ 分组列 ↔ 频道列表」之间正常走（参照样式的两栏导航）
             if (chPanel.visibility == View.VISIBLE) {
                 when (ev.keyCode) {
                     KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_MENU -> { closePanel(); return true }
+                    // 确认 = 播放「当前聚焦」的台（焦点在频道列表里才接管，分组/搜索框交给系统）
+                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                        if (focusIn(rvCh)) { pickFocusedChannel(); return true }
+                        return super.dispatchKeyEvent(ev)
+                    }
+                    // 左 = 从频道列表跳到左侧分组列（换分组）；已在分组/搜索框就不乱跳
+                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                        if (focusIn(rvCh)) { focusCats(); return true }
+                        return super.dispatchKeyEvent(ev)
+                    }
+                    // 右 = 从分组列/搜索框回到频道列表
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        if (focusIn(llCats) || focusIn(etSearch)) { rvCh.requestFocus(); return true }
+                        return super.dispatchKeyEvent(ev)
+                    }
+                    // 上下 = 列表/分组都是单列竖排，交给系统移动；焦点在搜索框则落进频道列表
+                    KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        if (focusIn(etSearch)) { rvCh.requestFocus(); return true }
+                        return super.dispatchKeyEvent(ev)
+                    }
+                    else -> return super.dispatchKeyEvent(ev)
                 }
-                return super.dispatchKeyEvent(ev)
             }
             when (ev.keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
@@ -231,6 +267,35 @@ class LiveActivity : AppCompatActivity() {
             }
         }
         return super.dispatchKeyEvent(ev)
+    }
+
+    // 焦点（或其任一祖先）是否落在某个 view 里
+    private fun focusIn(view: View): Boolean {
+        var n: View? = currentFocus ?: return false
+        while (n != null) {
+            if (n === view) return true
+            n = n.parent as? View
+        }
+        return false
+    }
+
+    // 频道列表里当前聚焦的是第几个（没确认播放也算）：确认键就播它
+    private fun focusedChannelPos(): Int {
+        var v: View? = currentFocus
+        while (v != null && v.parent !== rvCh) v = v.parent as? View
+        return if (v == null) -1 else rvCh.getChildAdapterPosition(v)
+    }
+
+    private fun pickFocusedChannel() {
+        var pos = focusedChannelPos()
+        if (pos < 0) pos = shown.indexOfFirst { it.cid == curCid }
+        if (pos >= 0) pickShown(pos)
+    }
+
+    // 进分组列：默认选中当前分组（高亮那一个），大哥自己上下换组
+    private fun focusCats() {
+        val target = llCats.getChildAt(selCat) ?: llCats.getChildAt(0)
+        target?.requestFocus()
     }
 
     // ---------- 分组筛选（竖列） + 搜索 ----------
@@ -400,6 +465,21 @@ class LiveActivity : AppCompatActivity() {
         pb.visibility = View.GONE
         tvErr.text = "这个频道播不出来：\n$reason\n\n按左键叫出频道单手动挑一个，或稍后再试"
         tvErr.visibility = View.VISIBLE
+    }
+
+    // 起播分辨率浮层：把 VideoSize 折算成 4K/1080P/720P 等标签，3.5s 后自动隐藏
+    private val hideRes = Runnable { tvRes.visibility = View.GONE }
+    private fun showRes(w: Int, h: Int) {
+        val label = when {
+            w >= 3840 || h >= 2160 -> "4K"
+            w >= 1920 || h >= 1080 -> "1080P"
+            w >= 1280 || h >= 720 -> "720P"
+            else -> w.toString() + "×" + h
+        }
+        tvRes.text = label
+        tvRes.visibility = View.VISIBLE
+        ui.removeCallbacks(hideRes)
+        ui.postDelayed(hideRes, 3500)
     }
 
     private fun play() {

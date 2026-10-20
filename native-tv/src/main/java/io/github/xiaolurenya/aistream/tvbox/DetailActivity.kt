@@ -97,6 +97,7 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var tvLoadCount: TextView
     private lateinit var tvLoadInfo: TextView
     private lateinit var btnLoadPlay: TextView
+    private lateinit var btnRetry: TextView
     private val ui = Handler(Looper.getMainLooper())
 
     private val title by lazy { intent.getStringExtra("title").orEmpty() }
@@ -119,6 +120,10 @@ class DetailActivity : AppCompatActivity() {
         tvLoadCount = findViewById(R.id.tvLoadCount)
         tvLoadInfo = findViewById(R.id.tvLoadInfo)
         btnLoadPlay = findViewById(R.id.btnLoadPlay)
+        btnRetry = findViewById(R.id.btnRetry)
+        // 取不到片源时给个「刷新重试」入口：重置状态重新去拉，别让用户干瞪眼
+        bindFocus(btnRetry)
+        btnRetry.setOnClickListener { retryLoad() }
 
         findViewById<TextView>(R.id.tvTitle).text = title
         findViewById<TextView>(R.id.tvMeta).text = year
@@ -239,8 +244,26 @@ class DetailActivity : AppCompatActivity() {
                 overlay.visibility = View.GONE
                 tvPlot.text = "这部片子暂时取不到片源。\n\n可能是站方接口抽风、片名对不上，或者后台还没配采集站，稍后再试一次。"
                 labEps.text = "暂无片源"
+                btnRetry.visibility = View.VISIBLE
             }
         }
+    }
+
+    /* 「刷新重试」：清空本次的失败结果并重置加载状态，重新去拉片源。
+       先把这条片的详情缓存清掉，否则 quiet 静默刷新会把上次的空结果又喂回来。 */
+    private fun retryLoad() {
+        if (!settled) return            // 还在加载中，不重复触发
+        synchronized(detailCache) { detailCache.remove(cacheKey()) }
+        upReady = null
+        collectReady = null
+        upDone = false
+        collectDone = false
+        expired = false
+        settled = false
+        btnRetry.visibility = View.GONE
+        ui.removeCallbacks(tick)
+        startTicker()
+        load(quiet = false)
     }
 
     /* 精确取（站点 id + 站内 id）和按名聚合必须一起跑：
@@ -503,14 +526,16 @@ class DetailActivity : AppCompatActivity() {
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 
-    /* 详情页整页海报背景：选集区透出本片海报（API31+ 加磨砂模糊，低版本不糊但能显示） */
+    /* 详情页整页海报背景：选集区透出本片海报（API31+ 加磨砂模糊，低版本不糊但能显示）。
+       v1.4.19：模糊半径从 22f 降到 12f——之前糊得连海报轮廓都看不清（大哥点名「大海报太模糊」），
+       12f 保留磨砂感但能看清本片海报。 */
     private fun loadBackdrop(u: String) {
         val iv = findViewById<ImageView>(R.id.ivBackdrop)
         if (u.isBlank()) { iv.setImageDrawable(null); return }
         iv.load(u)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             iv.setRenderEffect(
-                android.graphics.RenderEffect.createBlurEffect(22f, 22f, android.graphics.Shader.TileMode.CLAMP)
+                android.graphics.RenderEffect.createBlurEffect(12f, 12f, android.graphics.Shader.TileMode.CLAMP)
             )
         }
     }

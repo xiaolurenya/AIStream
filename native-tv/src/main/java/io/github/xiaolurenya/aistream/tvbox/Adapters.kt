@@ -210,6 +210,27 @@ class ColumnAdapter(
     // 每行翻页状态（下标与 cols 对齐）：page=已拉到的页；loading=拉取中；done=没更多了
     private val st = mutableListOf<RowState>()
 
+    // v1.4.19：栏目标题「聚焦即弹出」栏目墙（大哥点名之前要双击/确认才弹）。
+    // 但进应用或刚从栏目墙返回时，焦点会自动落回刚才那个标题 → 会瞬间又弹出来，很烦。
+    // 两层防护：① 创建后 / 每次 onResume 后 1.2s 内不自动开（防启动误开 + 防返回重开）；
+    // ② 同一栏目 1.5s 内重复聚焦不重开（返回时焦点回到刚开的那个标题正好命中这层）。
+    private var suppressUntil = System.currentTimeMillis() + 1200L
+    private var lastOpenIdx = -1
+    private var lastOpenAt = 0L
+
+    fun armGuard() {
+        suppressUntil = System.currentTimeMillis() + 1200L
+    }
+
+    private fun tryOpen(idx: Int) {
+        val now = System.currentTimeMillis()
+        if (now < suppressUntil) return
+        if (idx == lastOpenIdx && now - lastOpenAt < 1500) return
+        lastOpenIdx = idx
+        lastOpenAt = now
+        onOpenCol(idx)
+    }
+
     private data class RowState(var page: Int = 1, var loading: Boolean = false, var done: Boolean = false)
 
     class H(v: View) : RecyclerView.ViewHolder(v) {
@@ -245,9 +266,9 @@ class ColumnAdapter(
     override fun onBindViewHolder(h: H, i: Int) {
         val col = cols[i]
         h.label.text = col.label.orEmpty()
-        // 栏目标题：可聚焦 + 白描边，确认键 / 点击弹满屏海报墙（按下返回自动归位）
-        h.label.setOnClickListener { onOpenCol(col.idx) }
-        bindFocus(h.label)
+        // v1.4.19：栏目标题现在「选中（聚焦）即弹出」栏目墙，确认键 / 点击也能弹（向后兼容）
+        h.label.setOnClickListener { tryOpen(col.idx) }
+        bindFocus(h.label) { has -> if (has) tryOpen(col.idx) }
         if (h.rv.layoutManager == null) {
             h.rv.layoutManager = LinearLayoutManager(h.rv.context, LinearLayoutManager.HORIZONTAL, false)
                 .apply { initialPrefetchItemCount = 6 }

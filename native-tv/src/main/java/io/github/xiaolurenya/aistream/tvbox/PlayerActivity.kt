@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -21,6 +22,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -81,6 +83,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var btnAuto: TextView
     private lateinit var tvSkip: TextView
     private lateinit var tvPageInfo: TextView
+    private lateinit var tvRes: TextView
     private var epPage = 0          // 选集面板当前页（上百集分页）
     private val ui = Handler(Looper.getMainLooper())
 
@@ -94,6 +97,8 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
+        // v1.4.19：播放时不息屏，免得放着放着盒子进屏保（大哥点名直播/影视放着进屏保）
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         lineIdx = intent.getIntExtra("line", 0)
         epIdx = intent.getIntExtra("ep", 0)
@@ -125,6 +130,7 @@ class PlayerActivity : AppCompatActivity() {
         btnFull = findViewById(R.id.btnFull)
         btnFull.text = "适应"            // 默认铺满，按钮给出「切换回原始比例」的动作
         btnSpeed = findViewById(R.id.btnSpeed)
+        tvRes = findViewById(R.id.tvRes)
 
         if (PlayCache.lines.isEmpty() && !PlayCache.isUp) {
             showErr("播放数据已丢失，请退回详情页重新点一次")
@@ -183,6 +189,13 @@ class PlayerActivity : AppCompatActivity() {
                     return
                 }
                 showErr("播放失败：" + (error.message ?: "未知错误"))
+            }
+
+            // v1.4.19：起播刚出画面时把分辨率浮层亮出来（4K/1080P/720P），3.5s 后自动消失
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                val w = videoSize.width
+                val h = videoSize.height
+                if (w > 0 && h > 0) showRes(w, h)
             }
         })
 
@@ -432,6 +445,21 @@ class PlayerActivity : AppCompatActivity() {
     private fun showErr(s: String) {
         tvErr.text = s
         tvErr.visibility = View.VISIBLE
+    }
+
+    // 起播分辨率浮层：把 VideoSize 折算成 4K/1080P/720P 等标签，3.5s 后自动隐藏
+    private val hideRes = Runnable { tvRes.visibility = View.GONE }
+    private fun showRes(w: Int, h: Int) {
+        val label = when {
+            w >= 3840 || h >= 2160 -> "4K"
+            w >= 1920 || h >= 1080 -> "1080P"
+            w >= 1280 || h >= 720 -> "720P"
+            else -> w.toString() + "×" + h
+        }
+        tvRes.text = label
+        tvRes.visibility = View.VISIBLE
+        ui.removeCallbacks(hideRes)
+        ui.postDelayed(hideRes, 3500)
     }
 
     // 拦截提示：飘 6 秒自己消失，别挡画面

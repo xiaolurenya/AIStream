@@ -213,6 +213,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         // 右侧推荐列轮播：页面可见才转
         ui.removeCallbacks(rotSide)
         ui.postDelayed(rotSide, SIDE_MS)
+        // v1.4.19：从栏目墙返回首页时，焦点会自动落回刚点的那个标题，
+        // 1.2s 内不自动重开栏目墙（armGuard），避免「一回来又弹出去」的鬼打墙
+        adapter.armGuard()
         // 从详情页/播放器返回：设置开了「首页直接播直播」就恢复小窗
         // （loadIptv 提前 return 那条分支不会触发 startPreview，这里补上）
         if (Prefs.heroLive && PlayCache.iptv.isNotEmpty() && !previewOn) startPreview()
