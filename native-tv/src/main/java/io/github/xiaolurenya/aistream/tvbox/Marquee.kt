@@ -5,7 +5,7 @@ import android.graphics.Canvas
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.Choreographer
-import android.text.BufferType
+import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 
 /* v1.4.14 跑马灯再修（MarqueeTextView 自绘裁剪）。
@@ -136,8 +136,9 @@ class MarqueeTextView @JvmOverloads constructor(
     }
 
     /* 直接 setText 赋值（不走 bindMarquee）= 静态文本，自动停掉跑马灯，
-       避免「节目单暂无信息」这类短文案还挂在调度器里 */
-    override fun setText(text: CharSequence?, type: BufferType) {
+       避免「节目单暂无信息」这类短文案还挂在调度器里。
+       ⚠️ BufferType 是 TextView 的嵌套枚举（TextView.BufferType），CI 实锤不是 android.text 的 */
+    override fun setText(text: CharSequence?, type: TextView.BufferType) {
         ALL.remove(this)
         dist = 0f
         scrollMs = 0f
