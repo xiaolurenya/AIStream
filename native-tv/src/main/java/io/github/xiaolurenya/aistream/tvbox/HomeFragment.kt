@@ -3,8 +3,8 @@ package io.github.xiaolurenya.aistream.tvbox
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.GradientDrawable
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
