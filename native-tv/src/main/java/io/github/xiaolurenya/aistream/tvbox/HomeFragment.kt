@@ -195,10 +195,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             h.badge.visibility = View.GONE
             val u = Api.dimg(c.poster)
             if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
-            // v1.4.16：右侧推荐卡贴屏幕右缘，1.06 放大直接过界被裁（大哥图3/图4 点名
-            // 「边框位置不对/显示过界」）→ 放大收到 1.03「缩小一点」，配合 rvSide
-            // clipChildren=false 让描边完整画出，不再出界
-            bindFocus(h.card, 1.03f)
+            // v1.4.17：放大是描边「错位/靠右」的根源（1.06 出界、1.03 四周仍悬空一圈，
+            // 大哥还是不满意）→ 侧栏卡干脆**不放大只描边**：圆角已与 bg_card 对齐的
+            // 2dp 白框紧贴卡片轮廓，看着就是「框在卡上」，绝无错位、绝无过界
+            bindFocus(h.card, 1f)
             h.itemView.setOnClickListener { openDetail(c) }
         }
         fun submit(list: List<Api.Card>) {

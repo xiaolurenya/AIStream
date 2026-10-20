@@ -41,6 +41,7 @@ class LiveActivity : AppCompatActivity() {
     private var autoSw = 0
     private var curCid = ""
     private var curDirect = false
+    private var focusCid = ""   // v1.4.17：选台面板里焦点所在的台（没确认播放也算，顶部节目单跟着它走）
 
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
@@ -70,6 +71,29 @@ class LiveActivity : AppCompatActivity() {
             if (!ready) return
             val st = player.playbackState
             if (st == Player.STATE_BUFFERING || st == Player.STATE_IDLE) escalate("连接超时")
+        }
+    }
+
+    /* v1.4.17 节目单「时时自动更新」：EPG 只在进直播时拉一次，播到 19:33 节目换了
+       面板顶部还挂着「正在播 新闻联播（至 19:33）」—— 大哥点名不会实时识别。
+       每 60s 后台重拉一次 /api/iptv（节目单跟频道列表同一接口，包很小），有变化才
+       刷 PlayCache + adapter（行内节目单）+ 面板顶部；面板开着还跟焦点台实时走。 */
+    private val epgTick = object : Runnable {
+        override fun run() {
+            ui.postDelayed(this, 60000L)
+            Thread {
+                val r = runCatching { Api.iptv() }.getOrNull() ?: return@Thread
+                ui.post {
+                    val now = r.now.orEmpty()
+                    if (now != PlayCache.iptvEpg) {
+                        PlayCache.iptvEpg = now
+                        if (::chAdapter.isInitialized) chAdapter.updateEpg(now)
+                        // 面板开着时优先显示焦点台的节目单，别把焦点台顶掉
+                        if (chPanel.visibility == View.VISIBLE)
+                            paintPanelEpg(if (focusCid.isNotBlank()) focusCid else curCid)
+                    }
+                }
+            }.start()
         }
     }
 
@@ -137,8 +161,14 @@ class LiveActivity : AppCompatActivity() {
         rvCh.layoutManager = LinearLayoutManager(this)
         // 选台列表要的是遥控器一按立刻换高亮：任何 item 动画都是拖沓
         noAnim(rvCh)
-        chAdapter = ChannelAdapter(emptyList(), PlayCache.iptvEpg) { pos -> pickShown(pos) }
+        chAdapter = ChannelAdapter(
+            emptyList(), PlayCache.iptvEpg,
+            // v1.4.17：焦点挪到哪个台（没按确认播放也一样），顶部节目单立刻换成那个台的
+            onFocused = { focusCid = it; paintPanelEpg(it) }
+        ) { pos -> pickShown(pos) }
         rvCh.adapter = chAdapter
+        // v1.4.17：节目单每 60s 重拉一次，正在播/接下来到点自动换，不再进直播时定格
+        ui.postDelayed(epgTick, 60000L)
         etSearch = findViewById(R.id.etSearch)
         bindFocus(etSearch)
         llCats = findViewById(R.id.llCats)
@@ -169,6 +199,7 @@ class LiveActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         ui.removeCallbacks(watchdog)
+        ui.removeCallbacks(epgTick)
         runCatching { tvEpgNow.stopMarquee() }
         runCatching { tvEpgNext.stopMarquee() }
         if (ready) runCatching { player.release() }
@@ -291,9 +322,11 @@ class LiveActivity : AppCompatActivity() {
         }
     }
 
-    // 面板标题下的节目单：跟着当前播放的台走（v1.4.14 起 MarqueeTextView 自带跑马灯）
-    private fun paintPanelEpg() {
-        val e = PlayCache.iptvEpg[curCid]
+    // 面板标题下的节目单：默认跟当前播放的台走；v1.4.17 起焦点在列表里挪动（未确认
+    // 播放也一样）时由 ChannelAdapter.onFocused 传焦点台 cid 进来，实时更新识别 ——
+    // 不再只认正在播的台（v1.4.14 起 MarqueeTextView 自带跑马灯）
+    private fun paintPanelEpg(cid: String = curCid) {
+        val e = PlayCache.iptvEpg[cid]
         if (e?.t.isNullOrBlank()) {
             // 直接 setText 会自动停跑马灯（MarqueeTextView.setText override）
             tvEpgNow.text = "节目单暂无信息"
@@ -312,6 +345,7 @@ class LiveActivity : AppCompatActivity() {
 
     private fun closePanel() {
         chPanel.visibility = View.GONE
+        focusCid = ""   // v1.4.17：面板收了就清焦点台，下次打开回到「正在播的台」
         tvTitle.visibility = View.VISIBLE   // 面板收起，台名恢复显示
         playerView.requestFocus()
     }

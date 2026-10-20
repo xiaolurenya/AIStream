@@ -58,15 +58,15 @@
         android:layout_weight="1"
         android:orientation="vertical" android:clipChildren="false">
 
-        <!-- v1.4.14：台名/节目名换 MarqueeTextView（自绘裁剪跑马灯）。
-             View 恒 match_parent（=名字区宽）永不出界，onDraw 里 clipRect+translate 自绘，
-             文字滚到哪都被裁在自己边界内 —— 物理上不可能再盖住台标/前面编号（大哥图3/图4 点名）；
-             每轮滚回开头自动重量宽，台标异步加载挤压名字区也不怕行程错 -->
+        <!-- v1.4.17：台名不再滚动 —— 静态显示，超宽出省略号（只有下面节目信息行滚）。
+             v1.4.14：MarqueeTextView（自绘裁剪跑马灯）保留，面板节目单/行内 EPG 还在用 -->
         <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView
             android:id="@+id/tvName"
             style="@style/AIStream.TextTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textSize="12sp" />
 
         <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView

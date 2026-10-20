@@ -309,14 +309,26 @@ class ChipAdapter(
 // ---------- 直播频道列表（图4 样式：编号 + 台标 + 正在播节目 + 播放进度条） ----------
 class ChannelAdapter(
     items: List<Api.IptvCh>,
-    private val epg: Map<String, Api.EpgNow> = emptyMap(),
+    epg: Map<String, Api.EpgNow> = emptyMap(),
     curCid: String = "",
+    // v1.4.17：焦点挪到某行（未按确认）就回调该台 cid —— 面板顶部节目单跟着焦点台
+    // 实时更新识别，不再只认正在播的台。⚠️ 新参数必须放在尾随 lambda 的 onPick 之前
+    private val onFocused: (String) -> Unit = {},
     private val onPick: (Int) -> Unit
 ) : RecyclerView.Adapter<ChannelAdapter.H>() {
 
     private val rows = items.toMutableList()
     var curCid: String = curCid
         private set
+
+    // v1.4.17：EPG 可换新（LiveActivity 每分钟重拉一次节目单后调它，行内「正在播/接下来」跟着时间走）
+    private var epgMap: Map<String, Api.EpgNow> = epg
+
+    fun updateEpg(m: Map<String, Api.EpgNow>) {
+        if (m == epgMap) return
+        epgMap = m
+        notifyDataSetChanged()
+    }
 
     /* 复用同一个 adapter 刷新列表：选台面板的搜索框每敲一个字就 new 一个 adapter
        全量重建（+ item 动画），遥控器/输入法敲字能明显感觉到卡 —— 现在只换数据。 */
@@ -347,8 +359,11 @@ class ChannelAdapter(
         val c = rows[i]
         // 图4 的三位编号
         h.num.text = "%03d".format(i + 1)
-        // v1.4.14：台名走 MarqueeTextView 自绘跑马灯（开头停一下读全名 → 滚到最后一字完整可见 → 停一下回开头）
-        h.name.bindMarquee(c.name.orEmpty())
+        // v1.4.17：台名**不再滚动**（大哥点名「频道也在滚动」）—— 只让下面的节目信息行滚。
+        // 直接赋值走 setText override 自动停跑马灯 = 静态显示；超宽的台名靠 XML 的
+        // ellipsize=end 出省略号，不再占一行滚动。台标加载回调里的 name.remeasure()
+        // 一并删掉（那是给跑马灯行程用的，台名静态后留着会把滚动又注册回来）
+        h.name.text = c.name.orEmpty()
 
         // 台标：服务端给的是相对路径（自带 token），跟手机版一样拼域名。
         // v1.4.12：没台标的台、以及台标地址加载失败的台（果果1 那种），台标容器整个 GONE
@@ -359,7 +374,6 @@ class ChannelAdapter(
         if (lu.isBlank()) {
             h.logo.setImageDrawable(null)
             h.logoBox.visibility = View.GONE
-            h.name.remeasure()
             h.epg.remeasure()
         } else {
             h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu) {
@@ -367,12 +381,10 @@ class ChannelAdapter(
                 listener(
                     onSuccess = { _, _ ->
                         h.logoBox.visibility = View.VISIBLE
-                        h.name.remeasure()
                         h.epg.remeasure()
                     },
                     onError = { _, _ ->
                         h.logoBox.visibility = View.GONE
-                        h.name.remeasure()
                         h.epg.remeasure()
                     }
                 )
@@ -382,7 +394,7 @@ class ChannelAdapter(
         // 节目单（v1.4.14 按大哥图2 样式改）：一段滚动内容 = 「正在播 xx 几点结束 → 接下来 xx 几点开播」，
         // 滚完正在播接着滚接下来，和图2 参照样式两段信息一致。
         // 后台没配 EPG 就只显示台名，行更清爽
-        val e = epg[c.cid]
+        val e = epgMap[c.cid]
         if (e == null || e.t.isNullOrBlank()) {
             h.epg.visibility = View.GONE
             h.epg.stopMarquee()
@@ -401,8 +413,9 @@ class ChannelAdapter(
         h.row.setBackgroundResource(if (c.cid == curCid) R.drawable.bg_row_cur else R.drawable.bg_card)
 
         // v1.4.16：整行宽条 1.06 放大太夸张（白框上下撑一大截、左右出面板被裁），
-        // 改 1.02 只提一点动感，选中标识主要靠描边
-        bindFocus(h.row, 1.02f)
+        // 改 1.02 只提一点动感，选中标识主要靠描边。
+        // v1.4.17：焦点落上就通知面板「焦点台变了」，顶部节目单实时跟着换
+        bindFocus(h.row, 1.02f) { has -> if (has) onFocused(c.cid.orEmpty()) }
         h.itemView.setOnClickListener { onPick(i) }
     }
 

@@ -82,10 +82,9 @@ class MarqueeTextView @JvmOverloads constructor(
     private var offset = 0f   // 已滚过的像素（文字向左平移量，自绘用）
     private var acc = 0L      // 重绘节流累计器
 
-    init {
-        // 文字显示全权交给自绘，关掉 TextView 自带的省略/跑马灯行为
-        ellipsize = null
-    }
+    /* v1.4.17：不再在 init 里强制 ellipsize=null —— 注册了跑马灯的行走自绘（layout 的
+       省略号本来就不会生效）；静态行（台名 v1.4.17 起不滚）若 XML 配了 ellipsize=end
+       就能正常出省略号。XML 没配的行为不变。 */
 
     /* 绑定文本并（重）量宽。注册了跑马灯后走自绘；没超宽就是普通静态 TextView */
     fun bindMarquee(text: CharSequence?) {
