@@ -328,6 +328,9 @@ class ChannelAdapter(
         val logo: ImageView = v.findViewById(R.id.imgLogo)
         val name: TextView = v.findViewById(R.id.tvName)
         val epg: TextView = v.findViewById(R.id.tvEpg)
+        // v1.4.12：每行自己的跑马灯控制器（全局统一帧调度，见 MarqueeLabel）
+        val nameMq = MarqueeLabel(name)
+        val epgMq = MarqueeLabel(epg)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
@@ -339,33 +342,35 @@ class ChannelAdapter(
         val c = rows[i]
         // 图4 的三位编号
         h.num.text = "%03d".format(i + 1)
-        h.name.text = c.name.orEmpty()
+        // v1.4.12：台名走自定义跑马灯（开头停一下读全名 → 滚到最后一字完整可见 → 停一下回开头）
+        h.nameMq.bind(c.name.orEmpty())
 
         // 台标：服务端给的是相对路径（自带 token），跟手机版一样拼域名。
-        // v1.4.11：没台标的台把台标容器整个 GONE —— 不再留一截空位，台名真正靠左
+        // v1.4.12：没台标的台、以及台标地址加载失败的台（果果1 那种），台标容器整个 GONE
+        // —— 不再留一截空位，台名真正靠左（大哥图2 点名）
         val lu = c.logo.orEmpty()
         if (lu.isBlank()) {
             h.logo.setImageDrawable(null)
             h.logoBox.visibility = View.GONE
         } else {
-            h.logoBox.visibility = View.VISIBLE
-            h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu)
+            h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu) {
+                crossfade(false)
+                listener(
+                    onSuccess = { _, _ -> h.logoBox.visibility = View.VISIBLE },
+                    onError = { _, _ -> h.logoBox.visibility = View.GONE }
+                )
+            }
         }
 
         // 节目单：正在播 + 几点结束（后台没配 EPG 就只显示台名，行更清爽）
         val e = epg[c.cid]
         if (e == null || e.t.isNullOrBlank()) {
             h.epg.visibility = View.GONE
+            h.epgMq.stop()
         } else {
             h.epg.visibility = View.VISIBLE
-            h.epg.text = "▶ " + e.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else "")
+            h.epgMq.bind("▶ " + e.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else ""))
         }
-
-        // 跑马灯：singleLine+marquee 只在「选中」状态才滚。这里把每行都 setSelected(true)，
-        // 长台名/长节目名就会从右往左循环滚，不再「…」截断（大哥点名所有频道都要滚）。
-        // 短文字不会滚，维持原样不动。
-        h.name.isSelected = true
-        h.epg.isSelected = true
 
         // 正在播放的这一行：品牌蓝高亮，一眼定位当前台
         h.row.setBackgroundResource(if (c.cid == curCid) R.drawable.bg_row_cur else R.drawable.bg_card)

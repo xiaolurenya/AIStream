@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 选台行：三位编号（圆角小方块）+ 台标 + 台名/正在播节目。
-     v1.4.11：台标容器加 id（没台标的台整个隐藏，台名真正靠左）；
-     台名/节目名改跑马灯（singleLine + ellipsize=marquee），过长从右往左滚动不再截断 -->
+     v1.4.12：台名/节目名改自定义跑马灯（MarqueeLabel 统一调度，translationX 平移），
+     外面套 FrameLayout 负责裁剪滚动的文字；系统 marquee 已弃用 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/row"
     style="@style/AIStream.FocusItem"
@@ -35,7 +35,7 @@
 
     </FrameLayout>
 
-    <!-- 台标容器：加 id，频道没台标时在 Adapter 里整个 GONE，文字不留空位 -->
+    <!-- 台标容器：加 id，频道没台标/台标加载失败时在 Adapter 里整个 GONE，文字不留空位 -->
     <FrameLayout
         android:id="@+id/flLogo"
         android:layout_width="@dimen/ch_logo_w"
@@ -57,31 +57,38 @@
         android:layout_weight="1"
         android:orientation="vertical" android:clipChildren="false">
 
-        <!-- 跑马灯三件套：singleLine + ellipsize=marquee + marquee_forever；
-             Adapter 里 isSelected=true 让每一行都滚（大哥点名：所有频道文字从右往左移动） -->
-        <TextView
-            android:id="@+id/tvName"
-            style="@style/AIStream.TextTitle"
+        <!-- 裁剪壳：跑马灯文字在壳内平移，超出部分被壳裁掉 -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:scrollHorizontally="true"
-            android:singleLine="true"
-            android:textSize="13sp" />
+            android:clipChildren="true">
 
-        <TextView
-            android:id="@+id/tvEpg"
+            <TextView
+                android:id="@+id/tvName"
+                style="@style/AIStream.TextTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textSize="13sp" />
+
+        </FrameLayout>
+
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:scrollHorizontally="true"
-            android:singleLine="true"
-            android:textColor="@color/fg_dim"
-            android:textSize="11sp"
-            android:visibility="gone" />
+            android:clipChildren="true">
+
+            <TextView
+                android:id="@+id/tvEpg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textColor="@color/fg_dim"
+                android:textSize="11sp"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
     </LinearLayout>
 

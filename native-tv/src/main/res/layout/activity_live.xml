@@ -90,30 +90,38 @@
 
         <!-- 节目单（v1.4.10 从面板底部挪上来）：原来钉在最底下，台名后面正在播的节目
              经常被截断看不见；现在紧跟标题，一眼就是「当前台 + 正在播」。
-             v1.4.11：面板窄、节目名长，改跑马灯从右往左滚不截断 -->
-        <TextView
-            android:id="@+id/tvEpgNow"
+             v1.4.12：改自定义跑马灯（MarqueeLabel），套裁剪壳防平移出界 -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:scrollHorizontally="true"
-            android:singleLine="true"
-            android:textColor="#FFD9A441"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:clipChildren="true">
 
-        <TextView
-            android:id="@+id/tvEpgNext"
+            <TextView
+                android:id="@+id/tvEpgNow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textColor="#FFD9A441"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:scrollHorizontally="true"
-            android:singleLine="true"
-            android:textColor="@color/fg_dim"
-            android:textSize="12sp" />
+            android:clipChildren="true">
+
+            <TextView
+                android:id="@+id/tvEpgNext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:textColor="@color/fg_dim"
+                android:textSize="12sp" />
+
+        </FrameLayout>
 
         <!-- 搜索频道名（别人家的直播面板有这玩意，确实好用）。
              UP 明确指到关闭按钮：不然焦点搜索会被标题文字块/左侧分组列搅混，关闭按钮选不到 -->
@@ -137,12 +145,14 @@
             android:textColorHint="@color/fg_dim"
             android:textSize="13sp" />
 
-        <!-- 参照样式两栏：左边分组竖列（后台是什么列表就是什么列表），右边频道列表 -->
+        <!-- 参照样式两栏：左边分组竖列（后台是什么列表就是什么列表），右边频道列表。
+             v1.4.12：列表顶部留 6dp 并恢复裁剪（clipToPadding 默认 true）——
+             频道多快速下翻时行不会再顶到搜索框（大哥图3 点名） -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:orientation="horizontal" android:clipChildren="false">
 
             <!-- ⚠️ ScrollView 默认自己可聚焦且没有任何视觉反馈，D-pad 上下导航时它会在旁边
@@ -179,7 +189,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:clipToPadding="false"
+                android:paddingTop="6dp"
                 android:overScrollMode="never" />
 
         </LinearLayout>
