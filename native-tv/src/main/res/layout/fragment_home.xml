@@ -34,8 +34,9 @@
             android:layout_height="match_parent"
             android:layout_weight="1" android:clipChildren="false">
 
-            <!-- v1.4.21：背景放大层废弃（大哥打回「右边清晰左边模糊没法看」）。
-                 hero 现在只出一张完整清晰海报（heroPoster），这里保留 view 占位仅防旧引用 -->
+            <!-- v1.4.22 补底层（代码驱动，默认 gone）：
+                 竖版海报 → 填「海报左缘取色 → 页面底色」的横向渐变，补满左侧空档（取色不是模糊）；
+                 横版图 → 整幅铺满（清晰原图 centerCrop）。两种都消灭「只有半边」 -->
             <ImageView
                 android:id="@+id/heroBg"
                 android:layout_width="match_parent"
@@ -49,8 +50,8 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_scrim_left" />
 
-            <!-- v1.4.21 hero 唯一的海报：右侧原比例完整展示（不裁人物、不拉伸、不模糊），
-                 左侧干净的深色底 + 渐变压暗，标题/立即播放照旧在左下 -->
+            <!-- v1.4.22 竖版海报本体：右侧原比例完整清晰展示（不裁人物、不拉伸、不模糊），
+                 左侧空档由 heroBg 的环境色渐变衔接成整幅画面，标题/立即播放照旧在左下 -->
             <ImageView
                 android:id="@+id/heroPoster"
                 android:layout_width="wrap_content"

@@ -1,6 +1,10 @@
 package io.github.xiaolurenya.aistream.tvbox
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.GradientDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -31,7 +35,9 @@ import kotlinx.coroutines.withContext
 
 /* 首页（图1 样式）：左侧功能卡列 + 中间大海报 hero + 右侧推荐列，下面按栏目一行行竖着排。
    hero 支持直播预览小窗：焦点落在「电视直播」卡上就小窗播当前台（带防抖，快速滑过不误播），
-   确认键进全屏直播页，焦点移开就停掉预览、恢复海报。hero 用海报原图 + 渐变压暗，不做模糊。 */
+   确认键进全屏直播页，焦点移开就停掉预览、恢复海报。
+   v1.4.22 hero 按图自适应：竖版海报右侧原比例完整清晰 + 左边空档用海报边缘色渐变补满
+   （取色补底，不是模糊）；横版图整幅铺满。任何形状的图都不会出现「只有半边」。 */
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var adapter: ColumnAdapter
@@ -40,6 +46,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var hero: View
     private lateinit var heroBg: ImageView
     private lateinit var heroPoster: ImageView
+    // v1.4.22：当前 hero 图是不是横版（横版 → heroBg 整幅铺满、heroPoster 收起）
+    private var heroWide = false
     private lateinit var heroText: View
     private lateinit var heroTitle: TextView
     private lateinit var heroMeta: TextView
@@ -121,9 +129,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         hero = v.findViewById(R.id.hero)
         heroBg = v.findViewById(R.id.heroBg)
         heroPoster = v.findViewById(R.id.heroPoster)
-        /* v1.4.21：hero 只出**一张完整清晰的海报**（右侧原比例）——
-           上一版「背景放大磨砂 + 前景清晰」被大哥打回：右边清晰左边模糊没法看。
-           现在 heroBg 整个废弃不显示，左侧就是干净的深色底 + 渐变压暗，文字/按钮照旧 */
+        /* v1.4.22：heroBg 从「废弃占位」变成补底层，由代码按图驱动——
+           竖版海报：填海报边缘色→页面底色的横向渐变，把左边空档补成画面的一部分；
+           横版图：直接整幅铺满。两种都消灭「只有半边」的死黑/裁切 */
         heroBg.visibility = View.GONE
         heroText = v.findViewById(R.id.heroText)
         heroTitle = v.findViewById(R.id.heroTitle)
@@ -376,9 +384,76 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         heroMeta.text = bits.joinToString(" · ")
 
         val u = Api.dimg(c.poster)
-        // v1.4.21：只加载前景这一张 —— 完整、清晰、原比例，不再有任何模糊/放大层
-        if (u.isNotBlank()) heroPoster.load(u)
+        // v1.4.22：按加载到的位图自适应选路——竖版海报右侧原比例完整清晰 + 环境色补底；
+        // 横版图整幅铺满。加载失败退回页面底色，不残留上一张的底
+        heroWide = false
+        if (u.isNotBlank()) {
+            heroPoster.visibility = View.VISIBLE
+            heroPoster.load(u) {
+                allowHardware(false) // 要读像素采样边缘色，硬件位图读不了
+                crossfade(true)
+                listener(
+                    onSuccess = { _, r ->
+                        val bmp = (r.drawable as? BitmapDrawable)?.bitmap
+                        if (bmp != null) applyHeroArt(bmp, u)
+                        else heroBg.visibility = View.GONE
+                    },
+                    onError = { _, _ ->
+                        heroBg.visibility = View.GONE
+                        heroPoster.visibility = View.GONE
+                    }
+                )
+            }
+        }
         paintDots()
+    }
+
+    /* v1.4.22：hero 按图自适应（大哥打回「左边一大块空的黑，只有半边」）。
+       竖版海报：poster 右侧原比例完整清晰；heroBg 填「海报左缘取色 → 页面底色」的
+       横向渐变，左边空档变成和海报同色系的画面延伸（Apple TV ambient 的思路，
+       是取色不是模糊），配合原有左侧压字渐变，标题照旧清晰可读。
+       横版图：万一源给的是剧照/横版封面，整幅铺满 hero（清晰原图 centerCrop），
+       绝不会 fitCenter 宽超容器被裁成半张。 */
+    private fun applyHeroArt(bmp: Bitmap, url: String) {
+        runCatching {
+            if (bmp.width >= bmp.height) {
+                heroWide = true
+                heroPoster.visibility = View.GONE
+                heroBg.scaleType = ImageView.ScaleType.CENTER_CROP
+                heroBg.load(url)
+                heroBg.visibility = View.VISIBLE
+                return
+            }
+            heroWide = false
+            heroPoster.visibility = View.VISIBLE
+            // 左缘 3/8 宽度取平均色，就是海报「往左延伸」出来的颜色
+            val small = Bitmap.createScaledBitmap(bmp, 8, 8, true)
+            var r = 0L; var g = 0L; var b = 0L; var n = 0L
+            for (y in 0 until 8) for (x in 0..2) {
+                val c = small.getPixel(x, y)
+                r += Color.red(c); g += Color.green(c); b += Color.blue(c); n++
+            }
+            small.recycle()
+            if (n == 0L) return
+            fun lum(c: Int) =
+                (0.299f * Color.red(c) + 0.587f * Color.green(c) + 0.114f * Color.blue(c)) / 255f
+            fun mix(c1: Int, c2: Int, t: Float) = Color.rgb(
+                (Color.red(c1) + (Color.red(c2) - Color.red(c1)) * t).toInt(),
+                (Color.green(c1) + (Color.green(c2) - Color.green(c1)) * t).toInt(),
+                (Color.blue(c1) + (Color.blue(c2) - Color.blue(c1)) * t).toInt()
+            )
+            var edge = Color.rgb((r / n).toInt(), (g / n).toInt(), (b / n).toInt())
+            // 过亮的海报边缘（白底海报）稍微压一点，hero 别发白发亮
+            if (lum(edge) > 0.82f) edge = mix(edge, Color.BLACK, 0.3f)
+            val page = 0xFF112A5C.toInt() // @color/bg，和页面同色无缝衔接
+            val grad = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(page, mix(edge, page, 0.55f), edge)
+            )
+            heroBg.scaleType = ImageView.ScaleType.FIT_XY
+            heroBg.setImageDrawable(grad)
+            heroBg.visibility = View.VISIBLE
+        }.onFailure { Log.w("aistream", "hero art: " + it.message) }
     }
 
     // 右下角小圆点：当前那条拉长成小横条
@@ -474,7 +549,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         previewOn = false
         ui.removeCallbacks(pvWatchdog)
         runCatching { pvPlayer?.stop() }
-        heroPoster.visibility = View.VISIBLE
+        // v1.4.22：横版图走整幅铺满（heroPoster 收着），恢复时按形态来，别叠出两张
+        heroPoster.visibility = if (heroWide) View.GONE else View.VISIBLE
         heroText.visibility = View.VISIBLE
         dots.visibility = View.VISIBLE
         heroPv.visibility = View.GONE
