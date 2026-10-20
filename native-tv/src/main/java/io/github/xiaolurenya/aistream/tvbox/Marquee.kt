@@ -2,20 +2,24 @@ package io.github.xiaolurenya.aistream.tvbox
 
 import android.os.SystemClock
 import android.view.Choreographer
+import android.view.View
 import android.widget.TextView
 
-/* v1.4.12 跑马灯重做。系统自带的 marquee 三宗罪（大哥投影实测点名）：
-   ① 每个 TextView 各挂一条动画回调，选台列表一屏十几个同时滚，低端盒子掉帧卡顿；
-   ② 一轮滚完要等整行文字全走空、再从右边慢慢爬回来 —— 看起来「左边一大半是空的」；
-   ③ 速度和行程不可控，长台名滚一半像没滚（「滚动距离不够」）。
-   这里改成集中调度：全局只有一条帧回调，按帧时间差统一推进所有跑马灯（60fps 恒速）。
-   一轮节奏 = 开头停 1.2s（读得清完整台名）→ 匀速滚到文本末尾完整可见
-   （行程 = 文本真实超出宽度，一字不少）→ 末尾停 0.8s（读得清结尾）→ 回到开头。
-   全程行内始终有字，不再出现空窗期。没超宽的短文字不注册、不占帧。
-   文字移动用 translationX，外层 FrameLayout（clipChildren=true）负责裁剪。
-   注意：续帧必须用「函数 + 每帧新 lambda」的写法 —— 用 val 存 FrameCallback 再在
-   lambda 里引用它自己，Kotlin 会报 recursive problem / must be initialized（CI 实锤两次）。 */
-class MarqueeLabel(private val tv: TextView) {
+/* v1.4.13 跑马灯修正。v1.4.12 自绘跑马灯有三个回归（大哥投影点名）：
+   ① 短台名（CCTV1 这种）本不该滚却滚了；
+   ② 面板节目单 / 台名没跑完（行程算短了，末尾露不全）；
+   ③ 单行台名滚过头、把前面的三位编号挡住（行程算大了）。
+   根因：bind() 用 match_parent 的 TextView.tvWidth 当「可用宽」，RecyclerView 回收/快速滚动时
+   这个宽度量不准（时大时小），溢出判定与行程全跟着错。
+   本办法：
+   - TextView 改 wrap_content（自身宽度 = 文字宽，永不依赖布局宽度做判定）；
+   - 可用宽一律取自外层裁剪壳 box 的宽度（布局完成后量，稳定）；
+   - 文字宽用 paint 直量；仅当「文字宽确实 > 可用宽」才注册跑马灯，短文字绝不滚。
+   节奏 = 开头停 1.2s（读全名）→ 匀速滚到文本末尾完整可见（行程 = 文字真实超出宽，一字不少）
+   → 末尾停 0.8s（读结尾）→ 回到开头。全程行内始终有字，不空窗。
+   平移用 translationX，外层 FrameLayout(clipChildren=true) 负责裁剪；续帧用「函数 + 每帧新
+   lambda」，避免 val 存 FrameCallback 自引用被 Kotlin 报 recursive problem / must be initialized。 */
+class MarqueeLabel(private val tv: TextView, private val box: View? = null) {
 
     companion object {
         private val ALL = ArrayList<MarqueeLabel>()
@@ -64,16 +68,19 @@ class MarqueeLabel(private val tv: TextView) {
     private var scrollMs = 0f  // 滚完全程需要的毫秒数
     private var phase = 0L     // 当前周期内的毫秒位置
 
-    /* 绑定新文本：先复位停掉旧的，等布局完成后量超宽，超了才进调度器 */
+    /* 绑定新文本：先复位停掉旧的，等布局完成后量可用宽与文字宽，真溢出才进调度器 */
     fun bind(text: CharSequence?) {
         stop()
         tv.text = text
         tv.post {
             if (!tv.isAttachedToWindow) return@post
-            val avail = (tv.width - tv.paddingLeft - tv.paddingRight).toFloat()
-            if (avail <= 0f) return@post
-            val over = tv.paint.measureText(text?.toString().orEmpty()) - avail
-            if (over <= 1f) return@post
+            // 可用宽取自裁剪壳宽度（稳定），兜底用 tv 自身宽度
+            val boxW = (box?.width ?: tv.width).toFloat()
+            val avail = boxW - tv.paddingLeft - tv.paddingRight
+            if (avail <= 2f) return@post
+            val tw = tv.paint.measureText(text?.toString().orEmpty())
+            val over = tw - avail
+            if (over <= 2f) { tv.translationX = 0f; return@post }   // 短文字不滚
             dist = over
             scrollMs = over / (SPEED_DP * tv.resources.displayMetrics.density) * 1000f
             phase = 0L

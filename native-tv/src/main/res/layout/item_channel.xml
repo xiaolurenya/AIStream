@@ -57,8 +57,11 @@
         android:layout_weight="1"
         android:orientation="vertical" android:clipChildren="false">
 
-        <!-- 裁剪壳：跑马灯文字在壳内平移，超出部分被壳裁掉 -->
+        <!-- 裁剪壳：跑马灯文字在壳内平移，超出部分被壳裁掉。
+             v1.4.13：壳加 id（MarqueeLabel 量可用宽用壳宽，不再用 match_parent 的 tv 宽），
+             TextView 改 wrap_content（自身宽度=文字宽，判定永不依赖布局宽度） -->
         <FrameLayout
+            android:id="@+id/flNameBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clipChildren="true">
@@ -66,7 +69,7 @@
             <TextView
                 android:id="@+id/tvName"
                 style="@style/AIStream.TextTitle"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
                 android:textSize="13sp" />
@@ -74,6 +77,7 @@
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/flEpgBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
@@ -81,7 +85,7 @@
 
             <TextView
                 android:id="@+id/tvEpg"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
                 android:textColor="@color/fg_dim"

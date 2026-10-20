@@ -328,9 +328,10 @@ class ChannelAdapter(
         val logo: ImageView = v.findViewById(R.id.imgLogo)
         val name: TextView = v.findViewById(R.id.tvName)
         val epg: TextView = v.findViewById(R.id.tvEpg)
-        // v1.4.12：每行自己的跑马灯控制器（全局统一帧调度，见 MarqueeLabel）
-        val nameMq = MarqueeLabel(name)
-        val epgMq = MarqueeLabel(epg)
+        // v1.4.13：把各自的裁剪壳（flNameBox / flEpgBox）一并传进去，
+        // MarqueeLabel 量可用宽用壳宽而不是 match_parent 的 tv 宽，短文字不滚、行程准确
+        val nameMq = MarqueeLabel(name, v.findViewById(R.id.flNameBox))
+        val epgMq = MarqueeLabel(epg, v.findViewById(R.id.flEpgBox))
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =

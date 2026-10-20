@@ -91,8 +91,9 @@ class LiveActivity : AppCompatActivity() {
         btnClosePanel.setOnClickListener { closePanel() }
         tvEpgNow = findViewById(R.id.tvEpgNow)
         tvEpgNext = findViewById(R.id.tvEpgNext)
-        epgNowMq = MarqueeLabel(tvEpgNow)
-        epgNextMq = MarqueeLabel(tvEpgNext)
+        // v1.4.13：把 EPG 各自的裁剪壳一并传进去，量可用宽用壳宽而不是 match_parent 的 tv 宽
+        epgNowMq = MarqueeLabel(tvEpgNow, findViewById(R.id.flEpgNowBox))
+        epgNextMq = MarqueeLabel(tvEpgNext, findViewById(R.id.flEpgNextBox))
 
         // 只带 UA：直播清单会被改写成第三方源直链，把站点 token 塞进 Authorization 头
         // 会一路带给那些 CDN（不安全，有的源还因此拒播）。站点鉴权走 URL 上的 ?token=

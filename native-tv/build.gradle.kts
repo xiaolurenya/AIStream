@@ -17,8 +17,8 @@ android {
         applicationId = "io.github.xiaolurenya.aistream.tvbox"
         minSdk = 24
         targetSdk = 34
-        versionCode = 26
-        versionName = "1.4.12"
+        versionCode = 27
+        versionName = "1.4.13"
     }
 
     signingConfigs {

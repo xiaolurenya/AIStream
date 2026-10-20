@@ -90,15 +90,18 @@
 
         <!-- 节目单（v1.4.10 从面板底部挪上来）：原来钉在最底下，台名后面正在播的节目
              经常被截断看不见；现在紧跟标题，一眼就是「当前台 + 正在播」。
-             v1.4.12：改自定义跑马灯（MarqueeLabel），套裁剪壳防平移出界 -->
+             v1.4.13：壳加 id（量可用宽用壳宽）；整体下移 6dp（大哥点名再往下一点）；
+             TextView 改 wrap_content，判定不依赖布局宽度 -->
         <FrameLayout
+            android:id="@+id/flEpgNowBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
             android:clipChildren="true">
 
             <TextView
                 android:id="@+id/tvEpgNow"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
                 android:textColor="#FFD9A441"
@@ -108,6 +111,7 @@
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/flEpgNextBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
@@ -115,7 +119,7 @@
 
             <TextView
                 android:id="@+id/tvEpgNext"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
                 android:textColor="@color/fg_dim"
