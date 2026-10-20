@@ -33,16 +33,19 @@ fun focusBeep() {
    v1.4.2 关键改动：焦点标识从「换背景」改成 View.foreground 画描边——
    换背景有三个毛病：① 海报卡的背景被海报图整个盖住，选中了也看不出（大哥图2）；
    ② 彩色导航卡换底后圆角丢失，看着像方块（大哥图5）；③ 按钮换底后描边生硬（大哥图3）。
-   描边浮在内容上面谁都看得见，原来的形状/选中色全部保留。 */
+   描边浮在内容上面谁都看得见，原来的形状/选中色全部保留。
+   v1.4.15：① 去掉 elevation 阴影——深色底上阴影发脏发糊，还拖累盒子 GPU
+   （大哥图4 点名「选中后底层有阴影」）；② 120ms + 减速插值器，遥控器挪动更跟手。 */
 fun bindFocus(v: View, onFocus: ((Boolean) -> Unit)? = null) {
     v.setOnFocusChangeListener { _, has ->
         if (has) focusBeep()
+        v.elevation = 0f
         v.animate()
             .scaleX(if (has) 1.06f else 1f)
             .scaleY(if (has) 1.06f else 1f)
-            .setDuration(150)
+            .setDuration(120L)
+            .setInterpolator(android.view.animation.DecelerateInterpolator(1.6f))
             .start()
-        v.elevation = if (has) 14f else 0f
         v.foreground = if (has)
             androidx.core.content.ContextCompat.getDrawable(v.context, R.drawable.bg_focus_ring)
         else null

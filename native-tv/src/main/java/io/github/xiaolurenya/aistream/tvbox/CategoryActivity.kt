@@ -52,6 +52,10 @@ class CategoryActivity : AppCompatActivity() {
         rv.addItemDecoration(SpacesItemDecoration((12 * dm).toInt(), (16 * dm).toInt()))
         // 翻页要的是「瞬间出」：任何插入动画都只会让大哥觉得卡（图2 二次点击卡顿）
         noAnim(rv)
+        // v1.4.15 连点「显示更多」防卡顿：网格尺寸固定（不随内容重测整页）+ 视图缓存加大，
+        // append 新页时回收复用更充分，点几页之后也不掉帧
+        rv.setHasFixedSize(true)
+        rv.setItemViewCacheSize(8)
         val items = col.items.orEmpty().toMutableList()
 
         // 「显示更多」：网格末尾一张按钮卡，点了拉下一页，拉空自动收起。

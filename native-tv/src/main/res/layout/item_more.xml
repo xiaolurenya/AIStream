@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 分类网格末尾的「显示更多」卡：跟海报格同宽，一眼能看到、遥控器能点到 -->
+<!-- 分类网格末尾的「显示更多」卡：跟海报格同宽同高（poster_h）、同底色同圆角（bg_card），
+     排进网格就是一模一样的一格，不再「边框大小不统一」（大哥图1/图2 点名） -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/tvMore"
     style="@style/AIStream.FocusItem"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/bg_chip"
+    android:layout_height="@dimen/poster_h"
+    android:background="@drawable/bg_card"
     android:gravity="center"
-    android:paddingTop="14dp"
-    android:paddingBottom="14dp"
     android:text="显示更多"
     android:textColor="@color/fg"
     android:textSize="15sp"

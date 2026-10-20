@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 首页右侧推荐卡（参考 base.apk 扁横排样式）：小海报在左 + 片名/播放提示在右。
-     ID 跟 item_poster 保持一致（card/img/tvTitle/tvSub/tvBadge），复用 PosterAdapter.H。 -->
+     ID 跟 item_poster 保持一致（card/img/tvTitle/tvSub/tvBadge），复用 PosterAdapter.H。
+     v1.4.15：边框收小——海报占比加大（54x64）、左右内边距收紧（6/10dp）、
+     卡间距 8→6dp，整列更紧凑，不再一圈大蓝框（大哥图5 点名） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/card"
     style="@style/AIStream.FocusItem"
     android:layout_width="match_parent"
     android:layout_height="72dp"
-    android:layout_marginBottom="8dp"
+    android:layout_marginBottom="6dp"
     android:background="@drawable/bg_card"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingStart="8dp"
-    android:paddingEnd="12dp" android:clipChildren="false">
+    android:paddingStart="6dp"
+    android:paddingEnd="10dp" android:clipChildren="false">
 
     <ImageView
         android:id="@+id/img"
-        android:layout_width="50dp"
-        android:layout_height="60dp"
+        android:layout_width="54dp"
+        android:layout_height="64dp"
         android:contentDescription="@string/app_name"
         android:scaleType="centerCrop" />
 

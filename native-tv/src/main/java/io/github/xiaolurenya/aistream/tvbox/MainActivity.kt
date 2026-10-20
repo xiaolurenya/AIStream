@@ -68,13 +68,17 @@ class MainActivity : AppCompatActivity() {
                     text = icon + "  " + title
                     gravity = android.view.Gravity.CENTER
                     setTextColor(getColor(R.color.fg))
+                    // v1.4.15：文字加一层淡投影，亮色渐变底上也清晰（大哥图3 点名「文字不清晰」）
+                    setShadowLayer(6f, 0f, 2f, 0x99000000)
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.side_card_text))
                     setTypeface(typeface, android.graphics.Typeface.BOLD)
                 })
                 addView(TextView(this@MainActivity).apply {
                     text = sub
                     gravity = android.view.Gravity.CENTER
-                    setTextColor(0xFFC9D6EC.toInt())
+                    // v1.4.15：副标题提亮到近白 + 淡投影（原来 #C9D6EC 在亮绿/亮蓝底上几乎看不清）
+                    setTextColor(0xFFE7EEFA.toInt())
+                    setShadowLayer(6f, 0f, 2f, 0x99000000)
                     setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.side_sub_text))
                     layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
@@ -174,7 +178,9 @@ class MainActivity : AppCompatActivity() {
         cur = pos
         nav.forEachIndexed { i, tv ->
             val on = i == pos
-            tv.elevation = if (on) 14f else 0f
+            // v1.4.15：去掉 elevation 阴影（大哥图4 点名「选中后底层有阴影」），
+            // 选中态只留 alpha 高亮 + bindFocus 的放大白描边
+            tv.elevation = 0f
             tv.alpha = if (on) 1f else 0.85f
         }
         val f: Fragment = when (pos) {

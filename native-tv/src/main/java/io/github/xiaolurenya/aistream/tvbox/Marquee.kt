@@ -37,6 +37,7 @@ class MarqueeTextView @JvmOverloads constructor(
         private const val START_HOLD = 1200L   // 开头停：读得清完整台名
         private const val END_HOLD = 800L      // 末尾停：读得清结尾
         private const val SPEED_DP = 42f       // 每秒 42dp，电视上不紧不慢
+        private const val FRAME_MS = 32L       // v1.4.15 重绘节流到 ~30fps：视觉依旧顺滑，低端盒子开销减半
 
         private fun tickFrame() {
             val now = SystemClock.uptimeMillis()
@@ -54,18 +55,23 @@ class MarqueeTextView @JvmOverloads constructor(
                 }
                 m.phase += dt
                 val p = m.phase
-                m.offset = when {
-                    p < START_HOLD -> 0f
-                    p < START_HOLD + m.scrollMs -> m.dist * ((p - START_HOLD) / m.scrollMs)
-                    p < START_HOLD + m.scrollMs + END_HOLD -> m.dist
-                    else -> {
-                        // 一轮滚完回开头：宽度可能变过（台标异步加载挤压名字区），重量一次
-                        m.phase = 0L
-                        m.remeasure()
-                        0f
-                    }
+                val t1 = START_HOLD
+                val t2 = t1 + m.scrollMs
+                val t3 = t2 + END_HOLD
+                val t4 = t3 + m.backMs
+                val off = when {
+                    p < t1 -> 0f
+                    p < t2 -> m.dist * ((p - t1) / m.scrollMs)          // 去程：匀速滚到末尾完整可见
+                    p < t3 -> m.dist                                    // 末尾停：读结尾
+                    p < t4 -> m.dist * (1f - (p - t3) / m.backMs)       // v1.4.15 回程：快速平滑滚回开头，
+                    else -> { m.phase = 0L; m.remeasure(); 0f }         // 不再瞬间跳回（生硬感的元凶）；回程结束重量宽
                 }
-                m.invalidate()
+                // ~30fps 节流重绘：相位照算，重绘降频——盒子掉帧的直接救
+                m.acc += dt
+                if (m.acc >= FRAME_MS) {
+                    m.acc = 0L
+                    if (off != m.offset) { m.offset = off; m.invalidate() }
+                }
                 alive++
             }
             if (alive > 0) Choreographer.getInstance().postFrameCallback { tickFrame() }
@@ -82,8 +88,10 @@ class MarqueeTextView @JvmOverloads constructor(
 
     private var dist = 0f      // 文本超出的像素宽（要滚的全程）
     private var scrollMs = 0f  // 滚完全程需要的毫秒数
+    private var backMs = 300f  // v1.4.15 回程时长（滚回开头）
     private var phase = 0L     // 当前周期内的毫秒位置
     private var offset = 0f    // 已滚过的像素（文字向左平移量，自绘用）
+    private var acc = 0L       // 重绘节流累计器
 
     init {
         // 文字显示全权交给自绘，关掉 TextView 自带的省略/跑马灯行为
@@ -128,7 +136,10 @@ class MarqueeTextView @JvmOverloads constructor(
             if (over != dist) phase = 0L   // 宽变了从头来，别拿旧相位跳变（乱跳的根因之一）
             dist = over
             scrollMs = over / (SPEED_DP * resources.displayMetrics.density) * 1000f
+            // 回程速度 = 去程两倍（压在 250~500ms），快滚回开头但不闪跳
+            backMs = (scrollMs * 0.5f).coerceIn(250f, 500f)
             offset = 0f
+            acc = 0L
             ALL.remove(this)
             ALL.add(this)
             kick()
