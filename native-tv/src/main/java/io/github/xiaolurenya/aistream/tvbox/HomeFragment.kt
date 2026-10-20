@@ -1,7 +1,6 @@
 package io.github.xiaolurenya.aistream.tvbox
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -122,13 +121,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         hero = v.findViewById(R.id.hero)
         heroBg = v.findViewById(R.id.heroBg)
         heroPoster = v.findViewById(R.id.heroPoster)
-        // v1.4.20：背景层定性为「氛围底」——竖版海报拉宽屏必然放大，索性加磨砂让它
-        // 看着是有意为之的虚化衬底；清晰本体是前景 heroPoster（右侧原比例完整展示）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            heroBg.setRenderEffect(
-                android.graphics.RenderEffect.createBlurEffect(18f, 18f, android.graphics.Shader.TileMode.CLAMP)
-            )
-        }
+        /* v1.4.21：hero 只出**一张完整清晰的海报**（右侧原比例）——
+           上一版「背景放大磨砂 + 前景清晰」被大哥打回：右边清晰左边模糊没法看。
+           现在 heroBg 整个废弃不显示，左侧就是干净的深色底 + 渐变压暗，文字/按钮照旧 */
+        heroBg.visibility = View.GONE
         heroText = v.findViewById(R.id.heroText)
         heroTitle = v.findViewById(R.id.heroTitle)
         heroMeta = v.findViewById(R.id.heroMeta)
@@ -380,11 +376,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         heroMeta.text = bits.joinToString(" · ")
 
         val u = Api.dimg(c.poster)
-        if (u.isNotBlank()) {
-            // v1.4.20：背景氛围层 + 前景清晰海报同一张图两层出
-            heroBg.load(u)
-            heroPoster.load(u)
-        }
+        // v1.4.21：只加载前景这一张 —— 完整、清晰、原比例，不再有任何模糊/放大层
+        if (u.isNotBlank()) heroPoster.load(u)
         paintDots()
     }
 
@@ -430,7 +423,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         pvCid = c.cid.orEmpty()
         pvDirect = c.direct
 
-        heroBg.visibility = View.GONE
         heroPoster.visibility = View.GONE
         heroText.visibility = View.GONE
         dots.visibility = View.GONE
@@ -482,7 +474,6 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         previewOn = false
         ui.removeCallbacks(pvWatchdog)
         runCatching { pvPlayer?.stop() }
-        heroBg.visibility = View.VISIBLE
         heroPoster.visibility = View.VISIBLE
         heroText.visibility = View.VISIBLE
         dots.visibility = View.VISIBLE

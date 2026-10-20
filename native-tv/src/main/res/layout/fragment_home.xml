@@ -34,21 +34,23 @@
             android:layout_height="match_parent"
             android:layout_weight="1" android:clipChildren="false">
 
+            <!-- v1.4.21：背景放大层废弃（大哥打回「右边清晰左边模糊没法看」）。
+                 hero 现在只出一张完整清晰海报（heroPoster），这里保留 view 占位仅防旧引用 -->
             <ImageView
                 android:id="@+id/heroBg"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:contentDescription="@string/app_name"
-                android:scaleType="centerCrop" />
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_scrim_left" />
 
-            <!-- v1.4.20 前景清晰海报：右侧原比例完整展示（不裁人物、不拉伸）。
-                 背景层 heroBg 是竖版海报硬铺宽屏的放大氛围底（代码里加磨砂），
-                 真正给大家看的是这张 —— 大哥点名「人物都没显示全、像拉扯放大」的根治 -->
+            <!-- v1.4.21 hero 唯一的海报：右侧原比例完整展示（不裁人物、不拉伸、不模糊），
+                 左侧干净的深色底 + 渐变压暗，标题/立即播放照旧在左下 -->
             <ImageView
                 android:id="@+id/heroPoster"
                 android:layout_width="wrap_content"
