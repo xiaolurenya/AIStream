@@ -12,7 +12,9 @@ import android.widget.TextView
    一轮节奏 = 开头停 1.2s（读得清完整台名）→ 匀速滚到文本末尾完整可见
    （行程 = 文本真实超出宽度，一字不少）→ 末尾停 0.8s（读得清结尾）→ 回到开头。
    全程行内始终有字，不再出现空窗期。没超宽的短文字不注册、不占帧。
-   文字移动用 translationX，外层 FrameLayout（clipChildren=true）负责裁剪。 */
+   文字移动用 translationX，外层 FrameLayout（clipChildren=true）负责裁剪。
+   注意：续帧必须用「函数 + 每帧新 lambda」的写法 —— 用 val 存 FrameCallback 再在
+   lambda 里引用它自己，Kotlin 会报 recursive problem / must be initialized（CI 实锤两次）。 */
 class MarqueeLabel(private val tv: TextView) {
 
     companion object {
@@ -23,9 +25,7 @@ class MarqueeLabel(private val tv: TextView) {
         private const val END_HOLD = 800L      // 末尾停：读得清结尾
         private const val SPEED_DP = 42f       // 每秒 42dp，电视上不紧不慢
 
-        // 显式标注类型：lambda 内部要引用 frame 自己（postFrameCallback 续帧），
-        // 不标类型 Kotlin 推断会「recursive problem」编译失败（CI 实锤过一次）
-        private val frame: Choreographer.FrameCallback = Choreographer.FrameCallback {
+        private fun tickFrame() {
             val now = SystemClock.uptimeMillis()
             val dt = (now - lastTs).coerceIn(0L, 100L)
             lastTs = now
@@ -48,14 +48,15 @@ class MarqueeLabel(private val tv: TextView) {
                 }
                 alive++
             }
-            if (alive > 0) Choreographer.getInstance().postFrameCallback(frame) else ticking = false
+            if (alive > 0) Choreographer.getInstance().postFrameCallback { tickFrame() }
+            else ticking = false
         }
 
         private fun kick() {
             if (ticking) return
             ticking = true
             lastTs = SystemClock.uptimeMillis()
-            Choreographer.getInstance().postFrameCallback(frame)
+            Choreographer.getInstance().postFrameCallback { tickFrame() }
         }
     }
 
