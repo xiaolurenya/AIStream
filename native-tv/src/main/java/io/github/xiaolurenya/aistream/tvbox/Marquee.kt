@@ -23,7 +23,9 @@ class MarqueeLabel(private val tv: TextView) {
         private const val END_HOLD = 800L      // 末尾停：读得清结尾
         private const val SPEED_DP = 42f       // 每秒 42dp，电视上不紧不慢
 
-        private val frame = Choreographer.FrameCallback {
+        // 显式标注类型：lambda 内部要引用 frame 自己（postFrameCallback 续帧），
+        // 不标类型 Kotlin 推断会「recursive problem」编译失败（CI 实锤过一次）
+        private val frame: Choreographer.FrameCallback = Choreographer.FrameCallback {
             val now = SystemClock.uptimeMillis()
             val dt = (now - lastTs).coerceIn(0L, 100L)
             lastTs = now
