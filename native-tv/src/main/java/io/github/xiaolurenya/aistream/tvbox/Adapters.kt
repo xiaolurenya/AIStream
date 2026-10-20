@@ -359,21 +359,22 @@ class ChannelAdapter(
         val c = rows[i]
         // 图4 的三位编号
         h.num.text = "%03d".format(i + 1)
-        // v1.4.17：台名**不再滚动**（大哥点名「频道也在滚动」）—— 只让下面的节目信息行滚。
-        // 直接赋值走 setText override 自动停跑马灯 = 静态显示；超宽的台名靠 XML 的
-        // ellipsize=end 出省略号，不再占一行滚动。台标加载回调里的 name.remeasure()
-        // 一并删掉（那是给跑马灯行程用的，台名静态后留着会把滚动又注册回来）
-        h.name.text = c.name.orEmpty()
+        // v1.4.18：台名**超长才滚**（大哥点名「自动监测到超长节目标题可滚动显示」）——
+        // bindMarquee 内部就是「文字实宽 > 名字区宽才注册跑马灯」：花容失色这种超长台名
+        // 循环滚动看得全，CCTV1 这类短名一帧不动；静态时不超宽也没有省略号问题。
+        // v1.4.17 的一刀切「台名全静态」过不了超长台名这关，本版改回按宽度自动判定
+        h.name.bindMarquee(c.name.orEmpty())
 
         // 台标：服务端给的是相对路径（自带 token），跟手机版一样拼域名。
         // v1.4.12：没台标的台、以及台标地址加载失败的台（果果1 那种），台标容器整个 GONE
         // —— 不再留一截空位，台名真正靠左（大哥图2 点名）。
-        // v1.4.14：回调里主动让台名/节目名重测行程 —— 台标容器 VISIBLE/GONE 会把名字区
-        // 挤宽/挤窄，跑马灯行程必须跟着改，否则滚过头盖住台标编号、或末尾露不全（图3/图4 根因）
+        // v1.4.14 定式：回调里主动让台名/节目名重测行程 —— 台标容器 VISIBLE/GONE 会把名字区
+        // 挤宽/挤窄，跑马灯行程必须跟着改（v1.4.18 台名恢复超长才滚，这里的 name 重测必须跟着回来）
         val lu = c.logo.orEmpty()
         if (lu.isBlank()) {
             h.logo.setImageDrawable(null)
             h.logoBox.visibility = View.GONE
+            h.name.remeasure()
             h.epg.remeasure()
         } else {
             h.logo.load(if (lu.startsWith("http")) lu else Prefs.base + lu) {
@@ -381,10 +382,12 @@ class ChannelAdapter(
                 listener(
                     onSuccess = { _, _ ->
                         h.logoBox.visibility = View.VISIBLE
+                        h.name.remeasure()
                         h.epg.remeasure()
                     },
                     onError = { _, _ ->
                         h.logoBox.visibility = View.GONE
+                        h.name.remeasure()
                         h.epg.remeasure()
                     }
                 )

@@ -58,8 +58,9 @@
         android:layout_weight="1"
         android:orientation="vertical" android:clipChildren="false">
 
-        <!-- v1.4.17：台名不再滚动 —— 静态显示，超宽出省略号（只有下面节目信息行滚）。
-             v1.4.14：MarqueeTextView（自绘裁剪跑马灯）保留，面板节目单/行内 EPG 还在用 -->
+        <!-- v1.4.18：台名超长才滚（MarqueeTextView 自动监测文字实宽，短名一帧不动）；
+             ellipsize=end 只对「没超宽」的静态行兜底（超宽的行走自绘循环滚动，看不到省略号）。
+             v1.4.14：MarqueeTextView（自绘裁剪跑马灯），面板节目单/行内 EPG 还在用 -->
         <io.github.xiaolurenya.aistream.tvbox.MarqueeTextView
             android:id="@+id/tvName"
             style="@style/AIStream.TextTitle"
