@@ -287,17 +287,21 @@ class LiveActivity : AppCompatActivity() {
         }
     }
 
-    // 面板底部的节目单：跟着当前播放的台走
+    // 面板标题下的节目单：跟着当前播放的台走（v1.4.11 起跑马灯滚动，选中才滚）
     private fun paintPanelEpg() {
         val e = PlayCache.iptvEpg[curCid]
         if (e?.t.isNullOrBlank()) {
             tvEpgNow.text = "节目单暂无信息"
             tvEpgNext.text = ""
+            tvEpgNow.isSelected = false
+            tvEpgNext.isSelected = false
             return
         }
         tvEpgNow.text = "正在播：" + e!!.t + (if (e.ce > 0) "（至 " + hhmm(e.ce) + "）" else "")
         tvEpgNext.text = if (e.next.isNullOrBlank()) ""
         else "接下来 " + (if (e.ns > 0) hhmm(e.ns) + " " else "") + e.next
+        tvEpgNow.isSelected = true
+        tvEpgNext.isSelected = true
     }
 
     private fun hhmm(ts: Long): String =

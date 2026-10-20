@@ -89,13 +89,16 @@
         </LinearLayout>
 
         <!-- 节目单（v1.4.10 从面板底部挪上来）：原来钉在最底下，台名后面正在播的节目
-             经常被截断看不见；现在紧跟标题，一眼就是「当前台 + 正在播」 -->
+             经常被截断看不见；现在紧跟标题，一眼就是「当前台 + 正在播」。
+             v1.4.11：面板窄、节目名长，改跑马灯从右往左滚不截断 -->
         <TextView
             android:id="@+id/tvEpgNow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
             android:textColor="#FFD9A441"
             android:textSize="13sp"
             android:textStyle="bold" />
@@ -105,8 +108,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:maxLines="1"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
             android:textColor="@color/fg_dim"
             android:textSize="12sp" />
 
