@@ -1,6 +1,7 @@
 package io.github.xiaolurenya.aistream.tvbox
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -39,6 +40,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private lateinit var rv: RecyclerView
     private lateinit var hero: View
     private lateinit var heroBg: ImageView
+    private lateinit var heroPoster: ImageView
     private lateinit var heroText: View
     private lateinit var heroTitle: TextView
     private lateinit var heroMeta: TextView
@@ -119,6 +121,14 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onViewCreated(v: View, savedInstanceState: Bundle?) {
         hero = v.findViewById(R.id.hero)
         heroBg = v.findViewById(R.id.heroBg)
+        heroPoster = v.findViewById(R.id.heroPoster)
+        // v1.4.20：背景层定性为「氛围底」——竖版海报拉宽屏必然放大，索性加磨砂让它
+        // 看着是有意为之的虚化衬底；清晰本体是前景 heroPoster（右侧原比例完整展示）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            heroBg.setRenderEffect(
+                android.graphics.RenderEffect.createBlurEffect(18f, 18f, android.graphics.Shader.TileMode.CLAMP)
+            )
+        }
         heroText = v.findViewById(R.id.heroText)
         heroTitle = v.findViewById(R.id.heroTitle)
         heroMeta = v.findViewById(R.id.heroMeta)
@@ -370,7 +380,11 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         heroMeta.text = bits.joinToString(" · ")
 
         val u = Api.dimg(c.poster)
-        if (u.isNotBlank()) heroBg.load(u)
+        if (u.isNotBlank()) {
+            // v1.4.20：背景氛围层 + 前景清晰海报同一张图两层出
+            heroBg.load(u)
+            heroPoster.load(u)
+        }
         paintDots()
     }
 
@@ -417,6 +431,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         pvDirect = c.direct
 
         heroBg.visibility = View.GONE
+        heroPoster.visibility = View.GONE
         heroText.visibility = View.GONE
         dots.visibility = View.GONE
         heroPv.visibility = View.VISIBLE
@@ -468,6 +483,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         ui.removeCallbacks(pvWatchdog)
         runCatching { pvPlayer?.stop() }
         heroBg.visibility = View.VISIBLE
+        heroPoster.visibility = View.VISIBLE
         heroText.visibility = View.VISIBLE
         dots.visibility = View.VISIBLE
         heroPv.visibility = View.GONE

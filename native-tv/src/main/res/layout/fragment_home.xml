@@ -46,6 +46,18 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_scrim_left" />
 
+            <!-- v1.4.20 前景清晰海报：右侧原比例完整展示（不裁人物、不拉伸）。
+                 背景层 heroBg 是竖版海报硬铺宽屏的放大氛围底（代码里加磨砂），
+                 真正给大家看的是这张 —— 大哥点名「人物都没显示全、像拉扯放大」的根治 -->
+            <ImageView
+                android:id="@+id/heroPoster"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end|center_vertical"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/app_name"
+                android:scaleType="fitCenter" />
+
             <!-- 直播预览小窗：盖在海报上，只有预览时可见。
                  ⚠️ 必须用 TextureView（默认 SurfaceView 在一批盒子/投影上 surface 位置
                  不跟着布局走：预览一开画面「钉」在原地，下面的栏目行从它上面滚过去，
@@ -161,11 +173,11 @@
                 android:id="@+id/heroDots"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
+                android:layout_gravity="bottom|center_horizontal"
                 android:layout_marginBottom="32dp"
-                android:gravity="center_vertical|end"
+                android:gravity="center_vertical|center_horizontal"
                 android:orientation="horizontal"
-                android:paddingEnd="@dimen/page_pad"  android:clipChildren="false" />
+                android:clipChildren="false" />
 
         </FrameLayout>
 

@@ -2223,7 +2223,10 @@ async function doubanList(kind, page, limit) {
   return (j && j.items || []).filter(x => x && x.title && x.pic).map(x => ({
     id: 'db_' + x.id,
     title: x.title,
-    poster_url: (x.pic && (x.pic.normal || x.pic.large)) || '',
+    /* v1.4.20：large 优先 —— 之前 normal（小缩略图）优先，TV/网页 hero 全屏一拉
+       就是近十倍放大，糊得像马赛克（大哥点名「像拉扯放大了一样」）。
+       large 是豆瓣原图，全端（TV/手机/网页）海报清晰度一起根治。 */
+    poster_url: (x.pic && (x.pic.large || x.pic.normal)) || '',
     year: (/^\d{4}/.test(x.card_subtitle || '') ? x.card_subtitle.slice(0, 4) : ''),
     score: (x.rating && x.rating.value) || 0,
     content_kind: kind
