@@ -35,14 +35,18 @@ fun focusBeep() {
    ② 彩色导航卡换底后圆角丢失，看着像方块（大哥图5）；③ 按钮换底后描边生硬（大哥图3）。
    描边浮在内容上面谁都看得见，原来的形状/选中色全部保留。
    v1.4.15：① 去掉 elevation 阴影——深色底上阴影发脏发糊，还拖累盒子 GPU
-   （大哥图4 点名「选中后底层有阴影」）；② 120ms + 减速插值器，遥控器挪动更跟手。 */
-fun bindFocus(v: View, onFocus: ((Boolean) -> Unit)? = null) {
+   （大哥图4 点名「选中后底层有阴影」）；② 120ms + 减速插值器，遥控器挪动更跟手。
+   v1.4.16：放大倍数可按控件调（默认仍 1.06）——选台行/右侧推荐卡这些「宽条」
+   1.06 太夸张：上下撑出白框一大截、左右靠边的直接被屏幕裁掉（大哥 4 图点名），
+   宽条用小倍数只提一点动感，描边才是主角。⚠️ 新参数 scale 必须放在尾随 lambda
+   的回调参数 onFocus 之前（尾随 lambda 绑定最后一个参数，放后面会 Type mismatch）。 */
+fun bindFocus(v: View, scale: Float = 1.06f, onFocus: ((Boolean) -> Unit)? = null) {
     v.setOnFocusChangeListener { _, has ->
         if (has) focusBeep()
         v.elevation = 0f
         v.animate()
-            .scaleX(if (has) 1.06f else 1f)
-            .scaleY(if (has) 1.06f else 1f)
+            .scaleX(if (has) scale else 1f)
+            .scaleY(if (has) scale else 1f)
             .setDuration(120L)
             .setInterpolator(android.view.animation.DecelerateInterpolator(1.6f))
             .start()
@@ -396,7 +400,9 @@ class ChannelAdapter(
         // 正在播放的这一行：品牌蓝高亮，一眼定位当前台
         h.row.setBackgroundResource(if (c.cid == curCid) R.drawable.bg_row_cur else R.drawable.bg_card)
 
-        bindFocus(h.row)
+        // v1.4.16：整行宽条 1.06 放大太夸张（白框上下撑一大截、左右出面板被裁），
+        // 改 1.02 只提一点动感，选中标识主要靠描边
+        bindFocus(h.row, 1.02f)
         h.itemView.setOnClickListener { onPick(i) }
     }
 

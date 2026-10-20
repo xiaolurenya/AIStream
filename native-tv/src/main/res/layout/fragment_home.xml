@@ -169,12 +169,15 @@
 
         </FrameLayout>
 
-        <!-- 右：推荐列（取服务器首页第一栏最前面几张） -->
+        <!-- 右：推荐列（取服务器首页第一栏最前面几张）。
+             v1.4.16：clipChildren=false —— 焦点卡放大后描边可完整画出不被 RecyclerView
+             裁掉（之前描边被裁得缺一块，看着「边框位置不对」） -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSide"
             android:layout_width="@dimen/side_rv"
             android:layout_height="match_parent"
             android:layout_marginStart="14dp"
+            android:clipChildren="false"
             android:clipToPadding="false"
             android:overScrollMode="never" />
 

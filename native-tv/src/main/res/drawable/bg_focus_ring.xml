@@ -2,9 +2,12 @@
 <!-- 遥控器焦点描边（参考奈飞）：只画一圈白边，不改底色。
      之前用「换背景」当焦点标识有三个毛病：海报卡的背景被海报图盖住看不见、
      彩色导航卡换底后圆角丢了像方块、按钮换底后描边生硬。
-     焦点层走 View.foreground 浮在内容上面，谁都能看见，原来的形状/选中色全保留。 -->
+     焦点层走 View.foreground 浮在内容上面，谁都能看见，原来的形状/选中色全保留。
+     v1.4.16：描边 3dp→2dp（投影上显笨重，大哥点名「边框过大」）；
+     圆角 12dp→10dp 与 bg_card 对齐 —— 之前四角比卡片圆，描边角悬浮在卡外，
+     看着像「边框位置不对」。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="#00000000" />
-    <stroke android:width="3dp" android:color="#FFFFFFFF" />
-    <corners android:radius="12dp" />
+    <stroke android:width="2dp" android:color="#FFFFFFFF" />
+    <corners android:radius="10dp" />
 </shape>

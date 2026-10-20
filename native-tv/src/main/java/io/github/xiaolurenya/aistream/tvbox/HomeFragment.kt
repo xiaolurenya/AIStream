@@ -195,7 +195,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             h.badge.visibility = View.GONE
             val u = Api.dimg(c.poster)
             if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
-            bindFocus(h.card)
+            // v1.4.16：右侧推荐卡贴屏幕右缘，1.06 放大直接过界被裁（大哥图3/图4 点名
+            // 「边框位置不对/显示过界」）→ 放大收到 1.03「缩小一点」，配合 rvSide
+            // clipChildren=false 让描边完整画出，不再出界
+            bindFocus(h.card, 1.03f)
             h.itemView.setOnClickListener { openDetail(c) }
         }
         fun submit(list: List<Api.Card>) {

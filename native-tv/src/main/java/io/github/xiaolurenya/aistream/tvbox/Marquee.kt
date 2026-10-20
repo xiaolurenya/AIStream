@@ -8,21 +8,19 @@ import android.view.Choreographer
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 
-/* v1.4.14 跑马灯再修（MarqueeTextView 自绘裁剪）。
-   v1.4.12/13 两版「translationX 平移 + 外壳 clipChildren 裁剪」在真机上仍有回归（大哥投影 4 图点名）：
-   ① 台标是 Coil 异步加载，成功回调把台标容器 GONE→VISIBLE 会把名字区挤宽/挤窄，
-      而跑马灯行程只在 bind 时量一次 → dist 时大时小：大了滚过头（文字左端越出壳，
-      视觉上盖住台标甚至前面的编号方块，图3/图4），小了末尾的字永远露不全（「…后面没显示全」）；
-   ② 每次条目复用 dist 忽大忽小、相位重置，看起来频道在乱跳。
-   这版彻底换思路 —— 不再把 View 平移出边界靠父壳裁剪，而是：
-   - View 恒为 match_parent（= 名字区宽），View 本身永远不会越界去碰编号/台标；
-   - onDraw 里自己 canvas.clipRect(0,0,w,h) + translate(-offset) 自绘文字，
-     文字怎么滚都被裁在 View 自己的边界里，物理上不可能遮挡旁边任何控件；
-   - 每一轮滚回开头时重新量宽（remeasure），台标异步挤宽/挤窄自动适配，dist 永远是准的
-     （Coil 加载回调里也会主动触发一次重测，第一轮就是准的）；
-   - 文字没超宽（CCTV1 这种短名）绝不注册调度，一帧都不动。
-   节奏：开头停 1.2s（读全名）→ 匀速滚到末尾最后一字完整可见（行程 = 真实超宽，一字不少）
-   → 末尾停 0.8s（读结尾）→ 回开头。全程 View 内始终有字、无空窗。
+/* 跑马灯（v1.4.16 定稿：无缝循环滚动）。
+   v1.4.14 换成 MarqueeTextView 自绘裁剪后，遮挡编号/叠台标/露不全/乱跳已根治；
+   v1.4.15 又把回程改平滑 + 重绘节流。但大哥实测点名：**滚完滚回开头（回弹）不对，
+   要的是一直循环的滚动** —— 即文字向左滚出、从右边再进来，永不停歇，像新闻条。
+   v1.4.16 实现（无缝循环的经典做法）：
+   - 一轮行程 = 文字实宽 tw + 段间空隙 gap，offset 在 [0, tw+gap) 内循环推进；
+   - onDraw 画**两份**文字：x1 = pad - offset（正在退出左边），x2 = x1 + tw + gap
+     （正从右边跟进）。offset 到达 tw+gap 时相位归零，此刻 x2 恰好走到 x1 的位置，
+     视觉上完全无缝 —— 永远有字在滚，没有空窗、没有回弹；
+   - 首次 bind 仍停 START_HOLD 1.2s（先让人读一遍开头），之后无限循环不再停顿；
+   - 重绘节流 ~30fps（FRAME_MS）保留，低端盒子不掉帧；
+   - View 恒 match_parent + clipRect 自绘裁剪不变，物理上不可能遮挡编号/台标；
+   - 短文字（不超宽）不注册，静态显示。
    续帧仍用「私有函数 + 每帧新 lambda」—— val 存 FrameCallback 在 lambda 里自引用会被
    Kotlin 拒编译（recursive problem / must be initialized，CI 实锤过）。 */
 class MarqueeTextView @JvmOverloads constructor(
@@ -34,10 +32,10 @@ class MarqueeTextView @JvmOverloads constructor(
         private val ALL = ArrayList<MarqueeTextView>()
         private var ticking = false
         private var lastTs = 0L
-        private const val START_HOLD = 1200L   // 开头停：读得清完整台名
-        private const val END_HOLD = 800L      // 末尾停：读得清结尾
+        private const val START_HOLD = 1200L   // 首轮开头停：读得清完整文字（只停这一次）
         private const val SPEED_DP = 42f       // 每秒 42dp，电视上不紧不慢
-        private const val FRAME_MS = 32L       // v1.4.15 重绘节流到 ~30fps：视觉依旧顺滑，低端盒子开销减半
+        private const val GAP_DP = 48f         // 循环两份文字之间的空隙
+        private const val FRAME_MS = 32L       // 重绘节流到 ~30fps：视觉顺滑，低端盒子开销减半
 
         private fun tickFrame() {
             val now = SystemClock.uptimeMillis()
@@ -47,25 +45,16 @@ class MarqueeTextView @JvmOverloads constructor(
             var alive = 0
             while (it.hasNext()) {
                 val m = it.next()
-                if (!m.isAttachedToWindow || m.dist <= 0f) {
+                if (!m.isAttachedToWindow || m.loop <= 0f) {
                     m.offset = 0f
                     m.invalidate()
                     it.remove()
                     continue
                 }
                 m.phase += dt
-                val p = m.phase
-                val t1 = START_HOLD
-                val t2 = t1 + m.scrollMs
-                val t3 = t2 + END_HOLD
-                val t4 = t3 + m.backMs
-                val off = when {
-                    p < t1 -> 0f
-                    p < t2 -> m.dist * ((p - t1) / m.scrollMs)          // 去程：匀速滚到末尾完整可见
-                    p < t3 -> m.dist                                    // 末尾停：读结尾
-                    p < t4 -> m.dist * (1f - (p - t3) / m.backMs)       // v1.4.15 回程：快速平滑滚回开头，
-                    else -> { m.phase = 0L; m.remeasure(); 0f }         // 不再瞬间跳回（生硬感的元凶）；回程结束重量宽
-                }
+                // 起始停顿之后进入无限循环：offset 在 [0, loop) 内转圈（% 就是循环本体）
+                val off = if (m.phase < START_HOLD) 0f
+                else ((m.phase - START_HOLD) % m.scrollMs) / m.scrollMs * m.loop
                 // ~30fps 节流重绘：相位照算，重绘降频——盒子掉帧的直接救
                 m.acc += dt
                 if (m.acc >= FRAME_MS) {
@@ -86,12 +75,12 @@ class MarqueeTextView @JvmOverloads constructor(
         }
     }
 
-    private var dist = 0f      // 文本超出的像素宽（要滚的全程）
-    private var scrollMs = 0f  // 滚完全程需要的毫秒数
-    private var backMs = 300f  // v1.4.15 回程时长（滚回开头）
-    private var phase = 0L     // 当前周期内的毫秒位置
-    private var offset = 0f    // 已滚过的像素（文字向左平移量，自绘用）
-    private var acc = 0L       // 重绘节流累计器
+    private var tw = 0f       // 文字实宽（onDraw 画两份要用，remeasure 时量好存下）
+    private var loop = 0f     // 一轮循环行程 = 文字宽 + 段间空隙
+    private var scrollMs = 0f // 滚完一轮循环需要的毫秒数
+    private var phase = 0L    // 当前周期内的毫秒位置
+    private var offset = 0f   // 已滚过的像素（文字向左平移量，自绘用）
+    private var acc = 0L      // 重绘节流累计器
 
     init {
         // 文字显示全权交给自绘，关掉 TextView 自带的省略/跑马灯行为
@@ -107,7 +96,8 @@ class MarqueeTextView @JvmOverloads constructor(
 
     fun stopMarquee() {
         ALL.remove(this)
-        dist = 0f
+        tw = 0f
+        loop = 0f
         scrollMs = 0f
         phase = 0L
         offset = 0f
@@ -121,23 +111,23 @@ class MarqueeTextView @JvmOverloads constructor(
             if (!isAttachedToWindow) return@post
             val avail = (width - paddingLeft - paddingRight).toFloat()
             if (avail <= 2f) return@post
-            val tw = paint.measureText(text?.toString().orEmpty())
-            val over = tw - avail
+            val w = paint.measureText(text?.toString().orEmpty())
+            val over = w - avail
             if (over <= 2f) {
                 // 短文字不滚（CCTV1 这类），复位成普通静态显示
                 ALL.remove(this)
-                dist = 0f
+                tw = 0f
+                loop = 0f
                 scrollMs = 0f
                 phase = 0L
                 offset = 0f
                 invalidate()
                 return@post
             }
-            if (over != dist) phase = 0L   // 宽变了从头来，别拿旧相位跳变（乱跳的根因之一）
-            dist = over
-            scrollMs = over / (SPEED_DP * resources.displayMetrics.density) * 1000f
-            // 回程速度 = 去程两倍（压在 250~500ms），快滚回开头但不闪跳
-            backMs = (scrollMs * 0.5f).coerceIn(250f, 500f)
+            if (over != loop) phase = 0L   // 宽变了从头来，别拿旧相位跳变（乱跳的根因之一）
+            tw = w
+            loop = w + GAP_DP * resources.displayMetrics.density
+            scrollMs = loop / (SPEED_DP * resources.displayMetrics.density) * 1000f
             offset = 0f
             acc = 0L
             ALL.remove(this)
@@ -151,7 +141,8 @@ class MarqueeTextView @JvmOverloads constructor(
        ⚠️ BufferType 是 TextView 的嵌套枚举（TextView.BufferType），CI 实锤不是 android.text 的 */
     override fun setText(text: CharSequence?, type: TextView.BufferType) {
         ALL.remove(this)
-        dist = 0f
+        tw = 0f
+        loop = 0f
         scrollMs = 0f
         phase = 0L
         offset = 0f
@@ -159,17 +150,22 @@ class MarqueeTextView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (dist <= 0f) {
+        if (loop <= 0f) {
             super.onDraw(canvas)
             return
         }
-        // 自绘：裁在自身边界内再平移，文字永远出不了这个 View，绝不可能盖到编号/台标
+        // 自绘：裁在自身边界内再平移，文字永远出不了这个 View，绝不可能盖到编号/台标。
+        // 循环精髓：同时画两份 —— 第一份正在退出左边，第二份贴着段间空隙从右边跟进，
+        // offset 转完一圈归零时第二份恰好接到第一份的位置，视觉无缝永不停。
         canvas.save()
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         canvas.translate(-offset, 0f)
         val fm = paint.fontMetrics
         val baseline = height / 2f - (fm.ascent + fm.descent) / 2f
-        canvas.drawText(text?.toString().orEmpty(), paddingLeft.toFloat(), baseline, paint)
+        val t = text?.toString().orEmpty()
+        val x1 = paddingLeft.toFloat()
+        canvas.drawText(t, x1, baseline, paint)
+        canvas.drawText(t, x1 + tw + GAP_DP * resources.displayMetrics.density, baseline, paint)
         canvas.restore()
     }
 }
