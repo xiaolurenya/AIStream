@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 选台行：三位编号（圆角小方块）+ 台标 + 台名/正在播节目。
-     参照样式只留三样：编号 / 台标 / 台名（+节目小字），行距放宽不再拥挤 -->
+     行高压到 54dp、编号/台标/字号全档下调，避免选台面板拥挤看不全 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/row"
     style="@style/AIStream.FocusItem"
     android:layout_width="match_parent"
-    android:layout_height="62dp"
-    android:layout_marginBottom="6dp"
+    android:layout_height="54dp"
+    android:layout_marginBottom="4dp"
     android:background="@drawable/bg_card"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingStart="12dp"
-    android:paddingTop="8dp"
-    android:paddingEnd="12dp"
-    android:paddingBottom="8dp" android:clipChildren="false">
+    android:paddingStart="10dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="10dp"
+    android:paddingBottom="6dp" android:clipChildren="false">
 
     <!-- 三位编号：半透明圆角小方块，金色字更醒目 -->
     <FrameLayout
-        android:layout_width="36dp"
-        android:layout_height="32dp"
-        android:layout_marginEnd="10dp"
+        android:layout_width="30dp"
+        android:layout_height="26dp"
+        android:layout_marginEnd="8dp"
         android:background="@drawable/bg_num"
         android:clipChildren="false">
 
@@ -29,7 +29,7 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:textColor="@color/gold"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
     </FrameLayout>
@@ -37,7 +37,7 @@
     <FrameLayout
         android:layout_width="@dimen/ch_logo_w"
         android:layout_height="@dimen/ch_logo_h"
-        android:layout_marginEnd="10dp" android:clipChildren="false">
+        android:layout_marginEnd="8dp" android:clipChildren="false">
 
         <ImageView
             android:id="@+id/imgLogo"
@@ -61,17 +61,17 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textSize="15sp" />
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/tvEpg"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/fg_dim"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:visibility="gone" />
 
     </LinearLayout>

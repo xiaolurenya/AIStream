@@ -30,6 +30,6 @@
     <dimen name="chcat_w">80dp</dimen>
     <dimen name="live_title">17sp</dimen>
     <dimen name="ch_num_w">36dp</dimen>
-    <dimen name="ch_logo_w">40dp</dimen>
-    <dimen name="ch_logo_h">28dp</dimen>
+    <dimen name="ch_logo_w">36dp</dimen>
+    <dimen name="ch_logo_h">26dp</dimen>
 </resources>
