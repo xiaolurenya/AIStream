@@ -1949,10 +1949,18 @@ async function homeColItems(col, page) {
     if (col.type === 'douban') {
       /* v73：内置豆瓣栏目 —— 前端 homeCard 点击后按片名去采集站聚合播放 */
       const list = await doubanList(col.kind || 'series', page, HOME_PAGE_SIZE);
-      return list.map(x => ({
+      const out = list.map(x => ({
         id: x.id, title: x.title, media: col.kind === 'movie' ? 'movie' : 'tv',
         poster: x.poster_url, year: x.year, score: x.score
       }));
+      /* v1.4.23：首页第一页给前几张卡补横版剧照（TV hero 整幅铺满用，卡片区不消费也无害）。
+         并发补取，每部走 24h 缓存；单部失败空串，不影响整栏返回。 */
+      if (page === 1) {
+        await Promise.all(out.slice(0, 8).map(async it => {
+          it.backdrop = await doubanBackdrop(it.id);
+        }));
+      }
+      return out;
     }
     const def = COLS[col.key];
     if (!def) return null;
@@ -2231,6 +2239,26 @@ async function doubanList(kind, page, limit) {
     score: (x.rating && x.rating.value) || 0,
     content_kind: kind
   }));
+}
+/* v1.4.23：豆瓣横版剧照（TV hero 整幅铺满用）。
+   海报是竖版 2:3，宽幅 hero 里 fitCenter 只能占右边一条——大哥点名「一个大窗口
+   只有这么小的海报」。横版剧照天生 16:9 上下，整幅铺满又大又清晰还不裁人。
+   rexxar photos（type 参数实测不区分内容，一次 count=20 全拉）里混着横竖版：
+   image 是各尺寸对象（large/normal/small，带宽高），按 large 的宽>高筛横版，
+   取 large.url（1600px 级，全幅不糊）。全竖版（部分剧都是竖版宣传图）返回空串，
+   客户端自动退回海报方案。每部缓存 24h（走 doubanJson 统一缓存），失败也空串。 */
+async function doubanBackdrop(dbId) {
+  try {
+    const sid = String(dbId || '').replace(/^db_/, '');
+    if (!sid || /^av_/.test(sid)) return '';
+    const j = await doubanJson('movie/' + sid + '/photos?start=0&count=20', 24 * 3600e3);
+    const ps = (j && j.photos || []).map(p => {
+      const im = p && p.image;
+      const lg = (im && typeof im === 'object' && im.large) || {};
+      return (lg.width | 0) > (lg.height | 0) ? (lg.url || '') : '';
+    }).filter(Boolean);
+    return ps[0] || '';
+  } catch (e) { return ''; }
 }
 /* 追剧日历豆瓣回退：weeklyBuildTmdb（TMDB discover）没有凭据时是全 0 天，照样返回。
    这里拉 4 个热门池（剧集/动漫/综艺/电影各 50 条）按天切片填 7 天——豆瓣没有公开的

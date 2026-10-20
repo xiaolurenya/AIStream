@@ -49,6 +49,8 @@ object Api {
         val title: String? = null,
         val media: String? = null,
         val poster: String? = null,
+        /* v1.4.23：横版剧照（服务端给豆瓣卡补的，hero 整幅铺满用；可空，没有就走海报） */
+        val backdrop: String? = null,
         val year: String? = null,
         val score: String? = null,
         val station: String? = null

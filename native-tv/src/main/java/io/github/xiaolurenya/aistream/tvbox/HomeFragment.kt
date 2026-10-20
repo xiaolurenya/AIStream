@@ -36,8 +36,8 @@ import kotlinx.coroutines.withContext
 /* 首页（图1 样式）：左侧功能卡列 + 中间大海报 hero + 右侧推荐列，下面按栏目一行行竖着排。
    hero 支持直播预览小窗：焦点落在「电视直播」卡上就小窗播当前台（带防抖，快速滑过不误播），
    确认键进全屏直播页，焦点移开就停掉预览、恢复海报。
-   v1.4.22 hero 按图自适应：竖版海报右侧原比例完整清晰 + 左边空档用海报边缘色渐变补满
-   （取色补底，不是模糊）；横版图整幅铺满。任何形状的图都不会出现「只有半边」。 */
+   v1.4.23 hero 显示优先级：服务端补的横版剧照 → 整幅铺满（大窗口配大图，不裁人不模糊）；
+   没剧照 → 竖版海报右侧原比例完整清晰 + 左缘取色渐变补底（v1.4.22 兜底）。 */
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     private lateinit var adapter: ColumnAdapter
@@ -383,29 +383,53 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         if (sc != null && sc > 0) bits.add("%.1f".format(sc))
         heroMeta.text = bits.joinToString(" · ")
 
-        val u = Api.dimg(c.poster)
-        // v1.4.22：按加载到的位图自适应选路——竖版海报右侧原比例完整清晰 + 环境色补底；
-        // 横版图整幅铺满。加载失败退回页面底色，不残留上一张的底
+        val bu = Api.dimg(c.backdrop.orEmpty()) // 横版剧照（服务端 v1.4.23 起给豆瓣卡补）
+        val pu = Api.dimg(c.poster)
+        // v1.4.23：有剧照 → 整幅铺满（大、清晰、不裁人，海报天生竖版塞不满宽幅 hero）；
+        // 没剧照 → 竖版海报右侧原比例 + 环境色补底（v1.4.22 方案兜底）
         heroWide = false
-        if (u.isNotBlank()) {
-            heroPoster.visibility = View.VISIBLE
-            heroPoster.load(u) {
-                allowHardware(false) // 要读像素采样边缘色，硬件位图读不了
-                crossfade(true)
-                listener(
-                    onSuccess = { _, r ->
-                        val bmp = (r.drawable as? BitmapDrawable)?.bitmap
-                        if (bmp != null) applyHeroArt(bmp, u)
-                        else heroBg.visibility = View.GONE
-                    },
-                    onError = { _, _ ->
-                        heroBg.visibility = View.GONE
-                        heroPoster.visibility = View.GONE
-                    }
-                )
-            }
-        }
+        if (bu.isNotBlank()) paintBackdrop(bu, pu)
+        else if (pu.isNotBlank()) paintPoster(pu)
         paintDots()
+    }
+
+    /* 横版剧照：整幅铺满 hero——一个大窗口配一幅大图（大哥点名「大窗口只有小海报」）。
+       剧照本来就是横版，centerCrop 只轻微裁边，人物完整；image 是千像素级大图，全幅不糊；
+       标题/按钮照旧压在左侧渐变上。剧照挂了自动退回海报方案，hero 不能空着。 */
+    private fun paintBackdrop(bu: String, pu: String) {
+        heroWide = true
+        heroPoster.visibility = View.GONE
+        heroBg.scaleType = ImageView.ScaleType.CENTER_CROP
+        heroBg.load(bu) {
+            crossfade(true)
+            listener(onError = { _, _ ->
+                heroBg.visibility = View.GONE
+                if (pu.isNotBlank()) paintPoster(pu)
+            })
+        }
+        heroBg.visibility = View.VISIBLE
+    }
+
+    /* 竖版海报兜底：右侧原比例完整清晰 + 左缘取色渐变补底（v1.4.22 方案）。
+       加载成功回调里按位图宽高再自适应一次（万一海报本身是横版的）。 */
+    private fun paintPoster(pu: String) {
+        heroWide = false
+        heroPoster.visibility = View.VISIBLE
+        heroPoster.load(pu) {
+            allowHardware(false) // 要读像素采样边缘色，硬件位图读不了
+            crossfade(true)
+            listener(
+                onSuccess = { _, r ->
+                    val bmp = (r.drawable as? BitmapDrawable)?.bitmap
+                    if (bmp != null) applyHeroArt(bmp, pu)
+                    else heroBg.visibility = View.GONE
+                },
+                onError = { _, _ ->
+                    heroBg.visibility = View.GONE
+                    heroPoster.visibility = View.GONE
+                }
+            )
+        }
     }
 
     /* v1.4.22：hero 按图自适应（大哥打回「左边一大块空的黑，只有半边」）。
