@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -56,13 +57,19 @@ fun bindFocus(v: View, scale: Float = 1.06f, ring: Boolean = true, onFocus: ((Bo
             .setInterpolator(android.view.animation.DecelerateInterpolator(1.6f))
             .start()
         if (ring) {
+            // ⚠️ 必须 mutate()：Resources 对同一 resId 会复用 Drawable 实例/ConstantState，
+            // 不隔离的话上一个视图设过的 bounds 会串到下一个视图（2026-10-21 大哥登录页
+            // 截图实锤：环被画成 2082×192 的错位矩形，上下两根线、竖边被裁没）。
             val rg = if (has)
-                androidx.core.content.ContextCompat.getDrawable(v.context, R.drawable.bg_focus_ring)
+                androidx.core.content.ContextCompat.getDrawable(v.context, R.drawable.bg_focus_ring)?.mutate()
             else null
             v.foreground = rg
-            // bounds 兜底：布局前就拿焦点时 view 还是 0×0，不纠的话环会退化成一根直线
+            // bounds 三重兜底：设的时候纠一次 + 布局后纠一次 + post 再纠一次。
+            // 有的 ROM 在视图已布局后 setForeground 不重设 bounds，0×0 时期设进去的
+            // 退化 bounds 会一直留着（环变成一根线/错位矩形）。
             fun syncBounds() { rg?.setBounds(0, 0, v.width, v.height) }
             syncBounds()
+            v.doOnLayout { syncBounds() }
             v.post { syncBounds() }
         }
         onFocus?.invoke(has)
