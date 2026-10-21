@@ -51,7 +51,7 @@ class DetailActivity : AppCompatActivity() {
             val up: UpReady?, val col: CollectReady?, val t: Long = System.currentTimeMillis()
         )
         private val detailCache = object : LinkedHashMap<String, CacheEntry>(16, 0.75f, true) {
-            override fun removeEldestEntry(eldest: Mutable.Map.MutableEntry<String, CacheEntry>): Boolean = size > 12
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CacheEntry>): Boolean = size > 12
         }
         private const val CACHE_TTL = 10 * 60 * 1000L
 
@@ -364,7 +364,7 @@ class DetailActivity : AppCompatActivity() {
     // 去掉「第X季 / Season N」再去检索：上游按裸片名归档，带着季名经常搜不到
     private fun bareTitle(): String =
         title.replace(Regex("\\s*[（(]?第[一二三四五六七八九十0-9]+季[）)]?\\s*$"), "")
-            .replace(Regex("\\s*Season\\s*\\d+\\s*$", RegexOption.IGNORE_CASE))
+            .replace(Regex("\\s*Season\\s*\\d+\\s*$", RegexOption.IGNORE_CASE), "")
             .trim().ifBlank { title }
 
     private suspend fun loadUp(quiet: Boolean) {
