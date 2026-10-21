@@ -7,6 +7,7 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnLayout
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -47,8 +48,11 @@ class SetupActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvVer).text = "v" + BuildConfig.VERSION_NAME
 
         // 焦点反馈（大哥点名「选中没有动画都不知道选哪里」）：之前整页只给了 focusable
-        // 却没调 bindFocus，遥控器上下移动既没放大也没描边。现在全部统一：放大 + 白描边 + 轻提示音
-        listOf(chipHttp, chipHttps, etHost, etPort, etUser, etPass, btnGo, tvClear).forEach { bindFocus(it) }
+        // 却没调 bindFocus，遥控器上下移动既没放大也没描边。现在全部统一：放大 + 白描边 + 轻提示音。
+        // v1.4.25：四个输入框的聚焦环画在 bg_input 的 layer-list 里（背景 bounds 框架保证，
+        // 不会出现 foreground 环在 0×0 时设进去退化成一根线的问题）→ 这里传 ring=false 别再叠一层
+        listOf(chipHttp, chipHttps, btnGo, tvClear).forEach { bindFocus(it) }
+        listOf(etHost, etPort, etUser, etPass).forEach { bindFocus(it, ring = false) }
 
         chipHttp.setOnClickListener { setProto("http") }
         chipHttps.setOnClickListener { setProto("https") }
@@ -74,13 +78,15 @@ class SetupActivity : AppCompatActivity() {
             if (hadCrash) {
                 Crash.reset(this)
                 showErr("上次启动就崩了，已停在配置页。点「进入」重试，或复制上面的报错发我")
-                btnGo.requestFocus()
+                btnGo.doOnLayout { btnGo.requestFocus() }
                 return
             }
             verifyAndEnter()
         } else {
-            // 新配置：焦点落在第一格（地址），遥控器开机直接往下填就行
-            etHost.requestFocus()
+            // 新配置：焦点落在第一格（地址），遥控器开机直接往下填就行。
+            // ⚠️ 必须等布局完再要焦点：onCreate 里就要，视图还是 0×0，
+            // 焦点环相关状态会在退化尺寸下被设进去（v1.4.25 实测环变成框顶一根直线）
+            etHost.doOnLayout { etHost.requestFocus() }
         }
     }
 

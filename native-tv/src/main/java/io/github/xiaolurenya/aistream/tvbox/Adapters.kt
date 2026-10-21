@@ -39,8 +39,13 @@ fun focusBeep() {
    v1.4.16：放大倍数可按控件调（默认仍 1.06）——选台行/右侧推荐卡这些「宽条」
    1.06 太夸张：上下撑出白框一大截、左右靠边的直接被屏幕裁掉（大哥 4 图点名），
    宽条用小倍数只提一点动感，描边才是主角。⚠️ 新参数 scale 必须放在尾随 lambda
-   的回调参数 onFocus 之前（尾随 lambda 绑定最后一个参数，放后面会 Type mismatch）。 */
-fun bindFocus(v: View, scale: Float = 1.06f, onFocus: ((Boolean) -> Unit)? = null) {
+   的回调参数 onFocus 之前（尾随 lambda 绑定最后一个参数，放后面会 Type mismatch）。
+   v1.4.25：① 新增 ring 开关——背景自带聚焦环的控件（登录页输入框，环画在
+   bg_input 的 layer-list 里）传 false，别再叠 foreground 环；
+   ② foreground 环的 bounds 兜底强制纠正——onCreate 里就 requestFocus 的视图
+   （登录页第一格）会在 0×0 时设进 foreground，bounds 退化后整环变成「框顶一根
+   直线、圆角切平」（大哥截图实测）。设完立即按当前尺寸纠一次，布局后再兜底一次。 */
+fun bindFocus(v: View, scale: Float = 1.06f, ring: Boolean = true, onFocus: ((Boolean) -> Unit)? = null) {
     v.setOnFocusChangeListener { _, has ->
         if (has) focusBeep()
         v.elevation = 0f
@@ -50,9 +55,16 @@ fun bindFocus(v: View, scale: Float = 1.06f, onFocus: ((Boolean) -> Unit)? = nul
             .setDuration(120L)
             .setInterpolator(android.view.animation.DecelerateInterpolator(1.6f))
             .start()
-        v.foreground = if (has)
-            androidx.core.content.ContextCompat.getDrawable(v.context, R.drawable.bg_focus_ring)
-        else null
+        if (ring) {
+            val rg = if (has)
+                androidx.core.content.ContextCompat.getDrawable(v.context, R.drawable.bg_focus_ring)
+            else null
+            v.foreground = rg
+            // bounds 兜底：布局前就拿焦点时 view 还是 0×0，不纠的话环会退化成一根直线
+            fun syncBounds() { rg?.setBounds(0, 0, v.width, v.height) }
+            syncBounds()
+            v.post { syncBounds() }
+        }
         onFocus?.invoke(has)
     }
 }

@@ -17,7 +17,7 @@ android {
         applicationId = "io.github.xiaolurenya.aistream.tvbox"
         minSdk = 24
         targetSdk = 34
-        versionCode = 39
+        versionCode = 40
         versionName = "1.4.24"
     }
 
