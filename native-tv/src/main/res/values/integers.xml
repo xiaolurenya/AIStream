@@ -2,8 +2,6 @@
 <!-- 网格列数/数量按屏幕分档：手机密一点会挤成一团，宁少不挤 -->
 <resources>
     <integer name="ep_cols">8</integer>
-    <!-- v75：详情页信息列只占屏宽 46%，选集列数比全屏网格收一档，chip 才不挤成一团 -->
-    <integer name="detail_ep_cols">4</integer>
     <integer name="grid_cols">3</integer>
     <integer name="player_ep_cols">2</integer>
     <integer name="redeem_cols">2</integer>

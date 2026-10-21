@@ -6,14 +6,6 @@
     <string name="label_parser">解析线路</string>
     <string name="label_episodes">选集</string>
     <string name="detail_plot">剧情简介</string>
-    <string name="detail_cast">演员</string>
-    <string name="cast_photo">演员头像</string>
-    <string name="line_loading">线路加载中…</string>
-    <string name="play_continue">▶ 继续 %1$s</string>
-    <string name="play_first_ep">▶ 播放 %1$s</string>
-    <string name="play_movie">▶ 播放</string>
-    <string name="fav_on">♥ 已收藏</string>
-    <string name="fav_off">♡ 收藏</string>
     <string name="nav_home">首页</string>
     <string name="nav_search">搜索</string>
     <string name="nav_live">直播</string>

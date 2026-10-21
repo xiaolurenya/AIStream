@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- v75：演员无头像占位（圆形色块，加载中/失败时露出来） -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="#FF1C3768" />
-</shape>

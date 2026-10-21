@@ -12,9 +12,4 @@
     <color name="accent">#FF45A2FF</color>
     <color name="accent_soft">#FFBADBFF</color>
     <color name="gold">#FFFFD468</color>
-    <!-- v75：详情页播放大按钮（截图参考的绿色胶囊）+ 收藏描边钮 -->
-    <color name="play_green">#FF12B76A</color>
-    <color name="play_green_hi">#FF32D97F</color>
-    <color name="fav_stroke">#66FFFFFF</color>
-    <color name="detail_bg">#F20A1226</color>
 </resources>

@@ -101,41 +101,6 @@ object Api {
 
     data class SearchResp(val tmdb: List<Card>? = null, val collect: List<PlayRes>? = null)
 
-    // ---------- TMDB 详情增强（v75：详情页简介/类型/演员头像，截图样式那套信息列） ----------
-    data class TmdbGenre(val name: String? = null)
-    data class TmdbCast(val name: String? = null, val character: String? = null, val profile_path: String? = null)
-    data class TmdbCredits(val cast: List<TmdbCast>? = null)
-
-    data class TmdbDetail(
-        val title: String? = null,
-        val name: String? = null,
-        val overview: String? = null,
-        val genres: List<TmdbGenre>? = null,
-        val vote_average: Double? = null,
-        val credits: TmdbCredits? = null,
-        val backdrop_path: String? = null,
-        val poster_path: String? = null,
-        val release_date: String? = null,
-        val first_air_date: String? = null
-    )
-
-    // 卡片 id 全是数字 = TMDB 条目（db_ 豆瓣 / av_ 上游 / 采集站 id 都不是）
-    fun isTmdbId(id: String?): Boolean {
-        val s = id.orEmpty()
-        return s.isNotBlank() && s.all { it in '0'..'9' }
-    }
-
-    // TMDB 剧照/头像图根（w1280 剧照 / w185 演员头像）；一律经站点图片代理出去
-    private const val TMDB_IMG = "https://image.tmdb.org/t/p/"
-    fun tmdbBackdropUrl(path: String?): String =
-        dimg(if (path.orEmpty().startsWith("http")) path.orEmpty() else TMDB_IMG + "w1280" + path.orEmpty())
-
-    fun tmdbProfileUrl(path: String?): String =
-        dimg(if (path.orEmpty().startsWith("http")) path.orEmpty() else TMDB_IMG + "w185" + path.orEmpty())
-
-    fun tmdbDetail(media: String, id: String): TmdbDetail? =
-        get("/api/tmdb/" + (if (media == "movie") "movie" else "tv") + "/" + enc(id) + "?append_to_response=credits")
-
     data class User(val id: String? = null, val username: String? = null, val role: String? = null)
     data class LoginResp(val token: String? = null, val user: User? = null, val error: String? = null)
 

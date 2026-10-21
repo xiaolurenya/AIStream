@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v75：详情页重做（截图样式：全屏剧照 + 左侧信息列）。
-     层级：剧照整幅铺满 → 左暗右淡渐变（保左侧文字可读、右侧人物透亮）
-     → 底部压暗（选集/线路区可读）→ 左侧信息列（宽 46%，右侧透出剧照）。
-     信息页秒开：线路后台加载，播放大按钮就绪即可播（不再全屏遮罩干等）。 -->
+<!-- 外层 FrameLayout 为了盖「正在优化加载线路」遮罩：官方 + 采集都到位再渲染，不闪 360zy -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg" android:clipChildren="false">
 
-    <!-- 全屏剧照：本片横版剧照（TMDB w1280 / 豆瓣 backdrop），没有则用海报裁切铺满 -->
+    <!-- 海报背景：播放前的选集区也透出本片海报（磨砂），不再是一块死蓝底 -->
     <ImageView
         android:id="@+id/ivBackdrop"
         android:layout_width="match_parent"
@@ -16,83 +13,82 @@
         android:contentDescription="@string/app_name"
         android:scaleType="centerCrop" />
 
-    <!-- 左浓右淡渐变遮罩 -->
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_detail_scrim" />
-
-    <!-- 底部压暗 -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:layout_gravity="bottom"
-        android:background="@drawable/bg_scrim_bottom" />
+        android:background="#B30C1F3F" />
 
     <ScrollView
-        android:id="@+id/scroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:overScrollMode="never">
+        android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="36dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="36dp"
+        android:paddingBottom="32dp" android:clipChildren="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal" android:clipChildren="false">
 
-            <!-- 左侧信息列：宽 46%（右侧透出剧照主体） -->
+            <FrameLayout
+                android:layout_width="200dp"
+                android:layout_height="290dp"
+                android:background="@drawable/bg_card" android:clipChildren="false">
+
+                <ImageView
+                    android:id="@+id/imgPoster"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/app_name"
+                    android:scaleType="centerCrop" />
+
+            </FrameLayout>
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.46"
+                android:layout_marginStart="26dp"
+                android:layout_weight="1"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                android:orientation="vertical"
-                android:paddingStart="48dp"
-                android:paddingTop="40dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="40dp">
-
-                <FrameLayout
-                    android:layout_width="132dp"
-                    android:layout_height="190dp"
-                    android:background="@drawable/bg_card" android:clipChildren="false">
-
-                    <ImageView
-                        android:id="@+id/imgPoster"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@string/app_name"
-                        android:scaleType="centerCrop" />
-
-                </FrameLayout>
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/tvTitle"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
                     android:ellipsize="end"
                     android:maxLines="2"
                     android:textColor="@color/fg"
-                    android:textSize="27sp"
+                    android:textSize="26sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvMeta"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textColor="@color/fg_dim"
                     android:textSize="14sp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tvScore"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:baselineAligned="false"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/gold"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
                     android:clipChildren="false"
                     android:clipToPadding="false"
                     android:orientation="horizontal">
@@ -101,123 +97,48 @@
                         android:id="@+id/btnPlay"
                         style="@style/AIStream.FocusItem"
                         android:layout_width="wrap_content"
-                        android:layout_height="52dp"
-                        android:background="@drawable/bg_btn_play"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_btn"
                         android:gravity="center"
-                        android:paddingStart="30dp"
-                        android:paddingEnd="30dp"
-                        android:text="@string/line_loading"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"
+                        android:text="@string/play_now"
                         android:textColor="@android:color/white"
-                        android:textSize="18sp"
+                        android:textSize="17sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/btnFav"
                         style="@style/AIStream.FocusItem"
                         android:layout_width="wrap_content"
-                        android:layout_height="52dp"
+                        android:layout_height="48dp"
                         android:layout_marginStart="14dp"
-                        android:background="@drawable/bg_btn_fav"
+                        android:background="@drawable/bg_chip"
                         android:gravity="center"
-                        android:paddingStart="24dp"
-                        android:paddingEnd="24dp"
-                        android:text="@string/fav_off"
+                        android:paddingStart="28dp"
+                        android:paddingEnd="28dp"
+                        android:text="☆ 收藏"
                         android:textColor="@color/fg_dim"
                         android:textSize="17sp" />
 
                 </LinearLayout>
 
-                <!-- 线路加载提示：两路并发进度，就绪后隐藏 -->
-                <TextView
-                    android:id="@+id/tvLineHint"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:textColor="@color/fg_dim"
-                    android:textSize="13sp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="26dp"
-                    android:text="@string/detail_plot"
-                    android:textColor="@color/fg"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
                 <TextView
                     android:id="@+id/tvPlot"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="18dp"
                     android:lineSpacingExtra="4dp"
                     android:textColor="@color/fg_dim"
                     android:textSize="14sp" />
 
-                <TextView
-                    android:id="@+id/labCast"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/detail_cast"
-                    android:textColor="@color/fg"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvCast"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:clipToPadding="false"
-                    android:overScrollMode="never"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/labLines"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/label_line"
-                    android:textColor="@color/fg"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvLines"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:clipToPadding="false"
-                    android:overScrollMode="never" />
-
-                <TextView
-                    android:id="@+id/labEps"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="22dp"
-                    android:text="@string/label_episodes"
-                    android:textColor="@color/fg"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvEps"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:clipToPadding="false"
-                    android:overScrollMode="never" />
-
-                <!-- 取不到片源时的「刷新重试」入口 -->
+                <!-- 取不到片源时的「刷新重试」入口：遥控器选中即可按确认重拉 -->
                 <TextView
                     android:id="@+id/btnRetry"
                     style="@style/AIStream.FocusItem"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
-                    android:layout_marginTop="18dp"
+                    android:layout_marginTop="16dp"
                     android:background="@drawable/bg_btn"
                     android:gravity="center"
                     android:paddingStart="28dp"
@@ -230,14 +151,109 @@
 
             </LinearLayout>
 
-            <!-- 右侧留空：透出剧照主体（截图文右侧是人物剧照） -->
-            <View
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.54" />
-
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/labLines"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="@string/label_line"
+            android:textColor="@color/fg"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvLines"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never" />
+
+        <TextView
+            android:id="@+id/labEps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/label_episodes"
+            android:textColor="@color/fg"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvEps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false" />
+
+    </LinearLayout>
+
     </ScrollView>
+
+    <!-- 加载遮罩：倒计时 + 已找到线路数 + 立即播放（遥控器确认键直接播） -->
+    <LinearLayout
+        android:id="@+id/loadOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone" android:clipChildren="false">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="正在优化加载线路"
+            android:textColor="@color/fg"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLoadCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/accent_soft"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tvLoadInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/fg_dim"
+            android:textSize="15sp" />
+
+        <ProgressBar
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:id="@+id/btnLoadPlay"
+            style="@style/AIStream.FocusItem"
+            android:layout_width="wrap_content"
+            android:layout_height="52dp"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/bg_btn"
+            android:gravity="center"
+            android:paddingStart="40dp"
+            android:paddingEnd="40dp"
+            android:text="立即播放"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="等全部线路就绪自动进入 · 急着看按确认键直接播"
+            android:textColor="@color/fg_dim"
+            android:textSize="14sp" />
+
+    </LinearLayout>
 
 </FrameLayout>

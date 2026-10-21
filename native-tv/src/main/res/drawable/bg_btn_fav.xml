@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- v75：详情页收藏按钮（截图参考的半透明描边胶囊，心形图标 + 文案） -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#33000000" />
-    <stroke android:width="1.5dp" android:color="@color/fav_stroke" />
-    <corners android:radius="26dp" />
-</shape>
