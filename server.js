@@ -1892,6 +1892,10 @@ function mapItem(x, mediaFn) {
     title: x.title || x.name || '',
     media,
     poster: x.poster_path ? IMG + 'w500' + x.poster_path : '',
+    /* v75：横版剧照（TV hero 整幅铺满 / 详情页全屏背景用）。
+       豆瓣栏目是首页取数后单独补的（doubanBackdrop），TMDB 卡这里随数据带下去，
+       两种来源对客户端都是同一个 backdrop 字段。 */
+    backdrop: x.backdrop_path ? IMG + 'w1280' + x.backdrop_path : '',
     year: (x.release_date || x.first_air_date || '').slice(0, 4),
     score: x.vote_average || 0
   };
@@ -1905,14 +1909,27 @@ function homeColsCfg() {
      加了站就能直接在首页看到内容（要改顺序/改名再去栏目管理里调）。 */
   let colsCfg = (config.home && config.home.columns) || [];
   /* v73：空壳没有任何栏目配置时，注入内置豆瓣栏目（数据来自豆瓣公开榜单，无需密钥），
-     首页开箱就有内容；站长一旦在后台配过栏目，就以配置为准，不再注入 */
+     首页开箱就有内容；站长一旦在后台配过栏目，就以配置为准，不再注入。
+     v75：配了 TMDB 凭据的站点（正式版/自用站）优先给 TMDB 榜单栏目 ——
+     影视排行推荐数据一律走 TMDB，豆瓣降级成「没配 token 时」的兜底。 */
   if (!colsCfg.length) {
-    colsCfg = [
-      { type: 'douban', key: 'db_series', label: '热门剧集', kind: 'series' },
-      { type: 'douban', key: 'db_movie', label: '热门电影', kind: 'movie' },
-      { type: 'douban', key: 'db_variety', label: '热门综艺', kind: 'variety' },
-      { type: 'douban', key: 'db_anime', label: '热门动漫', kind: 'anime' }
-    ];
+    if (tmdbToken()) {
+      colsCfg = [
+        { type: 'tmdb', key: 'trending', label: '本周热门' },
+        { type: 'tmdb', key: 'zh_tv_hot', label: '华语热播剧' },
+        { type: 'tmdb', key: 'zh_movie_hot', label: '华语热门电影' },
+        { type: 'tmdb', key: 'tv_popular', label: '热门剧集' },
+        { type: 'tmdb', key: 'movie_popular', label: '热门电影' },
+        { type: 'tmdb', key: 'movie_now', label: '正在热映' }
+      ];
+    } else {
+      colsCfg = [
+        { type: 'douban', key: 'db_series', label: '热门剧集', kind: 'series' },
+        { type: 'douban', key: 'db_movie', label: '热门电影', kind: 'movie' },
+        { type: 'douban', key: 'db_variety', label: '热门综艺', kind: 'variety' },
+        { type: 'douban', key: 'db_anime', label: '热门动漫', kind: 'anime' }
+      ];
+    }
   }
   if ((config.collectList || []).length) {
     const used = {};

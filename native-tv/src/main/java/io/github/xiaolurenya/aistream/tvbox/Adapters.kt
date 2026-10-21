@@ -474,3 +474,35 @@ class RedeemAdapter(
         h.itemView.setOnClickListener { onPick(d) }
     }
 }
+
+// ---------- 详情页演员横排（v75，截图样式：圆头像 + 名下） ----------
+/* 纯展示行：不设点击、不抢焦点（焦点从播放大按钮/收藏直接落到线路线 chips）。
+   头像 clipToOutline 裁圆：XML 的 clipToOutline 在部分盒子上不认，代码里兜底一遍。 */
+class CastAdapter : RecyclerView.Adapter<CastAdapter.H>() {
+
+    class H(v: View) : RecyclerView.ViewHolder(v) {
+        val img: ImageView = v.findViewById(R.id.imgCast)
+        val name: TextView = v.findViewById(R.id.tvCastName)
+    }
+
+    private val items = mutableListOf<Api.TmdbCast>()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): H =
+        H(LayoutInflater.from(parent.context).inflate(R.layout.item_cast, parent, false))
+
+    override fun getItemCount() = items.size
+
+    override fun onBindViewHolder(h: H, i: Int) {
+        val c = items[i]
+        h.name.text = c.name.orEmpty()
+        h.img.clipToOutline = true
+        val u = Api.tmdbProfileUrl(c.profile_path)
+        if (u.isBlank()) h.img.setImageDrawable(null) else h.img.load(u)
+    }
+
+    fun submit(list: List<Api.TmdbCast>) {
+        items.clear()
+        items.addAll(list)
+        notifyDataSetChanged()
+    }
+}

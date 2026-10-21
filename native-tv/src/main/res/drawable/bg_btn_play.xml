@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v75：详情页主播放按钮（截图参考的绿色胶囊）。聚焦不变底色、只靠 bindFocus
+     的白描边浮层标识 —— 换底色+描边圆角对不齐是老问题（大哥图3）。 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/play_green_hi" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="#594B5563" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/play_green" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+</selector>
