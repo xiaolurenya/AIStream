@@ -2,7 +2,10 @@
 <!-- 第一屏（v1.4.9 重构）：居中登录卡片 + 品牌头。
      之前是一面「从左上铺到右下」的输入框墙，而且全页只给了 focusable 却没调
      bindFocus —— 遥控器上下移动既没放大也没描边，完全看不出选中谁（大哥点名）。
-     现在全部可聚焦控件在代码里统一 bindFocus：放大 + 白描边 + 轻提示音。 -->
+     v1.4.9 起全页 bindFocus 统一放大 + 轻提示音；v1.4.26 焦点指示彻底重设计——
+     这台设备上白描边环在聚焦控件上必退化成两根横线（三版实测），
+     故登录页 bindFocus 一律 ring=false，焦点全靠 drawable 聚焦态的
+     「左 5dp 强调色条 + 深蓝实心块」（见 bg_input / bg_login_*，绝无描边）。 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -104,7 +107,7 @@
                     style="@style/AIStream.FocusItem"
                     android:layout_width="wrap_content"
                     android:layout_height="44dp"
-                    android:background="@drawable/bg_chip_on"
+                    android:background="@drawable/bg_login_chip_on"
                     android:gravity="center"
                     android:paddingStart="26dp"
                     android:paddingEnd="26dp"
@@ -118,7 +121,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="44dp"
                     android:layout_marginStart="12dp"
-                    android:background="@drawable/bg_chip"
+                    android:background="@drawable/bg_login_chip"
                     android:gravity="center"
                     android:paddingStart="26dp"
                     android:paddingEnd="26dp"
@@ -243,7 +246,7 @@
                     style="@style/AIStream.FocusItem"
                     android:layout_width="wrap_content"
                     android:layout_height="54dp"
-                    android:background="@drawable/bg_btn"
+                    android:background="@drawable/bg_login_btn"
                     android:gravity="center"
                     android:letterSpacing="0.12"
                     android:paddingStart="46dp"
@@ -259,7 +262,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="54dp"
                     android:layout_marginStart="14dp"
-                    android:background="@drawable/bg_chip"
+                    android:background="@drawable/bg_login_chip"
                     android:gravity="center"
                     android:paddingStart="28dp"
                     android:paddingEnd="28dp"

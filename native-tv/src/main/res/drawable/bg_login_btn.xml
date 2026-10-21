@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 登录页专用：「进入」按钮底色。v1.4.26 重设计——
+     聚焦态 = 深蓝实心块 #FF2B549F（白字对比强、绝无描边），和输入框聚焦态同语言；
+     默认态 = accent。仅登录页用。 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF2B549F" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FF2B549F" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/accent" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>

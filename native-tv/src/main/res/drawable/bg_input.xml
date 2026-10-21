@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 登录页输入框。v1.4.25 两处改动：
-     ① 圆角 14→10dp，与 bg_focus_ring 对齐（原环比框圆角大，描边四角翘到框外出圈）；
-     ② 聚焦环画进背景 layer-list，不再只靠 bindFocus 的 foreground 环 ——
-        onCreate 里就 requestFocus 的视图会在 0×0 时拿到焦点环，foreground 的 bounds
-        退化，整环退化成「框顶一根直线、圆角被切平」（大哥截图实测）。背景 bounds
-        由框架按视图尺寸管理，不可能退化。 -->
+<!-- 登录页输入框 v1.4.26 —— 焦点指示彻底重设计（大哥拍板：不在描边环上继续修）。
+     血泪：这台设备上「白描边环」画在聚焦的 EditText 上必退化——
+     v1.4.24 foreground 环 → 一根线；v1.4.25 背景 layer-list 环 → 还是上下两根线、
+     竖边消失（三次截图同一几何：线跨全宽、无竖边、方头）。
+     而实心填充在它上面永远渲染正常。所以新方案一根线都不画：
+     聚焦 = 底色亮一档 + 左侧 5dp 强调色条（都是实心块）+ bindFocus 的放大。
+     非聚焦态的 16% 细描边实测渲染正常，保留。 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <layer-list>
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#FF182B52" />
+                    <solid android:color="#FF2B549F" />
                     <corners android:radius="10dp" />
-                    <stroke android:width="1.5dp" android:color="#8CFFFFFF" />
                 </shape>
             </item>
-            <item>
+            <item android:width="5dp" android:gravity="left">
                 <shape android:shape="rectangle">
-                    <solid android:color="#00000000" />
-                    <stroke android:width="2dp" android:color="#FFFFFFFF" />
-                    <corners android:radius="10dp" />
+                    <solid android:color="@color/accent" />
+                    <corners android:topLeftRadius="10dp" android:bottomLeftRadius="10dp" />
                 </shape>
             </item>
         </layer-list>
@@ -28,16 +27,14 @@
         <layer-list>
             <item>
                 <shape android:shape="rectangle">
-                    <solid android:color="#FF182B52" />
+                    <solid android:color="#FF2B549F" />
                     <corners android:radius="10dp" />
-                    <stroke android:width="1.5dp" android:color="#8CFFFFFF" />
                 </shape>
             </item>
-            <item>
+            <item android:width="5dp" android:gravity="left">
                 <shape android:shape="rectangle">
-                    <solid android:color="#00000000" />
-                    <stroke android:width="2dp" android:color="#FFFFFFFF" />
-                    <corners android:radius="10dp" />
+                    <solid android:color="@color/accent" />
+                    <corners android:topLeftRadius="10dp" android:bottomLeftRadius="10dp" />
                 </shape>
             </item>
         </layer-list>

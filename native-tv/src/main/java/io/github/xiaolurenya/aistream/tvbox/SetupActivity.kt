@@ -47,12 +47,10 @@ class SetupActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.tvVer).text = "v" + BuildConfig.VERSION_NAME
 
-        // 焦点反馈（大哥点名「选中没有动画都不知道选哪里」）：之前整页只给了 focusable
-        // 却没调 bindFocus，遥控器上下移动既没放大也没描边。现在全部统一：放大 + 白描边 + 轻提示音。
-        // v1.4.25：四个输入框的聚焦环画在 bg_input 的 layer-list 里（背景 bounds 框架保证，
-        // 不会出现 foreground 环在 0×0 时设进去退化成一根线的问题）→ 这里传 ring=false 别再叠一层
-        listOf(chipHttp, chipHttps, btnGo, tvClear).forEach { bindFocus(it) }
-        listOf(etHost, etPort, etUser, etPass).forEach { bindFocus(it, ring = false) }
+        // 焦点反馈：放大 + 提示音；描边环一个都不画（v1.4.26 重设计）——
+        // 这台设备上白描边环画在聚焦控件上必退化成两根横线（三版实测），
+        // 全页焦点指示 = drawable 的聚焦态亮底/色条（实心块），bindFocus 只管放大
+        listOf(chipHttp, chipHttps, btnGo, tvClear, etHost, etPort, etUser, etPass).forEach { bindFocus(it, ring = false) }
 
         chipHttp.setOnClickListener { setProto("http") }
         chipHttps.setOnClickListener { setProto("https") }
@@ -93,9 +91,9 @@ class SetupActivity : AppCompatActivity() {
     private fun setProto(p: String) {
         proto = p
         val on = p == "https"
-        chipHttps.setBackgroundResource(if (on) R.drawable.bg_chip_on else R.drawable.bg_chip)
+        chipHttps.setBackgroundResource(if (on) R.drawable.bg_login_chip_on else R.drawable.bg_login_chip)
         chipHttps.setTextColor(getColor(if (on) R.color.accent_soft else R.color.fg_dim))
-        chipHttp.setBackgroundResource(if (on) R.drawable.bg_chip else R.drawable.bg_chip_on)
+        chipHttp.setBackgroundResource(if (on) R.drawable.bg_login_chip else R.drawable.bg_login_chip_on)
         chipHttp.setTextColor(getColor(if (on) R.color.fg_dim else R.color.accent_soft))
     }
 

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 登录页专用：未选中 chip / 清除按钮底色。v1.4.26 重设计——
+     这台设备白描边环在聚焦控件上必退化成两根横线（三版实测），
+     登录页 bindFocus 已 ring=false，焦点指示全靠「聚焦态 + 左侧 5dp 强调色条」
+     （实心块，绝无描边，和 bg_input 同一套语言）。仅 activity_setup 使用。 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/bg_card_hi" />
+                    <corners android:radius="10dp" />
+                </shape>
+            </item>
+            <item android:width="5dp" android:gravity="left">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/accent" />
+                    <corners android:topLeftRadius="10dp" android:bottomLeftRadius="10dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/bg_card_hi" />
+                    <corners android:radius="10dp" />
+                </shape>
+            </item>
+            <item android:width="5dp" android:gravity="left">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/accent" />
+                    <corners android:topLeftRadius="10dp" android:bottomLeftRadius="10dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bg_card_hi" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>

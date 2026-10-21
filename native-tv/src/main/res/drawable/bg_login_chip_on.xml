@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 登录页专用：选中协议 chip（默认 http）底色。v1.4.26 重设计——
+     聚焦态 = 保留选中色(accent) + 左侧 5dp 亮强调色条（实心，无环）。仅登录页用。 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/accent" />
+                    <corners android:radius="10dp" />
+                </shape>
+            </item>
+            <item android:width="5dp" android:gravity="left">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/accent_soft" />
+                    <corners android:topLeftRadius="10dp" android:bottomLeftRadius="10dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/accent" />
+                    <corners android:radius="10dp" />
+                </shape>
+            </item>
+            <item android:width="5dp" android:gravity="left">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/accent_soft" />
+                    <corners android:topLeftRadius="10dp" android:bottomLeftRadius="10dp" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/accent" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>
