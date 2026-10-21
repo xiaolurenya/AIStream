@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 登录页「端口」图标：井号（数字/端口的通用象形，v1.4.25 新增） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M9.5,4 L7.5,20 M16.5,4 L14.5,20"
+        android:strokeColor="#C9D6F0"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M4.5,8.5h16 M3.5,15.5h16"
+        android:strokeColor="#C9D6F0"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round" />
+</vector>

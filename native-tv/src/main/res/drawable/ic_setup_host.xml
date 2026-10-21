@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 登录页「站点地址」图标：地球（v1.4.25 新增，表单字段前置图标） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M12,3c-5,0 -9,4 -9,9s4,9 9,9 9,-4 9,-9 -4,-9 -9,-9z"
+        android:strokeColor="#C9D6F0"
+        android:strokeWidth="1.7" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M3,12h18"
+        android:strokeColor="#C9D6F0"
+        android:strokeWidth="1.7" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M12,3c2.6,2.6 2.6,15.4 0,18 -2.6,-2.6 -2.6,-15.4 0,-18z"
+        android:strokeColor="#C9D6F0"
+        android:strokeWidth="1.7" />
+</vector>

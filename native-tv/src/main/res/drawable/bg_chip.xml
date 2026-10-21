@@ -2,5 +2,5 @@
 <!-- 顶部分类标签 / 各种 chip 未选中底色：在暗底上更亮一档，标签更跳 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="@color/bg_card_hi" />
-    <corners android:radius="8dp" />
+    <corners android:radius="10dp" />
 </shape>
