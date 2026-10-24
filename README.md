@@ -6,7 +6,7 @@
 ![Issues](https://img.shields.io/github/issues/xiaolurenya/AIStream?style=flat-square&logo=github&label=Issues)
 ![TG Group](https://img.shields.io/badge/TG%E7%BE%A4-AIStream1-2CA5E0?style=flat-square&logo=telegram&logoColor=white)
 
-> **一套自托管的影视聚合站：TMDB 榜单 + 你自己的采集站 + IPTV 直播 + 全原生 Android 双端 APP。**
+> **一套自托管的影视聚合站：TMDB 榜单 + 你自己的采集站 + IPTV 直播 + 电脑网页版（推荐使用） 全原生 Android 三端 APP。**
 > Node 原生 `http` 写成，**零 npm 依赖**，Docker 镜像仅 **169MB**；RSA 一机一码授权，**激活后离线校验**。
 > 不内置任何站点地址、密钥或会员体系——开箱是框架，填上你的源就能用。
 
@@ -31,7 +31,7 @@
 
 ## ✨ 亮点
 
-- 📱 **真·原生双端 APP**：手机 / 平板 + 电视盒子两套全原生 Kotlin 客户端（**不是网页套壳**），ExoPlayer 硬解，遥控器 / 触摸都顺手；同一把签名，直接覆盖安装。
+- 📱 **真·原生三端 APP**： 电脑网页版（推荐使用） 手机 / 平板 + 电视盒子两套全原生 Kotlin 客户端（**不是网页套壳**），ExoPlayer 硬解，遥控器 / 触摸都顺手；同一把签名，直接覆盖安装。
 - 🤖 **TG 机器人秒发授权码**：私聊 [@AIStreamAuth_Bot](https://t.me/AIStreamAuth_Bot) 发机器码，**几秒回永久码**；签发跑在 Cloudflare，飞牛关机也不影响新用户激活。
 - 🧩 **零依赖站点内核**：Node 原生 `http`，不装任何 npm 包，镜像 169MB；播放器 Artplayer + hls.js **自托管，页面不连任何外部 CDN**。
 - 🔀 **智能换源**：解析线路优先 + 跨站切换的换源面板；官方 + 采集线路合并去重，官方线路排前带 ★。
@@ -47,10 +47,11 @@
 ## 架构一览
 
 ```
-                 ┌─────────────────────────────┐
+                  ┌─────────────────────────────┐
+    电脑网页   ──▶│ IPH或者域名即可访问           │
    手机 / 平板 ──▶│  AIStream-Native.apk        │
    电视 / 盒子 ──▶│  AIStream-TV.apk            │  Kotlin + ExoPlayer（全原生）
-                 └──────────────┬──────────────┘
+                  └──────────────┬──────────────┘
                                 │ 填你的站点地址 + 账号
                  ┌──────────────▼──────────────┐
    任意浏览器 ───▶│  aistream  server.js        │  Node 原生 http · 零 npm 依赖
