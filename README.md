@@ -179,7 +179,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 6. **按「现状」提供，无任何担保。**
 
 **官方 TG 群（免费获取永久授权码 / 交流反馈）：[https://t.me/AIStream1](https://t.me/AIStream1)**
-**授权机器人（私聊发机器码秒得码）进去私聊机器人即可获取
+**授权机器人（进上方TG群私聊发机器人）即可获取授权码
 
 ![TG 群二维码](docs/tg-qr.png)
 
