@@ -2,6 +2,8 @@ services:
   aistream:
     # 现成镜像，粘贴即用，无需本地构建
     image: xiaoluya/aistream:latest
+    # 关键：每次都先拉最新镜像（配合面板「重启 / 重新部署」= 自动更新到最新版）
+    pull_policy: always
     container_name: aistream
     # 保持 root 用户运行，确保挂载出来的数据目录有读写权限
     user: "0:0"

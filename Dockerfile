@@ -9,6 +9,7 @@ ENV HOST=0.0.0.0
 
 WORKDIR /app
 COPY server.js ./server.js
+COPY VERSION ./VERSION
 COPY public ./public
 
 # 配置 / 用户 / 收藏 / 观看历史 / 图片缓存 全部落在这个卷里，重建容器不丢数据

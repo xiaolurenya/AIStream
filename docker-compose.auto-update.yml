@@ -1,0 +1,27 @@
+# 可选叠加文件：让 AIStream 自动更新（推送新镜像后自动拉取并重建容器，用户零操作）
+#
+# 用法（第一次执行一次，之后它就一直在后台自动检查）：
+#   docker compose -f docker-compose.yml -f docker-compose.auto-update.yml up -d
+#
+# 说明：
+#   · 只更新带 com.centurylinklabs.watchtower.enable=true 标签的容器（这里只有 aistream）
+#   · 每小时检查一次，发现新镜像会拉取 + 用同样的环境变量/端口/数据卷重建容器（数据卷 /data 不动）
+#   · 不需要自动更新就别加这个文件，用默认 docker-compose.yml 即可
+
+services:
+  aistream:
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: aistream-watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Asia/Shanghai
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_ROLLING_RESTART=true
+      - WATCHTOWER_POLL_INTERVAL=3600
