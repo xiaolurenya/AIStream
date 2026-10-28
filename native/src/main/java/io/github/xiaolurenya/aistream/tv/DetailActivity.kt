@@ -380,6 +380,8 @@ class DetailActivity : AppCompatActivity() {
         lines = emptyList()
         parses = emptyList()
         PlayCache.lines = emptyList()
+        /* v1.5.13：采集线路不清空 —— 上游模式换源里要能把它们列出来切过去 */
+        PlayCache.collectLines = collectReady?.lines.orEmpty()
         PlayCache.isUp = true
         PlayCache.upEps = r.eps
         PlayCache.upSkip = 0
@@ -414,7 +416,10 @@ class DetailActivity : AppCompatActivity() {
 
     private fun applyCollect(r: CollectReady) {
         overlay.visibility = View.GONE
-        PlayCache.clearUp()
+        /* v1.5.13：这里不再 clearUp() —— 上游分集/线路要留着，换源面板才能切回「上游 · 智能选择」；
+           同时把采集线路存一份，上游模式下换源也列得出来 */
+        PlayCache.isUp = false
+        PlayCache.collectLines = r.lines
         lines = r.lines
         parses = r.parses
         PlayCache.lines = r.lines
@@ -441,16 +446,29 @@ class DetailActivity : AppCompatActivity() {
     private fun paint() {
         if (PlayCache.isUp) { paintUp(); return }
         if (lines.isEmpty()) { labEps.text = "暂无片源"; return }
-        val names = lines.map {
+        /* v1.5.13：采集模式里也把上游线路摆出来（后台配了上游时），随时能切回官方线路 */
+        val hasUp = PlayCache.upEps.isNotEmpty() && PlayCache.upLines.isNotEmpty()
+        val base = if (hasUp) 1 else 0
+        val names = mutableListOf<String>()
+        if (hasUp) names.add("上游 · 智能选择")
+        names.addAll(lines.map {
             val tag = if (PlayCache.isOfficial(it)) "★ " else ""
             tag + it.station + " · " + it.from + " (" + it.eps.size + ")"
-        }
-        rvLines.adapter = ChipAdapter(names, { lineIdx }, wrap = true) { i ->
-            lineIdx = i
-            epIdx = 0
-            epPage = 0
-            rvLines.adapter?.notifyDataSetChanged()
-            paintEps()
+        })
+        rvLines.adapter = ChipAdapter(names, { lineIdx + base }, wrap = true) { i ->
+            if (hasUp && i == 0) {
+                PlayCache.isUp = true
+                PlayCache.upSkip = 0
+                epIdx = 0
+                epPage = 0
+                paintUp()
+            } else {
+                lineIdx = i - base
+                epIdx = 0
+                epPage = 0
+                rvLines.adapter?.notifyDataSetChanged()
+                paintEps()
+            }
         }
         labEps.text = "选集（共 ${lines[lineIdx].eps.size} 集）"
         paintEps()
@@ -460,21 +478,41 @@ class DetailActivity : AppCompatActivity() {
     }
 
     // 上游模式：第一条「智能选择」= 服务端官方优先 + 失败自动顺延；
-    // 后面是换源面板里那几条，点了就把 skip 下标喂给 resolve
+    // 后面是上游线路和采集站线路（v1.5.13 补齐，否则后台配了采集站也一条都看不到）
     private fun paintUp() {
+        val cols = PlayCache.collectLines
+        val upN = PlayCache.upLines.size
         val names = mutableListOf("智能选择")
         names.addAll(PlayCache.upLines.map {
             (if (it.official == true) "★ " else "") + (it.label ?: "线路") + (if (it.selected == true) " ·推荐" else "")
         })
+        names.addAll(cols.map { "采集 · " + it.station + " · " + it.from + " (" + it.eps.size + ")" })
         // picked 必须实时读 PlayCache：点完换线只 notifyDataSetChanged，本地算好的值会过期
-        rvLines.adapter = ChipAdapter(names, { if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1 }, wrap = true) { i ->
-            PlayCache.upSkip = if (i == 0) 0 else i - 1
-            epIdx = 0
-            epPage = 0
-            rvLines.adapter?.notifyDataSetChanged()
-            paintEps()
+        val cur = if (PlayCache.isUp) (if (PlayCache.upSkip <= 0) 0 else PlayCache.upSkip + 1) else (upN + 1 + lineIdx)
+        rvLines.adapter = ChipAdapter(names, { cur }, wrap = true) { i ->
+            if (i <= upN) {
+                PlayCache.isUp = true
+                PlayCache.upSkip = if (i == 0) 0 else i - 1
+                epIdx = 0
+                epPage = 0
+                rvLines.adapter?.notifyDataSetChanged()
+                paintEps()
+            } else {
+                val j = i - upN - 1
+                if (j in cols.indices) {
+                    PlayCache.isUp = false
+                    lines = cols
+                    PlayCache.lines = cols
+                    PlayCache.parseList = parses
+                    PlayCache.hasParse = parses.isNotEmpty()
+                    lineIdx = j
+                    epIdx = 0
+                    epPage = 0
+                    paint()
+                }
+            }
         }
-        labEps.text = "选集（共 ${PlayCache.upEps.size} 集）"
+        labEps.text = "选集（共 ${if (PlayCache.isUp) PlayCache.upEps.size else cols.getOrNull(lineIdx)?.eps?.size ?: 0} 集）"
         paintEps()
         labParse.visibility = View.GONE
         rvParse.visibility = View.GONE
