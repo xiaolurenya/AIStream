@@ -32,7 +32,7 @@
 ## ✨ 亮点
 
 - 📱 **真·原生双端 APP**：手机 / 平板 + 电视盒子两套全原生 Kotlin 客户端（**不是网页套壳**），ExoPlayer 硬解，遥控器 / 触摸都顺手；同一把签名，直接覆盖安装。
-- 🤖 **TG 机器人秒发授权码**：私聊 [@AIStreamAuth_Bot](https://t.me/AIStreamAuth_Bot) 发机器码，**几秒回永久码**；签发跑在 Cloudflare，飞牛关机也不影响新用户激活。
+- 🤖 **TG 交流群发永久授权码**： ((https://t.me/AIStream1)) 发机器码，**入群获取永久码**；签发跑在 Cloudflare，飞牛关机也不影响新用户激活。
 - 🧩 **零依赖站点内核**：Node 原生 `http`，不装任何 npm 包，镜像 169MB；播放器 Artplayer + hls.js **自托管，页面不连任何外部 CDN**。
 - 🔀 **智能换源**：解析线路优先 + 跨站切换的换源面板；官方 + 采集线路合并去重，官方线路排前带 ★。
 - 🚫 **m3u8 广告过滤**：服务端滤掉插播广告，APP 播放时实时显示「已拦截 N 条」。
@@ -130,7 +130,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 ## 激活（免费 · 永久 · 机器人秒发）
 
 1. 打开站点 → 激活页有一串**机器码**（如 `FB4C-EAB2-EC4E-499A`），复制。
-2. **TG 私聊 [@AIStreamAuth_Bot](https://t.me/AIStreamAuth_Bot)**（[群 t.me/AIStream1](https://t.me/AIStream1) 里就有）→ 把机器码发给机器人 → **几秒内回永久授权码**。
+2. **TG群 [https://t.me/AIStream1](https://t.me/AIStream1)）→ 把机器码发给机器人 → **获取永久授权码**。
    - 也可以把机器码发在群里，机器人会**私聊**把码发给你（码不在群里公开）。
 3. 粘进激活页 → 自动进站。全程本地校验，**支持离线激活**。
 
@@ -157,7 +157,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 
 ## 常见问题
 
-- **打开是激活页**：TG 私聊 [@AIStreamAuth_Bot](https://t.me/AIStreamAuth_Bot) 发机器码，秒回永久码。没有跳过激活的开关。
+- **打开激活页 复制机器码 **： TG群聊 [https://t.me/AIStream1](https://t.me/AIStream1)获取机器码永久码。没有跳过激活的开关。
 - **首页空白**：没加采集站。后台 → 采集站 → 添加 → 立即自检。没配也有内置热门数据，不会白屏。
 - **APP 连不上站点**：① 手机浏览器先打开站点地址，浏览器都打不开就不是 APP 的问题；② 地址只填 IP/域名不带路径；③ 账号密码就是网页登录那套。
 - **APP 播不出来**：先用浏览器试同一部片——浏览器也不行就是片源问题。浏览器能播则多半是后台「解析线路」为空（站方给播放页地址时需要），配一条再试。
@@ -176,7 +176,6 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 6. **按「现状」提供，无任何担保。**
 
 **官方 TG 群（免费获取永久授权码 / 交流反馈）：[https://t.me/AIStream1](https://t.me/AIStream1)**
-**授权机器人（私聊发机器码秒得码）：[@AIStreamAuth_Bot](https://t.me/AIStreamAuth_Bot)**
 
 ![TG 群二维码](docs/tg-qr.png)
 
