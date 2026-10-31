@@ -23,7 +23,7 @@
 | **这是什么** | 影视资源聚合站（服务端 + Web 前台后台）+ 手机/电视**全原生** Android APP |
 | **适合谁** | 想在飞牛 / 群晖 / 宝塔 / 任意 Docker 机器上自建影视站的人 |
 | **数据从哪来** | 你自己的苹果CMS 采集站 / IPTV 源 / TMDB Token（**一律不内置**，自己填） |
-| **怎么跑** | 一段 `docker compose up -d`，或 PM2 / 裸机 `node server.js` |
+| **怎么跑** | 一行 `docker compose up -d`，拉取预构建镜像 `xiaoluya/aistream:latest`，无需源码 |
 | **怎么激活** | 激活页复制机器码 → **TG 私聊机器人秒回永久授权码**（免费） |
 | **授权机制** | RSA-2048 一机一码，激活后**完全离线校验**，不连作者服务器 |
 
@@ -125,9 +125,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 
 - **飞牛 fnOS**：Docker → 项目(Compose) → 粘贴上面这段 → 卷路径改自己的 → 启动。路径要选没有其他 compose 项目的空目录。
 - **群晖**：Container Manager → 项目 → 新建 → 粘贴 Compose → 部署。
-- **宝塔**：Node 版本管理器(20/22) + PM2，上传 `server.js` 和 `public/` 到 `/www/wwwroot/aistream/`，`DATA_DIR=./data PORT=8890 pm2 start server.js --name aistream && pm2 save`，再反代到 8890。
-- **裸机调试**：`DATA_DIR=./data PORT=8890 node server.js`。
-- **镜像拉不动**：`git clone` 本仓库后 `docker build -t xiaoluya/aistream:latest .`，本地构建约十几秒。
+- **本仓库只分发预构建镜像**：运行方式就是上面那段 `docker compose up -d`，不需要、也不提供从源码构建的入口。镜像拉不动时，换网络或手动 `docker pull xiaoluya/aistream:latest` 后重启容器即可。
 
 ## 激活（免费 · 永久 · 机器人秒发）
 
