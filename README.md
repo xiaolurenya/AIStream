@@ -23,7 +23,7 @@
 | **这是什么** | 影视资源聚合站（服务端 + Web 前台后台）+ 手机/电视**全原生** Android APP |
 | **适合谁** | 想在飞牛 / 群晖 / 宝塔 / 任意 Docker 机器上自建影视站的人 |
 | **数据从哪来** | 你自己的苹果CMS 采集站 / IPTV 源 / TMDB Token（**一律不内置**，自己填） |
-| **怎么跑** | 一行 `docker compose up -d`，拉取预构建镜像 `xiaoluya/aistream:latest`，无需源码 |
+| **怎么跑**    | Docker Compose，拉取预构建镜像 `xiaoluya/aistream:latest`，下拉有 Compose 代码 |
 | **怎么激活** | 激活页复制机器码 → **TG 群发永久授权码**（免费） |
 | **授权机制** | RSA-2048 一机一码，激活后**完全离线校验**，不连作者服务器-无任何私带夹货 |
 
