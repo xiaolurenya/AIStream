@@ -24,7 +24,7 @@
 | **适合谁** | 想在飞牛 / 群晖 / 宝塔 / 任意 Docker 机器上自建影视站的人 |
 | **数据从哪来** | 你自己的苹果CMS 采集站 / IPTV 源 / TMDB Token（**一律不内置**，自己填） |
 | **怎么跑** | 一行 `docker compose up -d`，拉取预构建镜像 `xiaoluya/aistream:latest`，无需源码 |
-| **怎么激活** | 激活页复制机器码 → **TG 私聊机器人秒回永久授权码**（免费） |
+| **怎么激活** | 激活页复制机器码 → **TG 群发永久授权码**（免费） |
 | **授权机制** | RSA-2048 一机一码，激活后**完全离线校验**，不连作者服务器 |
 
 ---
@@ -32,7 +32,7 @@
 ## ✨ 亮点
 
 - 📱 **真·原生双端 APP**：手机 / 平板 + 电视盒子两套全原生 Kotlin 客户端（**不是网页套壳**），ExoPlayer 硬解，遥控器 / 触摸都顺手；同一把签名，直接覆盖安装。
-- 🤖 **TG 交流群发永久授权码**： ((https://t.me/AIStream1)) 发机器码，**入群获取永久码**；签发跑在 Cloudflare，飞牛关机也不影响新用户激活。
+- 💬 **TG 群发永久授权码**：[AIStream1](https://t.me/AIStream1) 发机器码，**入群获取永久码**；签发跑在 Cloudflare，飞牛关机也不影响新用户激活。
 - 🧩 **零依赖站点内核**：Node 原生 `http`，不装任何 npm 包，镜像 169MB；播放器 Artplayer + hls.js **自托管，页面不连任何外部 CDN**。
 - 🔀 **智能换源**：解析线路优先 + 跨站切换的换源面板；官方 + 采集线路合并去重，官方线路排前带 ★。
 - 🚫 **m3u8 广告过滤**：服务端滤掉插播广告，APP 播放时实时显示「已拦截 N 条」。
@@ -81,7 +81,7 @@ APP 不内置任何服务器地址——打开填你自己站点的地址 + 端�
 
 **👉 [提交 Bug](https://github.com/xiaolurenya/AIStream/issues/new?template=bug-report.yml)
 · [功能建议](https://github.com/xiaolurenya/AIStream/issues/new?template=feature-request.yml)
-· TG 群 [t.me/AIStream1](https://t.me/AIStream1)**
+· TG 群 [AIStream1](https://t.me/AIStream1)**
 
 提 Issue 请带**版本 + 复现步骤 + 环境 + 截图**，站点端和 APP 端的问题都收，也欢迎直接 PR。
 
@@ -127,11 +127,10 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 - **群晖**：Container Manager → 项目 → 新建 → 粘贴 Compose → 部署。
 - **本仓库只分发预构建镜像**：运行方式就是上面那段 `docker compose up -d`，不需要、也不提供从源码构建的入口。镜像拉不动时，换网络或手动 `docker pull xiaoluya/aistream:latest` 后重启容器即可。
 
-## 激活（免费 · 永久 · 机器人秒发）
+## 激活（免费 · 永久 · 群发授权码）
 
 1. 打开站点 → 激活页有一串**机器码**（如 `FB4C-EAB2-EC4E-499A`），复制。
-2. **TG群 [https://t.me/AIStream1](https://t.me/AIStream1)→ 把机器码发给机器人 → **获取永久授权码**。
-   - 也可以把机器码发在群里，机器人会**私聊**把码发给你（码不在群里公开）。
+2. 把机器码发到 **TG 群 [AIStream1](https://t.me/AIStream1)**，按群内指引获取**永久授权码**（码不在群里公开，私聊发放）。
 3. 粘进激活页 → 自动进站。全程本地校验，**支持离线激活**。
 
 > 机器码会变吗？存在 `data/config.json`，数据卷在就不变（重建容器也不变）；换数据卷 / 清空 `data/` 会重新生成，重新签发同样免费永久。
@@ -157,7 +156,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 
 ## 常见问题
 
-- **打开激活页 复制机器码 **： TG群聊 [https://t.me/AIStream1](https://t.me/AIStream1)获取机器码永久码。没有跳过激活的开关。
+- **打开是激活页**：把机器码发到 TG 群 [AIStream1](https://t.me/AIStream1) 按指引获取永久码。没有跳过激活的开关。
 - **首页空白**：没加采集站。后台 → 采集站 → 添加 → 立即自检。没配也有内置热门数据，不会白屏。
 - **APP 连不上站点**：① 手机浏览器先打开站点地址，浏览器都打不开就不是 APP 的问题；② 地址只填 IP/域名不带路径；③ 账号密码就是网页登录那套。
 - **APP 播不出来**：先用浏览器试同一部片——浏览器也不行就是片源问题。浏览器能播则多半是后台「解析线路」为空（站方给播放页地址时需要），配一条再试。
@@ -175,7 +174,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 5. **内容与合规责任完全在使用者**：接入源的合法性由使用者自行判断承担，一切法律后果与本项目及作者无关。授权码只是软件使用授权，不构成对所展示内容的任何授权。
 6. **按「现状」提供，无任何担保。**
 
-**官方 TG 群（免费获取永久授权码 / 交流反馈）：[https://t.me/AIStream1](https://t.me/AIStream1)**
+**官方 TG 群（免费获取永久授权码 / 交流反馈）：[AIStream1](https://t.me/AIStream1)**
 
 ![TG 群二维码](docs/tg-qr.png)
 
