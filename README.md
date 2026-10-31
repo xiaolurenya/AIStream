@@ -130,7 +130,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 ## 激活（免费 · 永久 · 机器人秒发）
 
 1. 打开站点 → 激活页有一串**机器码**（如 `FB4C-EAB2-EC4E-499A`），复制。
-2. **TG群 [https://t.me/AIStream1](https://t.me/AIStream1)）→ 把机器码发给机器人 → **获取永久授权码**。
+2. **TG群 [https://t.me/AIStream1](https://t.me/AIStream1)→ 把机器码发给机器人 → **获取永久授权码**。
    - 也可以把机器码发在群里，机器人会**私聊**把码发给你（码不在群里公开）。
 3. 粘进激活页 → 自动进站。全程本地校验，**支持离线激活**。
 
