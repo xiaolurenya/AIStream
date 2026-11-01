@@ -88,6 +88,29 @@ docker exec aistream cat /app/VERSION    # 应显示最新版本号
 2. SSH 执行 `bash update.sh`（compose 目录下，一键拉取+重建）
 3. 后台出现「有新版本」角标时，操作同 1
 
+## 想用后台「一键更新」按钮？（v1.5.17 起）
+
+按钮的原理是：容器往数据目录写一个请求文件 → **宿主机**上的定时任务检测到后执行 `docker compose pull && up -d`（容器里没有 docker，自己更新不了自己）。
+所以这套任务默认**没有装**，不装的话按钮点了不会有反应、只会等到超时。
+
+装一次即可（compose 目录下执行）：
+
+```bash
+bash update.sh cron
+```
+
+它会自动把同目录的 `update-cron.sh` 加进 crontab（每分钟检测一次，重复执行会自动去重）。
+
+- 若提示权限不足，改用有 docker 权限的用户安装：`sudo crontab -e`，粘贴这一行：
+
+```cron
+* * * * * /bin/sh /你的compose目录/update-cron.sh >/dev/null 2>&1
+```
+
+- 不想用了：`crontab -e` 删掉那一行即可，容器不受影响。
+- 任务日志在宿主机 `/tmp/aistream-update.log`，更新失败时看它。
+- 安全设计：拉镜像失败绝不动容器；只有确认容器脱离 compose 管理时才会删容器重建，**数据卷全程不碰**。
+
 ## 回滚
 
 把 compose 里的 `image` 改成旧版本 tag（如 `xiaoluya/aistream:v1.4.28`）后 `docker compose up -d`；数据异常时用 data-bak 还原数据目录。
