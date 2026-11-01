@@ -10,9 +10,9 @@
 > Node 原生 `http` 写成，**零 npm 依赖**，Docker 镜像仅 **169MB**；RSA 一机一码授权，**激活后离线校验**。
 > 不内置任何站点地址、密钥或会员体系——开箱是框架，填上你的源就能用。
 
-| 首页 · 预告短片/海报墙 | 播放页 · 换源 / 选集 / 追剧 |
+| 首页 · 新片预告 / 海报墙 | 播放页 · 换源 / 选集 / 追剧 |
 |:---:|:---:|
-| <img width="1893" height="903" alt="image" src="https://github.com/user-attachments/assets/20444e7e-f219-4b8b-9ce0-d1bdda12fa5f" /> ![播放页](docs/shot-play.jpg) |
+| ![首页](docs/shot-home.jpg) | ![播放页](docs/shot-play.jpg) |
 
 ---
 
