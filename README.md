@@ -12,7 +12,8 @@
 
 | 首页 · 海报墙 | 播放页 · 换源 / 选集 / 追剧 |
 |:---:|:---:|
-| ![首页](docs/shot-home.jpg) | ![播放页](docs/shot-play.jpg) |
+| ![首页](![Uploading image.png…]()
+) | ![播放页](docs/shot-play.jpg) |
 
 ---
 
