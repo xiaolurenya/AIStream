@@ -12,7 +12,7 @@
 
 | 首页 · 海报墙 | 播放页 · 换源 / 选集 / 追剧 |
 |:---:|:---:|
-| ![首页]<img width="1893" height="903" alt="image" src="https://github.com/user-attachments/assets/20444e7e-f219-4b8b-9ce0-d1bdda12fa5f" />
+| <img width="1893" height="903" alt="image" src="https://github.com/user-attachments/assets/20444e7e-f219-4b8b-9ce0-d1bdda12fa5f" />
 
 ) | ![播放页](docs/shot-play.jpg) |
 
