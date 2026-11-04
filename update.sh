@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # AIStream 一键更新（保留数据卷 /data，不删容器数据）
 #
-# 用法（在 docker-compose.yml 所在目录执行）：
-#   bash update.sh            # 拉最新镜像 → 用同一份 compose 重建容器
+# 用法（把本文件与 update-cron.sh 放同一目录，compose 或 docker run 部署都行）：
+#   bash update.sh            # 拉最新镜像 → 用同一份配置重建容器
 #   bash update.sh cron       # 装「宿主机自动更新任务」——装完后台的「一键更新」按钮才可用
 #
-# 做的事：拉最新镜像 → 用同一份 compose 重建容器（环境变量、端口、数据卷全部沿用）
+# 做的事：拉最新镜像 → 用同一份配置重建容器（环境变量、端口、数据卷全部沿用）
 # 若你的 compose 文件不叫 docker-compose.yml，把下面的文件名改掉即可。
 
 set -e
