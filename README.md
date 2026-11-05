@@ -97,7 +97,7 @@ APP 不内置任何服务器地址——打开填你自己站点的地址 + 端�
 > **授权体系**：RSA-2048 非对称签发，一机一码、**永久授权**、激活后离线校验。公钥随代码分发（只能验签），私钥只在你自己的 `data/config.json`，clone 下来的代码没有签发能力——这是设计，不是 bug。
 > **空壳原则**：功能全给，凭据一律不内置（采集站地址 / 上游密钥 / IPTV 源 / TMDB Token 都要你自己填）。凭据共刷会导致上游限流封号，**一实例一号，禁止共用**。
 
-## 三分钟装好（Docker Compose）适用于飞牛/群辉/X86
+## 三分钟装好（Docker Compose）适用于 飞牛 / 群晖（X86 与 ARM 均支持）
 
 ```yaml
 services:
@@ -123,8 +123,8 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 
 打开 `http://你的IP:8890` → 进激活页。默认 bridge 网络不占宿主机网络栈；**要用 DLNA 投屏**就把 `ports:` 换成 `network_mode: host`。
 
-- **飞牛商店自定义安装（提供 FPK 安装包）**：适用于飞牛商店（不想用Docker Compose）。先下载安装包 [`aistream-1.5.27.fpk`](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.27/aistream-1.5.27.fpk)，打开飞牛「应用中心 → 设置 → 手动安装」上传该 fpk，按向导设好端口与数据目录即可完成；之后在应用中心点「重启」会自动拉取最新镜像完成升级。
-- **群晖**：Container Manager → 项目 → 新建 → 粘贴 Compose → 部署
+- **飞牛商店自定义安装（提供 FPK 安装包）**：适用于飞牛 fnOS。先下载安装包 [`aistream-1.5.27.fpk`](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.27/aistream-1.5.27.fpk)，打开飞牛「应用中心 → 设置 → 手动安装」上传该 fpk，按向导设好端口与数据目录即可完成；之后在应用中心点「重启」会自动拉取最新镜像完成升级。
+- **群晖**：Container Manager → 项目 → 新建 → 粘贴 Compose → 部署。
 - **本仓库只分发预构建镜像**：运行方式就是上面那段 `docker compose up -d`，不需要、也不提供从源码构建的入口。镜像拉不动时，换网络或手动 `docker pull xiaoluya/aistream:latest` 后重启容器即可。
 
 ## 激活（免费 · 永久 · 群发授权码）
