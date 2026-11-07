@@ -1,5 +1,11 @@
 # AIStream 更新日志
 
+## v1.5.35（2026-11-07）· 飞牛安装包连接被拒修复 + 网页横屏/车机自适应
+
+- **修复飞牛安装包安装后「连接被拒」**：fpk compose 去掉 `pull_policy: always`（飞牛/NAS 无法直连 Docker Hub 导致强制拉取失败），端口/数据卷对齐 1.5.27 稳定写法；fpk `manifest` 版本号升到 **1.5.35**，镜像 tag 由浮动 `:latest` 固定为 **`:1.5.35`**，`upgrade_callback` 增加 `docker compose pull` 兜底。详见 `CHANGELOG-v1.5.35.md`。
+- **新增网页横屏 / 车机自适应**：车机浏览器与手机横屏打开页面布局错乱 → `style.css` 新增独立于 `is-mobile` 的横屏媒体查询（`orientation:landscape` + `max-height:760px`），把左侧固定竖栏折成顶部横向吸顶导航、卡片网格多列铺满、IPTV/新片预告横屏左右分栏；`mobile.js` 额外暴露 `is-landscape` class。
+- `VERSION` 1.5.34 → **1.5.35**；镜像保持 amd64 + arm64 双架构（`1.5.35` / `v1.5.35` / `latest` 均为多架构 manifest）；8890 / 18897 双容器已升级。
+
 ## v1.5.34（2026-11-07）· 版本号统一 + 两处 APP 端修复
 
 > 本版把服务端镜像 / APP（手机 + TV）/ fpk 四处版本号统一到 **v1.5.34**；服务端代码无功能改动，仅随镜像升版号。本次打包发布两处 APP 端修复（已在 1.5.33 线合并）。
