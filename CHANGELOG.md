@@ -1,5 +1,25 @@
 # AIStream 更新日志
 
+## v1.5.34（2026-11-07）· 版本号统一 + 两处 APP 端修复
+
+> 本版把服务端镜像 / APP（手机 + TV）/ fpk 四处版本号统一到 **v1.5.34**；服务端代码无功能改动，仅随镜像升版号。本次打包发布两处 APP 端修复（已在 1.5.33 线合并）。
+
+### 修复：TV 预览小窗「有声音无图像」
+
+- 根因：详情页预览首播只 `load` 出声、未把预览 `PlayerView` 绑到全站共享播放器 `PlayerHolder`（`pv.player` 未设置），黑窗出声；全屏往返因 `onResume` 补绑才恢复。
+- 修法：首播即 `PlayerHolder.attach(pv, muted=true, loop=true)`，预览窗与全屏共用同一 ExoPlayer，音画同步、切全屏 / 返回均秒切不重播。
+
+### 修复：手机 / TV 点进采集站栏目取不到分类
+
+- 根因：客户端 `Api.Column` 缺 `cats` 字段，Gson 反序列化时静默丢弃服务端下发的整份分类目录，两端从未渲染分类芯片。
+- 修法：模型新增 `Cat` / `Column.cats` 与 `homeCat()`，`CategoryActivity` / `HomeFragment` 渲染分类芯片并走 `/api/home/cat`；空分类走 `fallback` 兜底。
+
+### 分发与升级
+
+- `VERSION` 1.5.33 → 1.5.34；`native` / `native-tv` 的 `versionCode` / `versionName` 同步（手机 22 / TV 60）；fpk `manifest.version` = 1.5.34。
+- Docker 镜像 `xiaoluya/aistream:1.5.34`（amd64 + arm64 双架构 manifest）已推送；8890 / 18897 双容器已升级。
+- 飞牛应用中心将向已装用户推送更新提示（fpk `manifest` 版本号已升档）。
+
 ## v1.5.33（2026-11-06）· TV 端播放体验重构 + 采集站聚合修复 + 版本号统一
 
 > 本版焦点在 **TV 端观影体验** 与 **采集站聚合完整性**，并把手 server / 分发 / APP / fpk 四处的版本号统一到 **v1.5.33**（此前 8890 部署时把 VERSION 误标成 1.5.28，本次逆向改回）。服务端代码无功能改动，仅随镜像升版号。
