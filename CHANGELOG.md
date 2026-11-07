@@ -1,5 +1,11 @@
 # AIStream 更新日志
 
+## v1.5.36（2026-11-07）· 修复飞牛桌面快捷方式打不开（iframe 白屏）
+
+- **修复飞牛桌面图标点开白屏/打不开**：fpk 的 `app/ui/config` 以 `type:iframe` 内嵌打开应用，而服务端此前给每个响应都带 `X-Frame-Options: DENY`，浏览器据此拒绝在 iframe 里渲染 → 桌面窗口空白破图；直连浏览器/容器「8890 访问」是顶层导航不受影响。修法：`X-Frame-Options` 仅保留给 `/api/` 鉴权接口（防点击劫持），主文档与静态资源放开，飞牛桌面窗口可正常嵌入。详见 `CHANGELOG-v1.5.36.md`。
+- `VERSION` 1.5.35 → **1.5.36**；镜像保持 amd64 + arm64 双架构（`1.5.36` / `v1.5.36` / `latest` 均为多架构 manifest）；8890 / 18897 双容器已升级。
+- fpk `manifest` 版本号升到 **1.5.36**，compose 固定 `:1.5.36`，已重新打包并发布到 GitHub Release。
+
 ## v1.5.35（2026-11-07）· 飞牛安装包连接被拒修复 + 网页横屏/车机自适应
 
 - **修复飞牛安装包安装后「连接被拒」**：fpk compose 去掉 `pull_policy: always`（飞牛/NAS 无法直连 Docker Hub 导致强制拉取失败），端口/数据卷对齐 1.5.27 稳定写法；fpk `manifest` 版本号升到 **1.5.35**，镜像 tag 由浮动 `:latest` 固定为 **`:1.5.35`**，`upgrade_callback` 增加 `docker compose pull` 兜底。详见 `CHANGELOG-v1.5.35.md`。
