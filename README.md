@@ -124,7 +124,7 @@ docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就�
 
 打开 `http://你的IP:8890` → 进激活页。默认 bridge 网络不占宿主机网络栈；**要用 DLNA 投屏**就把 `ports:` 换成 `network_mode: host`。
 
-- **飞牛商店自定义安装（提供 FPK 安装包）**：适用于飞牛 fnOS。先下载安装包 [`aistream-1.5.44.fpk`](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.44/aistream-1.5.44.fpk)，打开飞牛「应用中心 → 设置 → 手动安装」上传该 fpk，按向导设好端口与数据目录即可完成；之后在应用中心点「重启」会自动拉取最新镜像完成升级。
+- **飞牛商店自定义安装（提供 FPK 安装包）**：适用于飞牛 fnOS。先下载安装包 [`aistream-1.5.45.fpk`](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.45/aistream-1.5.45.fpk)，打开飞牛「应用中心 → 设置 → 手动安装」上传该 fpk，按向导设好端口与数据目录即可完成；之后在应用中心点「重启」会自动拉取最新镜像完成升级。
 - **群晖**：Container Manager → 项目 → 新建 → 粘贴 Compose → 部署。
 - **本仓库只分发预构建镜像**：运行方式就是上面那段 `docker compose up -d`，不需要、也不提供从源码构建的入口。镜像拉不动时，换网络或手动 `docker pull xiaoluya/aistream:latest` 后重启容器即可。
 
