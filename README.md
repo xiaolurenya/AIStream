@@ -1,104 +1,38 @@
 # AIStream
 
+自托管的影视聚合站。自己填采集站、IPTV 源或 TMDB Token，就能在浏览器和手机、电视上看。服务端用 Node 原生 http 写成，没有 npm 依赖，Docker 镜像约 169MB。站点需要授权码激活，激活后离线校验。
+
 ![Docker Pulls](https://img.shields.io/docker/pulls/xiaoluya/aistream?style=flat-square&logo=docker&label=Docker%20Pulls)
 ![Latest Release](https://img.shields.io/github/v/release/xiaolurenya/AIStream?style=flat-square&logo=github&label=Release)
 ![Stars](https://img.shields.io/github/stars/xiaolurenya/AIStream?style=flat-square&logo=github&label=Stars)
-![Issues](https://img.shields.io/github/issues/xiaolurenya/AIStream?style=flat-square&logo=github&label=Issues)
-![TG Group](https://img.shields.io/badge/TG%E7%BE%A4-AIStream1-2CA5E0?style=flat-square&logo=telegram&logoColor=white)
 
-> **一套自托管的影视聚合站：TMDB 榜单 + 你自己的采集站 + IPTV 直播 + 全原生 Android 双端 APP。**
-> Node 原生 `http` 写成，**零 npm 依赖**，Docker 镜像仅 **169MB**；RSA 一机一码授权，**激活后离线校验**。
-> 不内置任何站点地址、密钥或会员体系——开箱是框架，填上你的源就能用。
-
-| 首页 · 新片预告 / 海报墙 | 播放页 · 换源 / 选集 / 追剧 |
+| 首页 | 播放页 |
 |:---:|:---:|
 | ![首页](docs/shot-home.jpg) | ![播放页](docs/shot-play.jpg) |
 
----
+## 关于这个项目
 
-## 30 秒了解
+项目由三部分组成：服务端和网页前后台、手机客户端、电视客户端。它本身不提供任何影视内容，也不内置采集站地址、上游密钥或会员账号，装完只是一个框架，数据源要自己配置。
 
-| | |
-|---|---|
-| **这是什么** | 影视资源聚合站（服务端 + Web 前台后台）+ 手机/电视**全原生** Android APP |
-| **适合谁** | 想在飞牛 / 群晖 / 宝塔 / 任意 Docker 机器上自建影视站的人 |
-| **数据从哪来** | 你自己的苹果CMS 采集站 / IPTV 源 / TMDB Token（**一律不内置**，自己填） |
-| **怎么跑**    | Docker Compose，拉取预构建镜像 `xiaoluya/aistream:latest`，下拉有 Compose 代码 |
-| **怎么激活** | 激活页复制机器码 → **TG 群发永久授权码**（免费） |
-| **授权机制** | RSA-2048 一机一码，激活后**完全离线校验**，不连作者服务器 |
+网页端包含前台浏览播放和后台管理；手机端和电视端是两个独立的 Android 原生客户端（Kotlin + ExoPlayer），不是网页套壳，需要在 APP 里填写自己站点的地址和账号。
 
----
+授权码是免费的：打开激活页复制机器码，发到 TG 群 [AIStream1](https://t.me/AIStream1) 换取。签发用 RSA-2048，一机一码，激活之后不再连作者服务器。
 
-## ✨ 亮点
+## 功能
 
-- 📱 **真·原生双端 APP**：手机 / 平板 + 电视盒子两套全原生 Kotlin 客户端（**不是网页套壳**），ExoPlayer 硬解，遥控器 / 触摸都顺手；同一把签名，直接覆盖安装。
-- 💬 **TG 群发永久授权码**：[AIStream1](https://t.me/AIStream1) 发机器码，**入群获取永久码**；签发跑在 Cloudflare，纯离线激活。
-- 🧩 **零依赖站点内核**：Node 原生 `http`，不装任何 npm 包，镜像 169MB；播放器 Artplayer + hls.js **自托管，页面不连任何外部 CDN**。
-- 🔀 **智能换源**：解析线路优先 + 跨站切换的换源面板；官方 + 采集线路合并去重，官方线路排前带 ★。
-- 🚫 **m3u8 广告过滤**：服务端滤掉插播广告，APP 播放时实时显示「已拦截 N 条」。
-- ⏩ **自动跳过片头片尾**：跟随账号权限，电影不自动跳，剧集按规则精准跳过。
-- 📺 **IPTV 直播带节目单**：EPG 节目单、三档兜底（直连 → 代理 → 切下一台）、25s 看门狗保活。
-- 📅 **追剧 & 续播**：追剧日历 + 继续观看（进度**绑集号**，换集不丢进度）+ 断点续播。
-- 🖼️ **海报磨砂背景 & 防盗链**：详情页海报磨砂大图；海报走站点图片代理绕防盗链，第三方图床不再 418。
-- 📡 **投屏 & 画中画**：DLNA 投屏（host 网络）、画中画小窗播放。
-- 🎟️ **积分社区体系**：每日签到、会员兑换、邀请注册。
-- 🛡️ **永久授权 + 空壳分发**：RSA-2048 一机一码，未激活 = 全部业务接口 402，没有旁路开关；功能全给，凭据一律不内置。
+- 首页栏目可混排 TMDB 榜单、采集站分类和内置热门数据；分类分页、聚合搜索、详情页选集、追剧日历、继续观看。
+- 播放用 ArtPlayer + hls.js，库文件随镜像分发，页面不依赖外部 CDN。换源面板会先试解析线路，再看采集线路；m3u8 插播广告在服务端过滤；支持自动跳过片头片尾、断点续播、倍速、DLNA 投屏。
+- IPTV 直播带 EPG 节目单，直连失败会依次尝试服务端代理和下一个源。
+- 后台可以管理首页栏目、采集站（地址规范化、连通自检、批量导入）、解析线路、用户和权限、积分签到、公告、IPTV、广告过滤、授权和日志。
+- 手机端和电视端支持线路合并去重、自动跳过片头片尾、画中画、图片代理，以及签到、兑换、邀请注册。
 
-## 架构一览
+海报、剧照走站点自己的图片代理，用来绕开第三方图床的防盗链。配置和观看记录都存在数据卷里，重建容器不会丢。
 
-```
-                 ┌─────────────────────────────┐
-   手机 / 平板 ──▶│  AIStream-Native.apk        │
-   电视 / 盒子 ──▶│  AIStream-TV.apk            │  Kotlin + ExoPlayer（全原生）
-                 └──────────────┬──────────────┘
-                                │ 填你的站点地址 + 账号
-                 ┌──────────────▼──────────────┐
-   任意浏览器 ───▶│  aistream  server.js        │  Node 原生 http · 零 npm 依赖
-                 │  ├─ 前台/后台（public/）     │  ArtPlayer + hls.js 自托管
-                 │  ├─ 采集站（苹果CMS v10）    │
-                 │  ├─ 解析线路 / 上游资源库    │
-                 │  ├─ IPTV 直播 + EPG         │
-                 │  └─ m3u8 索引级去广告       │
-                 └──────────────┬──────────────┘
-                                │ 数据卷 data/
-                 ┌──────────────▼──────────────┐
-                 │  config.json / users / 历史 │  授权码：RSA-2048 本机验签（离线）
-                 └─────────────────────────────┘
-```
+## 安装
 
-## 📱 Android 原生客户端 —— 免登录直接下载
+### Docker Compose
 
-| 版本 | 下载 | 一句话 |
-|---|---|---|
-| **手机 / 平板** | [**⬇ AIStream-Native.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-Native.apk) | Kotlin + ExoPlayer 全原生，原生硬解，**不是网页套壳** |
-| **电视 / 盒子（TV 版）** | [**⬇ AIStream-TV.apk**](https://github.com/xiaolurenya/AIStream/releases/latest/download/AIStream-TV.apk) | 遥控器专属界面，也支持触摸 / 手机安装 |
-
-两个包同一把签名密钥，**直接覆盖安装即可，不用先卸载**。
-APP 不内置任何服务器地址——打开填你自己站点的地址 + 端口 + 账号密码就能进，凭证只存手机本机。
-· [全部版本 / 更新日志](https://github.com/xiaolurenya/AIStream/releases)
-
-### 🐛 提交 Bug · 提需求 · 交流
-
-**👉 [提交 Bug](https://github.com/xiaolurenya/AIStream/issues/new?template=bug-report.yml)
-· [功能建议](https://github.com/xiaolurenya/AIStream/issues/new?template=feature-request.yml)
-· TG 群 [AIStream1](https://t.me/AIStream1)**
-
-提 Issue 请带**版本 + 复现步骤 + 环境 + 截图**，站点端和 APP 端的问题都收，也欢迎直接 PR。
-
----
-
-## 功能清单
-
-- **前台**：栏目混排（TMDB 榜单 / 你的采集站 / 本地媒体源 / 内置热门数据，配了采集站自动成栏目）、分类分页、聚合搜索、详情+选集+猜你喜欢、追剧日历、继续观看（进度绑集号）、公告广播、独立移动端适配。
-- **本地媒体源**：直接扫描 NAS / 服务器影视目录建库，自动分类电影 / 剧集并生成首页栏目；mp4/webm/mov 原生播放，mkv/avi/ts 等开启转封装由 ffmpeg 实时复制流转为 mp4；服务端流式接口支持 Range + 路径穿越防护，无需 Emby / 网盘直链 / 任何第三方工具。
-- **播放**：Artplayer + hls.js 自托管，**页面不连任何外部 CDN**；换源面板（解析线路优先 + 跨站切换）；**m3u8 插播广告服务端过滤**（APP 播放时显示已拦截数）；起播看门狗慢起播不误换线；IPTV 裸 MPEG-TS 直链播放（mpegts.js）；自动跳片头片尾（跟随账号权限）；断点续播、倍速、投屏（DLNA）。
-- **APP**：详情页官方+采集线路合并去重、官方线路排前打★；自动跳过片头片尾；画中画；直播 IPTV 带节目单；海报走站点图片代理绕防盗链；积分签到、会员兑换、邀请注册。
-- **后台**：首页栏目、采集站（地址自动规范化 + 连通自检 + 批量导入）、采集站栏目分类、后台列表排序、采集站权限（按人 / 按等级独立控制）、解析线路、上游接入、用户/会员/权限矩阵、积分签到、公告广播、IPTV、广告过滤、授权管理、日志。
-
-> **授权体系**：RSA-2048 非对称签发，一机一码、**永久授权**、激活后离线校验。公钥随代码分发（只能验签），私钥只在你自己的 `data/config.json`，clone 下来的代码没有签发能力——这是设计，不是 bug。
-> **空壳原则**：功能全给，凭据一律不内置（采集站地址 / 上游密钥 / IPTV 源 / TMDB Token 都要你自己填）。凭据共刷会导致上游限流封号，**一实例一号，禁止共用**。
-
-## 三分钟装好（Docker Compose）适用于 飞牛 / 群晖（X86 与 ARM 均支持）
+适用于飞牛、群晖、宝塔，以及任何能跑 Docker 的 x86 / ARM 机器。
 
 ```yaml
 services:
@@ -122,60 +56,83 @@ docker compose up -d
 docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就成了
 ```
 
-打开 `http://你的IP:8890` → 进激活页。默认 bridge 网络不占宿主机网络栈；**要用 DLNA 投屏**就把 `ports:` 换成 `network_mode: host`。
+打开 `http://你的IP:8890` 进激活页。默认 bridge 网络；要用 DLNA 投屏就把 `ports:` 换成 `network_mode: host`。
 
-- **飞牛商店自定义安装（提供 FPK 安装包）**：适用于飞牛 fnOS。先下载安装包 [`aistream-1.5.45.fpk`](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.45/aistream-1.5.45.fpk)，打开飞牛「应用中心 → 设置 → 手动安装」上传该 fpk，按向导设好端口与数据目录即可完成；之后在应用中心点「重启」会自动拉取最新镜像完成升级。
-- **群晖**：Container Manager → 项目 → 新建 → 粘贴 Compose → 部署。
-- **本仓库只分发预构建镜像**：运行方式就是上面那段 `docker compose up -d`，不需要、也不提供从源码构建的入口。镜像拉不动时，换网络或手动 `docker pull xiaoluya/aistream:latest` 后重启容器即可。
+镜像拉不动时换网络，或者先手动 `docker pull xiaoluya/aistream:latest` 再重启容器。本仓库只分发预构建镜像，不提供从源码构建的入口。
 
-## 激活（免费 · 永久 · 群发授权码）
+### 飞牛 fnOS 安装包
 
-1. 打开站点 → 激活页有一串**机器码**（如 `FB4C-EAB2-EC4E-499A`），复制。
-2. 把机器码发到 **TG 群 [AIStream1](https://t.me/AIStream1)**，按群内指引获取**永久授权码**（码不在群里公开，私聊发放）。
-3. 粘进激活页 → 自动进站。全程本地校验，**支持离线激活**。
+下载 [aistream-1.5.46.fpk](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.46/aistream-1.5.46.fpk)，在「应用中心 → 设置 → 手动安装」里上传。安装向导里可以改访问端口，默认 8890；如果 8890 已经被别的程序占用，填一个没被占用的端口即可，桌面图标会跟着这个端口打开。
 
-> 机器码会变吗？存在 `data/config.json`，数据卷在就不变（重建容器也不变）；换数据卷 / 清空 `data/` 会重新生成，重新签发同样免费永久。
+群晖用 Container Manager 新建项目，粘贴上面的 Compose 部署即可。
 
-默认后台账号 **`admin` / `admin123`**，**装完立刻改密码**。
+## 激活
 
-## 装完第一步：接入采集站
+1. 打开站点，激活页会显示机器码（如 `FB4C-EAB2-EC4E-499A`），复制它。
+2. 发到 TG 群 [AIStream1](https://t.me/AIStream1)，按群内指引领取永久授权码。
+3. 粘进激活页即可进站。
 
-后台 → 采集站 → 添加，填苹果CMS v10 采集接口（`https://example.com` 或完整 `/api.php/provide/vod`，地址会自动规范化）→ 点「立即自检」→ 保存后前台刷新，该站自动成为首页栏目。
-**一个采集站都不配也能用**：首页有内置热门数据（无需密钥），只是没有播放源。批量导入用后台「批量导入」（逐条真测后才入库）。
+机器码存在 `data/config.json`，数据卷在就不变，重建容器也不会变；清空 `data/` 会重新生成，重新领取同样免费。
+
+默认后台账号 `admin` / `admin123`，装完请立刻改密码。
+
+## 接入采集站
+
+后台 → 采集站 → 添加，填苹果CMS v10 采集接口（`https://example.com` 或完整 `/api.php/provide/vod`，地址会自动规范化），点「立即自检」再保存，前台刷新后该站会成为首页栏目。
+
+一个采集站都不配也能打开，首页有内置热门数据，只是没有播放源。批量导入请走后台的「批量导入」，它会逐条实测后才入库。
+
+## 手机和电视客户端
+
+APP 不内置服务器地址，打开后填自己站点的地址、端口和账号密码就能连，凭证只存在手机本机。两个包用同一把签名，覆盖安装即可，不用先卸载。
+
+| 客户端 | 下载 | 说明 |
+|---|---|---|
+| 手机 / 平板 | [AIStream-Native.apk](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.39/AIStream-Native.apk) | Kotlin + ExoPlayer，触摸操作 |
+| 电视 / 盒子 | [AIStream-TV.apk](https://github.com/xiaolurenya/AIStream/releases/download/v1.5.39/AIStream-TV.apk) | 遥控器操作的界面，也支持触摸 |
+
+APP 当前版本是 v1.5.39，之后的版本只更新了网页端和飞牛安装包，APP 没有改动。历史版本和更新日志见 [Releases](https://github.com/xiaolurenya/AIStream/releases)。
 
 ## 环境变量
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
 | `PORT` | `8890` | 监听端口 |
-| `DATA_DIR` | `/data` | 配置 / 用户 / 收藏 / 历史 / 图片缓存都在里面 |
+| `DATA_DIR` | `/data` | 配置、用户、收藏、历史、图片缓存都在这里 |
 | `TMDB_TOKEN` | 空 | 可选，不填则 TMDB 榜单不可用，采集站与内置数据源不受影响 |
-| `OUT_PROXY` | 空 | 出网代理 `host:port`，直连 TMDB / 图床不通时才需要 |
-| `PEPPER` | 内置 | 密码哈希盐，改了已有用户密码会失效 |
+| `OUT_PROXY` | 空 | 出网代理 `host:port`，直连 TMDB 或图床不通时才需要 |
+| `PEPPER` | 内置 | 密码哈希盐，改了之后已有用户密码会失效 |
 
-**数据全在 `data/`**：`docker compose pull && docker compose up -d` 重建不丢数据，删 `data/` 才会。**升级前先 `cp -r data data.bak`。**
+升级前建议先备份：`cp -r data data.bak`。数据都在 `data/`，`docker compose pull && docker compose up -d` 不会丢。
 
 ## 常见问题
 
-- **打开是激活页**：把机器码发到 TG 群 [AIStream1](https://t.me/AIStream1) 按指引获取永久码。没有跳过激活的开关。
-- **首页空白**：没加采集站。后台 → 采集站 → 添加 → 立即自检。没配也有内置热门数据，不会白屏。
-- **APP 连不上站点**：① 手机浏览器先打开站点地址，浏览器都打不开就不是 APP 的问题；② 地址只填 IP/域名不带路径；③ 账号密码就是网页登录那套。
-- **APP 播不出来**：先用浏览器试同一部片——浏览器也不行就是片源问题。浏览器能播则多半是后台「解析线路」为空（站方给播放页地址时需要），配一条再试。
-- **APP 签名不一致装不上**：官方 Release 全部同一把密钥，直接覆盖安装。出现这个提示说明装的不是官方版，卸载后装官方 Release 即可。
-- **想用自己的域名 + HTTPS**：反代到 8890 即可（Nginx / Caddy / 宝塔反代 / frp 都行），站点本身不需要证书。
+- **打开是激活页**：把机器码发到 TG 群领取授权码，没有跳过激活的开关。
+- **首页空白**：没加采集站，去后台添加并自检。没配也有内置热门数据，正常不会白屏。
+- **APP 连不上站点**：先用手机浏览器打开站点地址；浏览器都打不开就不是 APP 的问题。地址只填 IP 或域名，不带路径，账号密码和网页端一致。
+- **APP 播不出来**：先用浏览器试同一部片，浏览器也不行多半是片源问题。浏览器能播则检查后台「解析线路」是否为空，配一条再试。
+- **APP 提示签名不一致**：官方 Release 都是同一把密钥，出现这个提示说明装的不是官方版，卸载后装官方包即可。
+- **想用域名和 HTTPS**：反代到 8890 就行，站点本身不用配证书。
+- **飞牛安装包上传后提示解析错误**：确认下载文件是 10981 字节左右的 `.fpk`，没有被浏览器改名成 `.zip`；GitHub 直连不稳定时换个网络重下。1.5.46 已针对安装解析做过修复。
+
+## 反馈
+
+[提交 Bug](https://github.com/xiaolurenya/AIStream/issues/new?template=bug-report.yml) · [功能建议](https://github.com/xiaolurenya/AIStream/issues/new?template=feature-request.yml) · TG 群 [AIStream1](https://t.me/AIStream1)
+
+提 Issue 请带上版本、复现步骤、环境和截图。
 
 ## 免责声明与使用限制
 
-> 使用、复制、修改或分发本项目（含源码、镜像及任何派生内容）即视为你已**全部接受**以下条款。
+使用、复制、修改或分发本项目（含源码、镜像及派生内容）即视为接受以下条款。
 
-1. **禁止用于任何商业或盈利行为**：严禁收费观看、会员售卖、广告分成、引流变现、付费部署、代搭建收费、二次分发转售，或作为任何商业产品/服务的组成部分。
-2. **仅供技术研究与交流**：本项目是影视聚合**框架**，不生产、不存储、不上传、不缓存任何影视内容，所有内容源由使用者自行接入。
-3. **如不同意条款，或所在地区有合规要求，请在 24 小时内删除全部副本。**
-4. **请勿在公开场合宣传推广**：请勿在短视频平台、论坛、社群、公开教程等渠道传播引流，后果由传播者自行承担。
-5. **内容与合规责任完全在使用者**：接入源的合法性由使用者自行判断承担，一切法律后果与本项目及作者无关。授权码只是软件使用授权，不构成对所展示内容的任何授权。
-6. **按「现状」提供，无任何担保。**
+1. 禁止用于任何商业或盈利行为，包括收费观看、会员售卖、广告分成、引流变现、付费部署、代搭建收费、二次分发转售，或作为商业产品的一部分。
+2. 仅供技术研究与交流。本项目是影视聚合框架，不生产、不存储、不上传、不缓存任何影视内容，内容源由使用者自行接入。
+3. 如不同意条款，或所在地区有合规要求，请在 24 小时内删除全部副本。
+4. 请勿在短视频平台、论坛、社群、公开教程等渠道宣传推广，后果由传播者自行承担。
+5. 接入源的合法性由使用者自行判断承担，一切法律后果与本项目及作者无关。授权码只是软件使用授权，不构成对所展示内容的授权。
+6. 按现状提供，不提供任何担保。
 
-**官方 TG 群（免费获取永久授权码 / 交流反馈）：[AIStream1](https://t.me/AIStream1)**
+官方 TG 群（领取授权码、交流反馈）：[AIStream1](https://t.me/AIStream1)
 
 ![TG 群二维码](docs/tg-qr.png)
 
