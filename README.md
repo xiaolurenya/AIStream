@@ -38,6 +38,7 @@
 services:
   aistream:
     image: xiaoluya/aistream:latest
+    pull_policy: always
     container_name: aistream
     user: "0:0"
     restart: always
@@ -56,9 +57,11 @@ docker compose up -d
 docker compose logs -f        # 看到 [aistream] listening on 0.0.0.0:8890 就成了
 ```
 
-打开 `http://你的IP:8890` 进激活页。默认 bridge 网络；要用 DLNA 投屏就把 `ports:` 换成 `network_mode: host`。
+打开 `http://你的IP:8890` 进激活页。`pull_policy: always` 表示每次启动都会先拉最新镜像，所以以后出新版本，在面板点「重启 / 重新部署」就会自动更新，数据卷里的配置和记录不会丢。默认 bridge 网络；要用 DLNA 投屏就把 `ports:` 换成 `network_mode: host`。
 
-镜像拉不动时换网络，或者先手动 `docker pull xiaoluya/aistream:latest` 再重启容器。本仓库只分发预构建镜像，不提供从源码构建的入口。
+镜像拉不动时换网络，或者先手动 `docker pull xiaoluya/aistream:latest` 再重启容器。本仓库只分发预构建镜像，不提供从源码构建的入口。仓库根目录另有 `docker-compose.yml`、`update.sh`、`UPGRADE.md`，内容和上面一致。
+
+后台「概览」会显示当前版本并检查更新。发现新版本时可以直接点「一键更新」，它会在数据目录写一个请求文件，由宿主机的定时任务执行 `docker compose pull && up -d`。这个任务默认没装，在 compose 目录执行一次 `bash update.sh cron` 即可；不装的话按钮点了不会生效，仍可以用上面的「重启 / 重新部署」更新。也可以叠加 `docker-compose.auto-update.yml` 用 Watchtower 每小时自动检查。
 
 ### 飞牛 fnOS 安装包
 
@@ -103,7 +106,7 @@ APP 当前版本是 v1.5.39，之后的版本只更新了网页端和飞牛安�
 | `OUT_PROXY` | 空 | 出网代理 `host:port`，直连 TMDB 或图床不通时才需要 |
 | `PEPPER` | 内置 | 密码哈希盐，改了之后已有用户密码会失效 |
 
-升级前建议先备份：`cp -r data data.bak`。数据都在 `data/`，`docker compose pull && docker compose up -d` 不会丢。
+升级前建议先备份：`cp -r data data.bak`。数据都在 `data/`，重启、重新部署或 `docker compose pull && docker compose up -d` 都不会丢。
 
 ## 常见问题
 
