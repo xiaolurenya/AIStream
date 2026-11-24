@@ -103,6 +103,8 @@ APP 当前版本是 v1.5.39，之后的版本只更新了网页端和飞牛安�
 | `PORT` | `8890` | 监听端口 |
 | `DATA_DIR` | `/data` | 配置、用户、收藏、历史、图片缓存都在这里 |
 | `TMDB_TOKEN` | 空 | 可选，不填则 TMDB 榜单不可用，采集站与内置数据源不受影响 |
+| `TMDB_API_BASE` | 空 | 可选，TMDB API 反代基址（如 `https://tmdb.example.com/3`）；也可在后台「首页设置 → TMDB 反代地址」填 |
+| `TMDB_IMG_BASE` | 空 | 可选，TMDB 图片反代基址；也可在后台填 |
 | `OUT_PROXY` | 空 | 出网代理 `host:port`，直连 TMDB 或图床不通时才需要 |
 | `PEPPER` | 内置 | 密码哈希盐，改了之后已有用户密码会失效 |
 
